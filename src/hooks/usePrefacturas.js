@@ -117,9 +117,14 @@ export const usePrefacturasSummary = (filters = {}) => {
     byStatus: {},
   });
 
-  const sanitizedFilters = useMemo(
-    () => buildPrefacturaQuery(filters),
+  const filtersKey = useMemo(
+    () => JSON.stringify(filters ?? {}),
     [filters]
+  );
+
+  const sanitizedFilters = useMemo(
+    () => buildPrefacturaQuery(JSON.parse(filtersKey)),
+    [filtersKey]
   );
 
   const fetchSummary = useCallback(async () => {
