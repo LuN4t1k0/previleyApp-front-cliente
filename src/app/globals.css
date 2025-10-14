@@ -1,0 +1,278 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface: #ffffff;
+  --text-primary: #1f2229;
+  --text-secondary: #5e6370;
+  --border-soft: rgba(255, 255, 255, 0.6);
+  --shadow-elevated: 0 30px 60px -40px rgba(33, 38, 52, 0.55);
+
+  /* Valores por defecto (dashboard) */
+  --dashboard-primary: #425aef;
+  --dashboard-primary-dark: #2a3cc3;
+  --dashboard-accent: #9faffb;
+  --dashboard-highlight: #fbd6c8;
+  --dashboard-bg: #f5f7ff;
+
+  /* Valores globales iniciales para theme */
+  --theme-primary: var(--dashboard-primary);
+  --theme-primary-dark: var(--dashboard-primary-dark);
+  --theme-accent: var(--dashboard-accent);
+  --theme-highlight: var(--dashboard-highlight);
+  --theme-soft: var(--dashboard-bg);
+  --theme-badge-bg: #e4e9ff;
+  --theme-badge-text: #2a3cc3;
+  --theme-gradient: radial-gradient(
+      circle at 20% 15%,
+      rgba(66, 90, 239, 0.18),
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at 80% 90%,
+      rgba(251, 214, 200, 0.2),
+      transparent 45%
+    ),
+    var(--dashboard-bg);
+}
+
+.theme-dashboard {
+  --theme-primary: #425aef;
+  --theme-primary-dark: #2a3cc3;
+  --theme-accent: #9faffb;
+  --theme-highlight: #fbd6c8;
+  --theme-soft: #f5f7ff;
+  --theme-badge-bg: #e4e9ff;
+  --theme-badge-text: #2a3cc3;
+  --theme-gradient: radial-gradient(
+      circle at 20% 15%,
+      rgba(66, 90, 239, 0.18),
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at 80% 90%,
+      rgba(251, 214, 200, 0.2),
+      transparent 45%
+    ),
+    #f5f7ff;
+}
+
+.theme-mora {
+  --theme-primary: #ff3c41;
+  --theme-primary-dark: #e03238;
+  --theme-accent: #ffd1d3;
+  --theme-highlight: rgba(255, 209, 211, 0.22);
+  --theme-soft: #fff7f7;
+  --theme-badge-bg: #ffe3e5;
+  --theme-badge-text: #c8232b;
+  --theme-gradient: radial-gradient(
+      circle at 18% 22%,
+      rgba(255, 60, 65, 0.18),
+      transparent 55%
+    ),
+    radial-gradient(
+      circle at 82% 85%,
+      rgba(255, 209, 211, 0.24),
+      transparent 50%
+    ),
+    #fff7f7;
+}
+
+.theme-pagex {
+  --theme-primary: #7354ff;
+  --theme-primary-dark: #5637d8;
+  --theme-accent: #bda7ff;
+  --theme-highlight: rgba(150, 222, 255, 0.14);
+  --theme-soft: #f4f1ff;
+  --theme-badge-bg: #e7e1ff;
+  --theme-badge-text: #5132c6;
+  --theme-gradient: radial-gradient(
+      circle at 18% 18%,
+      rgba(115, 84, 255, 0.16),
+      transparent 52%
+    ),
+    radial-gradient(
+      circle at 78% 90%,
+      rgba(150, 222, 255, 0.18),
+      transparent 48%
+    ),
+    #f4f1ff;
+}
+
+.theme-licencias {
+  --theme-primary: #2bb07b;
+  --theme-primary-dark: #1c7f57;
+  --theme-accent: #9de8c7;
+  --theme-highlight: rgba(196, 244, 222, 0.22);
+  --theme-soft: #f0fbf6;
+  --theme-badge-bg: #d9f3e6;
+  --theme-badge-text: #16724d;
+  --theme-gradient: radial-gradient(
+      circle at 16% 20%,
+      rgba(43, 176, 123, 0.15),
+      transparent 52%
+    ),
+    radial-gradient(
+      circle at 82% 88%,
+      rgba(196, 244, 222, 0.24),
+      transparent 45%
+    ),
+    #f0fbf6;
+}
+
+.theme-visitas {
+  --theme-primary: #f97316;
+  --theme-primary-dark: #c2410c;
+  --theme-accent: #ffd3ad;
+  --theme-highlight: rgba(252, 211, 134, 0.26);
+  --theme-soft: #fff4e6;
+  --theme-badge-bg: #ffe2c5;
+  --theme-badge-text: #9a3f07;
+  --theme-gradient: radial-gradient(
+      circle at 18% 22%,
+      rgba(249, 115, 22, 0.18),
+      transparent 54%
+    ),
+    radial-gradient(
+      circle at 78% 88%,
+      rgba(255, 210, 160, 0.28),
+      transparent 50%
+    ),
+    #fff4e6;
+}
+
+.dashboard-gradient {
+  background: var(--theme-gradient);
+}
+
+.badge-theme {
+  background-color: var(--theme-badge-bg);
+  color: var(--theme-badge-text);
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.card-surface {
+  background-color: var(--surface);
+  color: var(--text-primary);
+}
+
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--theme-soft);
+  color: var(--theme-primary);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+
+.cta-link {
+  color: var(--theme-primary);
+  font-weight: 600;
+}
+
+.nav-shell {
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid rgba(18, 21, 25, 0.06);
+}
+
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: rgba(30, 33, 41, 0.78);
+  transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.nav-pill:is(:hover, :focus-visible) {
+  background: rgba(66, 90, 239, 0.1);
+  color: #1c215a;
+}
+
+.nav-pill--active {
+  background: rgba(66, 90, 239, 0.18);
+  color: #1c215a;
+}
+
+.nav-icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(66, 90, 239, 0.12);
+  color: #1c215a;
+}
+
+.nav-panel {
+  background: #ffffff;
+  border: 1px solid rgba(18, 21, 25, 0.05);
+  border-radius: 18px;
+  box-shadow: 0 24px 48px -32px rgba(15, 23, 42, 0.25);
+}
+
+.footer-gradient {
+  background: radial-gradient(circle at 0% 0%, rgba(66, 90, 239, 0.06), transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(43, 176, 123, 0.08), transparent 45%),
+    #f7f8fc;
+}
+
+.app-footer {
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid rgba(18, 21, 25, 0.06);
+  font-size: 0.85rem;
+  color: rgba(59, 63, 72, 0.76);
+}
+
+.app-footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-footer a:hover {
+  text-decoration: underline;
+}
+
+.footer-link {
+  color: rgba(46, 48, 56, 0.8);
+  font-size: 0.92rem;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: var(--theme-primary);
+}
+
+.footer-heading {
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(33, 36, 45, 0.82);
+  font-weight: 600;
+}
+
+.footer-contact {
+  display: grid;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  color: rgba(33, 36, 45, 0.9);
+}
+
+.footer-legal {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  font-size: 0.85rem;
+  color: rgba(59, 62, 70, 0.7);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

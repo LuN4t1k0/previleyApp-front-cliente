@@ -1,0 +1,297 @@
+// NUEVO:TRABAJANDO:
+// LicenciasMedicasPageContent.jsx
+
+"use client";
+
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+} from "react";
+import { useRole } from "@/context/RoleContext";
+import { useFilters } from "@/hooks/useFilters";
+import { FilterContext, FilterProvider } from "@/context/FilterContext";
+import GenericFilter from "@/components/filters/GenericFilter";
+import GenericTableWithDetail from "@/components/table/GenericTableWithDetail";
+import { ModalProvider, useModal } from "@/context/ModalContext";
+import ModalManager from "@/components/modal/ModalManager";
+import { showErrorAlert } from "@/utils/alerts";
+import ActionButtons from "@/components/filters/ActionButtons";
+import { useCrud } from "@/hooks/useCrud";
+import ProduccionConfig from "@/config/module/prefactura.config";
+import apiService from "@/app/api/apiService";
+
+const PrefacturaContent = () => {
+  const { openModal } = useModal();
+  const { role } = useRole();
+  // console.log(role);
+  const { filters, handleFilterChange } = useContext(FilterContext);
+
+  const [pageIndex, setPageIndex] = useState(0);
+  const limit = 10;
+
+  const canView = ["admin", "cliente", "previley", "trabajador"].includes(role);
+  const canEdit = ["superAdmin"].includes(role);
+  const canDelete = ["superAdmin"].includes(role);
+
+  const [sorting, setSorting] = useState([]);
+
+  const {
+    resourcePath,
+    deletePath,
+    filtersPath,
+    title,
+    subtitle,
+    excludeColumns,
+    buildDetailEndpoint,
+    filters: filterConfig,
+    detailPath,
+    createPath,
+    bulkDeletePath,
+    updatePath,
+    bulkUploadPath,
+    dateColumns,
+    columnsConfig,
+    monetaryColumns,
+    badgesConfig,
+    actionsConfig,
+    modalsConfig,
+  } = ProduccionConfig;
+
+  const {
+    data,
+    total,
+    loading,
+    error,
+    fetchDetails,
+    handleDelete,
+    handleSubmit,
+    fetchData,
+    handleBulkDelete,
+    handleBulkUpload,
+  } = useCrud(
+    resourcePath,
+    deletePath,
+    detailPath,
+    buildDetailEndpoint,
+    createPath,
+    bulkDeletePath,
+    updatePath,
+    bulkUploadPath
+  );
+
+  const handleCreate = useCallback(() => {
+    openModal("createFactura", {
+      handleSubmit,
+      fetchData,
+      updatePath,
+      createPath,
+    });
+  }, [openModal, handleSubmit, fetchData, updatePath, createPath]);
+
+  const handleEdit = useCallback(
+    (item) => {
+      openModal("createFactura", {
+        initialData: item,
+        handleSubmit,
+        fetchData,
+        updatePath,
+        createPath,
+      });
+    },
+    [openModal, handleSubmit, fetchData, updatePath, createPath]
+  );
+
+  // NUEVO:
+  // const handleCreateFactura = useCallback((rowData) => {
+  //   openModal("createFactura", {
+  //     prefacturaId: rowData.id,
+  //     fetchData,
+  //   });
+  // }, [openModal, fetchData]);
+
+    const handleCreateForEmpresa = useCallback(() => {
+      openModal("createForEmpresa", {
+        fetchData,
+      });
+    }, [openModal, fetchData]);
+    
+    const handleCreateForAllEmpresas = useCallback(() => {
+      openModal("createForAllEmpresas", {
+        fetchData,
+      });
+    }, [openModal, fetchData]);
+  
+
+
+
+  const handleBulkUploadModal = useCallback(() => {
+    openModal("bulkUpload", {
+      handleBulkUpload,
+      fetchData,
+    });
+  }, [openModal, handleBulkUpload, fetchData]);
+
+  const handleViewDetails = useCallback(
+      async (item) => {
+        console.log(item);
+        try {
+          const fetchedDetails = await fetchDetails(item.id);
+          if (fetchedDetails) {
+            openModal("licenciaDetails", { prefacturaData: fetchedDetails });
+          }
+        } catch (error) {
+          console.error("Error al obtener detalles de la licencia:", error);
+        }
+      },
+      [fetchDetails, openModal]
+    );
+
+  const actionHandlers = {
+    create: handleCreate,
+    bulkUpload: handleBulkUploadModal,
+    // exportPDF: handleExportPDF,
+    // exportExcel: handleExportExcel,
+    // validateProduccion: handleValidateProduccion,
+    // rejectProduccion: handleRejectProduccion,
+    // revertProduccion: handleRevertProduccion,
+    
+    createForEmpresa: handleCreateForEmpresa,
+  createForAllEmpresas: handleCreateForAllEmpresas,
+  };
+
+  const queryParams = { limit: 10, offset: 0 };
+
+  const {
+    uniqueValues,
+    loading: loadingFilters,
+    error: errorFilters,
+  } = useFilters(filtersPath, queryParams, filterConfig);
+
+  // Función para convertir los filtros en parámetros de consulta
+  const convertFiltersToQueryParams = useCallback(
+    (filters) => {
+      const params = {};
+      if (Array.isArray(ProduccionConfig.filters)) {
+        ProduccionConfig.filters.forEach(({ key, type, field }) => {
+          const value = filters[key]?.value;
+          if (value) {
+            if (type === "text") params[field] = value;
+            else if (type === "multiselect") params[field] = value.join(",");
+            else if (type === "dateRange") {
+              const { from, to } = value;
+              if (from) params["inicio"] = from.toISOString().split("T")[0];
+              if (to) params["termino"] = to.toISOString().split("T")[0];
+            }
+          }
+        });
+      }
+      return params;
+    },
+    []
+  );
+
+  // Función para convertir el estado de ordenamiento en parámetros de consulta
+  const convertSortingToQueryParams = useCallback((sorting) => {
+    if (sorting.length === 0) return {};
+    const sortField = sorting[0].id;
+    const sortOrder = sorting[0].desc ? "desc" : "asc";
+    return { sortField, sortOrder };
+  }, []);
+
+  // Efecto para cargar los datos cuando cambian los filtros o el ordenamiento
+  useEffect(() => {
+    if (!loadingFilters) {
+      const params = {
+        limit,
+        offset: pageIndex * limit,
+        ...convertFiltersToQueryParams(filters),
+        ...convertSortingToQueryParams(sorting),
+      };
+      fetchData(params);
+    }
+  }, [
+    loadingFilters,
+    limit,
+    pageIndex,
+    filters,
+    fetchData,
+    sorting,
+    convertFiltersToQueryParams,
+    convertSortingToQueryParams,
+  ]);
+
+  if (!canView) {
+    return (
+      <div className="text-center mt-10">
+        <h2 className="text-xl font-bold text-gray-700">
+          No tienes permiso para ver esta página.
+        </h2>
+        <p className="text-gray-500 mt-2">
+          Contacta al administrador si crees que esto es un error.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full px-2 sm:px-6 lg:px-8 pt-4 relative">
+      <div className="flex flex-row items-center space-x-2 flex-grow">
+        <GenericFilter
+          filters={filters}
+          uniqueValues={uniqueValues}
+          handleFilterChange={handleFilterChange}
+          filterConfig={filterConfig}
+        />
+        <ActionButtons
+          actionsConfig={actionsConfig}
+          actionHandlers={actionHandlers}
+        />
+      </div>
+
+      <GenericTableWithDetail
+        data={data}
+        total={total}
+        loading={loading}
+        error={error}
+        pageIndex={pageIndex}
+        setPageIndex={setPageIndex}
+        limit={limit}
+        excludeColumns={excludeColumns}
+        title={title}
+        subtitle={subtitle}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        handleEdit={canEdit ? handleEdit : null}
+        // handleCreate={canEdit ? handleCreate : null}
+        handleDelete={canDelete ? handleDelete : null}
+        handleViewDetails={handleViewDetails}
+        handleBulkDelete={handleBulkDelete}
+        monetaryColumns={monetaryColumns}
+        badgesConfig={badgesConfig}
+        dateColumns={dateColumns}
+        columnsConfig={columnsConfig}
+        sorting={sorting}
+        setSorting={setSorting}
+        convertFiltersToQueryParams={convertFiltersToQueryParams}
+        fetchData={fetchData}
+        filters={filters}
+        actionHandlers={actionHandlers}
+        role={role}
+        columnOrder={ProduccionConfig.columnOrder} 
+      />
+    </div>
+  );
+};
+
+const LicenciasMedicasPage = () => (
+  <FilterProvider>
+    <ModalProvider modalsConfig={ProduccionConfig.modalsConfig}>
+      <PrefacturaContent />
+      <ModalManager />
+    </ModalProvider>
+  </FilterProvider>
+);
+
+export default LicenciasMedicasPage;
