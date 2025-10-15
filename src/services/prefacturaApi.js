@@ -20,34 +20,81 @@ const normalizeEndpointPath = (endpoint) => {
 };
 
 const mergeFacturaData = (originalFactura, fetchedFactura) => {
-  if (!fetchedFactura) return originalFactura || null;
   const baseFactura = originalFactura || {};
+  const fetched = fetchedFactura || {};
+
+  if (!originalFactura && !fetchedFactura) return null;
 
   return {
     ...baseFactura,
-    ...fetchedFactura,
-    pdfUrl: fetchedFactura.pdfUrl ?? baseFactura.pdfUrl ?? null,
+    ...fetched,
+    pdfUrl: fetched.pdfUrl ?? baseFactura.pdfUrl ?? null,
   };
 };
 
 const mergeProduccionData = (originalProduccion, fetchedProduccion) => {
-  if (!fetchedProduccion) return originalProduccion || null;
   const baseProduccion = originalProduccion || {};
+  const fetched = fetchedProduccion || {};
+
+  if (!originalProduccion && !fetchedProduccion) return null;
 
   return {
     ...baseProduccion,
-    ...fetchedProduccion,
+    ...fetched,
     certificadoInicial:
-      fetchedProduccion.certificadoInicial ??
+      fetched.certificadoInicial ??
       baseProduccion.certificadoInicial ??
       null,
     certificadoFinal:
-      fetchedProduccion.certificadoFinal ??
+      fetched.certificadoFinal ??
       baseProduccion.certificadoFinal ??
       null,
-    detalle:
-      fetchedProduccion.detalle ?? baseProduccion.detalle ?? null,
+    detalle: fetched.detalle ?? baseProduccion.detalle ?? null,
   };
+};
+
+const collectProduccionIds = (detalle) => {
+  const ids = new Set();
+
+  if (detalle?.produccionId) ids.add(detalle.produccionId);
+  if (detalle?.produccionID) ids.add(detalle.produccionID);
+
+  const producciones = detalle?.producciones;
+  if (Array.isArray(producciones)) {
+    producciones.forEach((prod) => {
+      if (prod?.id) ids.add(prod.id);
+      if (prod?.produccionId) ids.add(prod.produccionId);
+      if (prod?.produccionID) ids.add(prod.produccionID);
+    });
+  } else if (producciones?.id) {
+    ids.add(producciones.id);
+  }
+
+  return Array.from(ids).filter(Boolean);
+};
+
+const mergeProduccionesForDetalle = (
+  detalle,
+  produccionesMap
+) => {
+  const existing = detalle?.producciones;
+
+  if (Array.isArray(existing)) {
+    return existing.map((prod) => {
+      const prodId =
+        prod?.id || prod?.produccionId || prod?.produccionID || null;
+      const fetched = prodId ? produccionesMap.get(prodId) : null;
+      return mergeProduccionData(prod, fetched);
+    });
+  }
+
+  const prodId =
+    detalle?.produccionId ||
+    detalle?.produccionID ||
+    existing?.id ||
+    null;
+  const fetched = prodId ? produccionesMap.get(prodId) : null;
+  return mergeProduccionData(existing, fetched);
 };
 
 export const enrichPrefacturaWithSignedAssets = async (prefactura) => {
@@ -78,15 +125,7 @@ export const enrichPrefacturaWithSignedAssets = async (prefactura) => {
   if (detalles.length > 0) {
     const uniqueProduccionIds = Array.from(
       new Set(
-        detalles
-          .map(
-            (detalle) =>
-              detalle.produccionId ||
-              detalle.produccionID ||
-              detalle.producciones?.id ||
-              null
-          )
-          .filter(Boolean)
+        detalles.flatMap((detalle) => collectProduccionIds(detalle))
       )
     );
 
@@ -116,23 +155,10 @@ export const enrichPrefacturaWithSignedAssets = async (prefactura) => {
 
       enriched = {
         ...enriched,
-        detalles: detalles.map((detalle) => {
-          const produccionId =
-            detalle.produccionId ||
-            detalle.produccionID ||
-            detalle.producciones?.id ||
-            null;
-          if (!produccionId) return detalle;
-          const produccionSigned = produccionesMap.get(produccionId);
-          if (!produccionSigned) return detalle;
-          return {
-            ...detalle,
-            producciones: mergeProduccionData(
-              detalle.producciones,
-              produccionSigned
-            ),
-          };
-        }),
+        detalles: detalles.map((detalle) => ({
+          ...detalle,
+          producciones: mergeProduccionesForDetalle(detalle, produccionesMap),
+        })),
       };
     }
   }
@@ -171,4 +197,3 @@ export const shouldEnrichPrefacturaEndpoint = (path) => {
     return false;
   }
 };
-
