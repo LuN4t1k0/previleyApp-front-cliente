@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import apiService from "@/app/api/apiService";
 import {
+  fetchPrefacturaDetailWithSignedUrls,
+  shouldEnrichPrefacturaEndpoint,
+} from "@/services/prefacturaApi";
+import {
   showSuccessAlert,
   showErrorAlert,
   showConfirmationAlert,
@@ -72,8 +76,13 @@ export const useCrud = (
         const endpoint = buildDetailEndpoint(detailPath, id);
         console.log("Endpoint generado:", endpoint);
 
-        const response = await apiService.get(endpoint);
-        const fetchedDetails = response.data.data; // Obtenemos los datos de la API
+        let fetchedDetails;
+        if (shouldEnrichPrefacturaEndpoint(endpoint || detailPath)) {
+          fetchedDetails = await fetchPrefacturaDetailWithSignedUrls(endpoint);
+        } else {
+          const response = await apiService.get(endpoint);
+          fetchedDetails = response?.data?.data ?? response?.data;
+        }
         setDetails(fetchedDetails); // Actualizamos el estado
         console.log("Detalles guardados:", fetchedDetails);
         return fetchedDetails; // Devolvemos los datos obtenidos
