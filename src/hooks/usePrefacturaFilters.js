@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import apiService from "@/app/api/apiService";
 import { buildPrefacturaQuery } from "./usePrefacturas";
 
@@ -9,12 +9,22 @@ export const usePrefacturaFilters = (filters = {}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const filtersKey = useMemo(
+    () => JSON.stringify(filters ?? {}),
+    [filters]
+  );
+
+  const queryParams = useMemo(
+    () => buildPrefacturaQuery(JSON.parse(filtersKey)),
+    [filtersKey]
+  );
+
   const fetchFilters = useCallback(async () => {
+    if (!filtersKey) return;
     setLoading(true);
     try {
-      const query = buildPrefacturaQuery(filters);
       const response = await apiService.get("/prefacturas/filters", {
-        params: query,
+        params: queryParams,
       });
       const payload = response?.data?.data || {};
       setData(payload);
@@ -25,7 +35,7 @@ export const usePrefacturaFilters = (filters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filtersKey, queryParams]);
 
   useEffect(() => {
     fetchFilters();
