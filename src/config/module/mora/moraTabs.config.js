@@ -13,7 +13,7 @@ const moraTabsConfig = [
     key: 'dashboard-operativo',
     label: 'Dashboard Operativo',
     component: <MoraOperativaDashboard />,
-    rolesAllowed: ['admin', 'trabajador'],
+    rolesAllowed: ['admin', 'trabajador', 'cliente'],
   },
   {
     key: 'gestion',

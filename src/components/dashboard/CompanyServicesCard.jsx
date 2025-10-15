@@ -28,11 +28,7 @@ const CompanyServicesCard = ({ empresa }) => {
               servicio.definition ||
               resolveServiceDefinition(servicio.serviceKey) ||
               resolveServiceDefinition(servicio.nombre);
-            const href = definition
-              ? `/servicios/${definition.slug}?empresa=${encodeURIComponent(
-                  empresa?.empresaRut || ""
-                )}`
-              : null;
+            const href = definition ? `/servicios/${definition.slug}` : null;
 
             return (
               <li

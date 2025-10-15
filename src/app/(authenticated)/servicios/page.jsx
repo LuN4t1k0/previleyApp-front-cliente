@@ -6,13 +6,9 @@ import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { useEmpresasServicios } from "@/hooks/useEmpresasServicios";
 import { resolveServiceDefinition } from "@/config/clientServices.config";
 
-const buildServiceLink = (service, empresas) => {
+const buildServiceLink = (service) => {
   if (!service?.definition) return null;
-  const defaultEmpresa = empresas?.[0];
-  const params = defaultEmpresa
-    ? `?empresa=${encodeURIComponent(defaultEmpresa.empresaRut)}`
-    : "";
-  return `/servicios/${service.definition.slug}${params}`;
+  return `/servicios/${service.definition.slug}`;
 };
 
 const ServicesPage = () => {
@@ -47,7 +43,7 @@ const ServicesPage = () => {
             service.definition || resolveServiceDefinition(service.serviceKey);
           if (!definition) return null;
           const empresasConServicio = service.empresas || [];
-          const link = buildServiceLink(service, empresasConServicio);
+          const link = buildServiceLink(service);
           return (
             <article
               key={service.serviceKey}

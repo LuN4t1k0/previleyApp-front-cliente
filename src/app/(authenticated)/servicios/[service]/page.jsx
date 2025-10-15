@@ -16,6 +16,10 @@ import {
 import MetricCard from "@/components/dashboard/MetricCard";
 import apiService from "@/app/api/apiService";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import PagexDashboard from "@/modules/pagex/PagexDashboard";
+import EmpresaLicenciasDashboard from "@/modules/licencias/EmpresaLicenciasDashboard";
+import PageShell from "@/components/PageShell/PageShell";
+import moraTabsConfig from "@/config/module/mora/moraTabs.config";
 
 const toISODate = (value) => {
   if (!value) return undefined;
@@ -75,10 +79,27 @@ const getServiceEntry = (servicesByType, definition, slug) => {
 
 const ServiceDetailPage = () => {
   const params = useParams();
-  const searchParams = useSearchParams();
   const slug = params?.service;
   const definition = resolveServiceDefinition(slug);
+  const inferredKey = definition?.key || resolveServiceKeyFromName(slug);
 
+  if (inferredKey === "mora") {
+    return <PageShell moduleTitle="Mora Presunta" tabsConfig={moraTabsConfig} />;
+  }
+
+  if (inferredKey === "licencias") {
+    return <EmpresaLicenciasDashboard />;
+  }
+
+  if (inferredKey === "pagex") {
+    return <PagexDashboard />;
+  }
+
+  return <GenericServiceContent definition={definition} slug={slug} />;
+};
+
+const GenericServiceContent = ({ definition, slug }) => {
+  const searchParams = useSearchParams();
   const initialEmpresaFromQuery = searchParams?.get("empresa") || undefined;
 
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
@@ -96,26 +117,27 @@ const ServiceDetailPage = () => {
     () => serviceEntry?.empresas || [],
     [serviceEntry]
   );
-  const [selectedEmpresaRut, setSelectedEmpresaRut] = useState(() =>
-    preferedEmpresaRut(empresasDisponibles, initialEmpresaFromQuery)
+  const serviceKey =
+    definition?.key ||
+    resolveServiceKeyFromName(serviceEntry?.definition?.label || slug);
+
+  const defaultEmpresaRut = useMemo(
+    () => preferedEmpresaRut(empresasDisponibles, initialEmpresaFromQuery),
+    [empresasDisponibles, initialEmpresaFromQuery]
   );
+
+  const [selectedEmpresaRut, setSelectedEmpresaRut] = useState(defaultEmpresaRut);
   const [range, setRange] = useState({
     from: undefined,
     to: undefined,
   });
 
   useEffect(() => {
-    const preferred = preferedEmpresaRut(
-      empresasDisponibles,
-      initialEmpresaFromQuery
-    );
-    setSelectedEmpresaRut(preferred);
-  }, [empresasDisponibles, initialEmpresaFromQuery]);
+    setSelectedEmpresaRut(defaultEmpresaRut);
+  }, [defaultEmpresaRut]);
 
   const normalizedRange = useMemo(() => buildRangeParams(range), [range]);
 
-  const serviceKey =
-    definition?.key || resolveServiceKeyFromName(serviceEntry?.definition?.label || "");
   const {
     data: dashboardData,
     loading: loadingDashboard,
@@ -135,14 +157,6 @@ const ServiceDetailPage = () => {
     refetch();
     refetchEmpresa();
   }, [selectedEmpresaRut, normalizedRange, refetch, refetchEmpresa]);
-
-  useEffect(() => {
-    if (definition && selectedEmpresaRut && typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("empresa", selectedEmpresaRut);
-      window.history.replaceState(null, "", url.toString());
-    }
-  }, [definition, selectedEmpresaRut]);
 
   const handleDownloadDocument = async (documentId) => {
     try {
