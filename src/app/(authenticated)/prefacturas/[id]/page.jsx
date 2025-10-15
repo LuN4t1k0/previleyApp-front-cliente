@@ -33,7 +33,34 @@ const PrefacturaDetailPage = () => {
       const response = await apiService.get(
         `/prefacturas/detalle/${prefacturaId}`
       );
-      const payload = response?.data?.data || null;
+      let payload = response?.data?.data || null;
+
+      if (payload?.factura?.id) {
+        try {
+          const facturaResponse = await apiService.get(
+            `/facturas/${payload.factura.id}`
+          );
+          const facturaPayload = facturaResponse?.data?.data || null;
+
+          if (facturaPayload) {
+            payload = {
+              ...payload,
+              factura: {
+                ...payload.factura,
+                ...facturaPayload,
+                pdfUrl:
+                  facturaPayload.pdfUrl || payload.factura.pdfUrl || null,
+              },
+            };
+          }
+        } catch (facturaError) {
+          console.error(
+            "No se pudo obtener la factura con URL firmada:",
+            facturaError
+          );
+        }
+      }
+
       setPrefactura(payload);
       setError(null);
     } catch (err) {
