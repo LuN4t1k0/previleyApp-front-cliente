@@ -128,6 +128,9 @@ export const usePrefacturasSummary = (filters = {}) => {
   );
 
   const fetchSummary = useCallback(async () => {
+    if (!filtersKey) {
+      return;
+    }
     setLoading(true);
     try {
       const [filtersResponse, totalsResponse] = await Promise.all([
@@ -175,7 +178,7 @@ export const usePrefacturasSummary = (filters = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [sanitizedFilters]);
+  }, [sanitizedFilters, filtersKey]);
 
   useEffect(() => {
     fetchSummary();

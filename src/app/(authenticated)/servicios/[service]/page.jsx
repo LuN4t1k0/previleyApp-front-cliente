@@ -17,9 +17,9 @@ import MetricCard from "@/components/dashboard/MetricCard";
 import apiService from "@/app/api/apiService";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import PagexDashboard from "@/modules/pagex/PagexDashboard";
-import EmpresaLicenciasDashboard from "@/modules/licencias/EmpresaLicenciasDashboard";
 import PageShell from "@/components/PageShell/PageShell";
 import moraTabsConfig from "@/config/module/mora/moraTabs.config";
+import licenciasClientTabs from "@/config/module/licencias/licenciasClientTabs.config";
 
 const toISODate = (value) => {
   if (!value) return undefined;
@@ -88,7 +88,7 @@ const ServiceDetailPage = () => {
   }
 
   if (inferredKey === "licencias") {
-    return <EmpresaLicenciasDashboard />;
+    return <PageShell moduleTitle="Licencias Médicas" tabsConfig={licenciasClientTabs} />;
   }
 
   if (inferredKey === "pagex") {
