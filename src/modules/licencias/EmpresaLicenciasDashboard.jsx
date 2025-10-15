@@ -8,10 +8,12 @@ import {
   RiInformationLine,
   RiArrowUpCircleLine,
   RiArrowDownCircleLine,
+  RiDownloadCloudLine,
 } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import TrabajadorSkeleton from "@/components/skeleton/TrabajadorSkeleton";
+import { saveAs } from "file-saver";
 
 // --- Helpers ---
 const formatCLP = (value) =>
@@ -65,6 +67,11 @@ const Header = ({
   empresaOptions,
   handleActualizar,
   loading,
+  selectedYear,
+  onYearChange,
+  yearOptions,
+  onDownloadExcel,
+  exportLoading,
 }) => (
   <section className="rounded-3xl border border-white/60 bg-white/65 p-6 shadow-elevated backdrop-blur md:p-8">
     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -80,7 +87,7 @@ const Header = ({
         </p>
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
         <div className="relative flex min-w-[260px] flex-1 items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
           <RiBuildingLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
           <input
@@ -104,15 +111,43 @@ const Header = ({
           </datalist>
         </div>
 
-        <button
-          type="button"
-          onClick={handleActualizar}
-          disabled={!empresaSeleccionada || loading}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[color:var(--theme-primary)] to-[color:var(--theme-primary-dark)] px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <RiRefreshLine className="h-4 w-4" aria-hidden="true" />
-          Actualizar
-        </button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={handleActualizar}
+            disabled={!empresaSeleccionada || loading}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[color:var(--theme-primary)] to-[color:var(--theme-primary-dark)] px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RiRefreshLine className="h-4 w-4" aria-hidden="true" />
+            Actualizar
+          </button>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select
+              aria-label="Seleccionar año calendario"
+              value={selectedYear}
+              onChange={(event) => onYearChange(Number(event.target.value))}
+              disabled={loading || exportLoading}
+              className="min-w-[120px] rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm font-semibold text-[color:var(--text-primary)] shadow-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {yearOptions.map((yearOption) => (
+                <option key={yearOption} value={yearOption}>
+                  {yearOption}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={onDownloadExcel}
+              disabled={!empresaSeleccionada || loading || exportLoading}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--theme-primary)] bg-white px-5 py-2 text-sm font-semibold text-[color:var(--theme-primary)] shadow-sm transition hover:bg-[color:var(--theme-primary)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RiDownloadCloudLine className="h-4 w-4" aria-hidden="true" />
+              {exportLoading ? "Generando..." : "Descargar Excel"}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -481,6 +516,13 @@ const EmpresaLicenciasDashboard = () => {
   const [resumen, setResumen] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const currentYear = new Date().getFullYear();
+  const yearOptions = useMemo(
+    () => Array.from({ length: 5 }, (_, index) => currentYear - index),
+    [currentYear]
+  );
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const empresaOptions = useMemo(() =>
     empresas
@@ -569,6 +611,36 @@ const EmpresaLicenciasDashboard = () => {
     }
   };
 
+  const handleDescargarExcel = useCallback(async () => {
+    if (!empresaSeleccionada) {
+      setError("Debes seleccionar una empresa para exportar el reporte.");
+      return;
+    }
+    setExportLoading(true);
+    try {
+      const response = await apiService.get(
+        `/licencia-dashboard/${empresaSeleccionada}/exportar-trabajadores-riesgo`,
+        {
+          params: { year: selectedYear },
+          responseType: "blob",
+        }
+      );
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const filename = `trabajadores_riesgo_${empresaSeleccionada}_${selectedYear}.xlsx`;
+      saveAs(blob, filename);
+    } catch (err) {
+      console.error("Error al exportar trabajadores con riesgo:", err);
+      setError(
+        err?.response?.data?.message ||
+          "No fue posible exportar el reporte de trabajadores con licencias rechazadas."
+      );
+    } finally {
+      setExportLoading(false);
+    }
+  }, [empresaSeleccionada, selectedYear]);
+
   useEffect(() => {
     if (empresaSeleccionada) {
       fetchResumen(empresaSeleccionada);
@@ -592,6 +664,11 @@ const EmpresaLicenciasDashboard = () => {
             empresaOptions={empresaOptions}
             handleActualizar={() => fetchResumen(empresaSeleccionada)}
             loading={loading}
+            selectedYear={selectedYear}
+            onYearChange={setSelectedYear}
+            yearOptions={yearOptions}
+            onDownloadExcel={handleDescargarExcel}
+            exportLoading={exportLoading}
           />
 
           {showError && (
