@@ -21,7 +21,25 @@ const TopTrabajadoresDeuda = ({ empresaRut }) => {
     const fetchTop = async () => {
       try {
         const res = await apiService.get(`/mora-dashboard/${empresaRut}/top-pendientes`);
-        setData(res.data.data || []);
+        const rawData = res.data.data || [];
+        const normalized = rawData.map((item) => {
+          const rawDeuda = item.totalDeudaPendiente;
+          const calculateAmount = (value) => {
+            const parsed = Number(value ?? 0);
+            return Number.isFinite(parsed) ? parsed : 0;
+          };
+
+          const totalDeudaPendiente = Array.isArray(rawDeuda)
+            ? rawDeuda.reduce((acc, value) => acc + calculateAmount(value), 0)
+            : calculateAmount(rawDeuda);
+
+          return {
+            ...item,
+            totalDeudaPendiente,
+          };
+        });
+
+        setData(normalized);
       } catch (error) {
         console.error("Error cargando top trabajadores:", error);
       }
