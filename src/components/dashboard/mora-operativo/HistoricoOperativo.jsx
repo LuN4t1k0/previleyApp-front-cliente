@@ -38,7 +38,7 @@ const HistoricoOperativo = ({ empresaRut, entidadId, dateRange }) => {
     return historico.map((fila) => ({
       periodo: fila.periodo,
       "Deuda inicial acumulada": Number(fila.deudaInicialAcumulada || 0),
-      "Recuperado acumulado": Number(fila.recuperadoAcumulado || 0),
+      "Regularizado acumulado": Number(fila.recuperadoAcumulado || 0),
       "Deuda actual": Number(fila.deudaActual || 0),
     }));
   }, [historico]);
@@ -53,12 +53,12 @@ const HistoricoOperativo = ({ empresaRut, entidadId, dateRange }) => {
     <Card>
       <Title>📉 Evolución histórica de la deuda</Title>
       <Text className="text-sm text-gray-500 mb-4">
-        Historial comparado entre deuda inicial acumulada, montos recuperados y saldo actual.
+        Historial comparado entre deuda inicial acumulada, montos regularizados y saldo actual.
       </Text>
       <AreaChart
         data={dataChart}
         index="periodo"
-        categories={["Deuda inicial acumulada", "Recuperado acumulado", "Deuda actual"]}
+        categories={["Deuda inicial acumulada", "Regularizado acumulado", "Deuda actual"]}
         colors={["rose", "emerald", "orange"]}
         valueFormatter={formatter}
         showLegend

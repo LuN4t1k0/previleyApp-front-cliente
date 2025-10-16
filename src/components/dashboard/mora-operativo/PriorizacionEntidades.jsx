@@ -81,7 +81,7 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
             <TableHeaderCell>Entidad</TableHeaderCell>
             <TableHeaderCell className="text-right">Deuda total</TableHeaderCell>
             <TableHeaderCell className="text-right">Pendiente</TableHeaderCell>
-            <TableHeaderCell className="text-right">Recuperado</TableHeaderCell>
+            <TableHeaderCell className="text-right">Regularizado</TableHeaderCell>
             <TableHeaderCell className="text-right">Riesgo</TableHeaderCell>
             <TableHeaderCell className="text-right">Casos riesgo</TableHeaderCell>
             <TableHeaderCell className="text-right">Acción</TableHeaderCell>
