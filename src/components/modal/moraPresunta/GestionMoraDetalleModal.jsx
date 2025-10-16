@@ -12,6 +12,7 @@ import {
 import apiService from "@/app/api/apiService";
 import useActionFeedback from "@/hooks/useActionFeedback";
 import useInfiniteScroll from "@/hooks/useInfiniteScroll";
+import { useRole } from "@/context/RoleContext";
 
 const tiposSecuencia = ["analisis", "pago requerido", "pagado", "regularizado"];
 
@@ -29,7 +30,11 @@ const initialFilters = {
 const estadoOptions = ["pendiente", "completado", "rechazado"];
 
 const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
+  const { role } = useRole();
   const isLocked = estadoGestion === "cerrada";
+  const canEdit = ["admin", "supervisor", "editor", "trabajador"].includes(role);
+  const canManage = canEdit && !isLocked;
+  const totalColumns = canManage ? 10 : 8;
   const [localChanges, setLocalChanges] = useState({});
   const [saving, setSaving] = useState(false);
   const { runWithFeedback } = useActionFeedback();
@@ -109,7 +114,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   const selectedCount = selectedIds.size;
 
   const handleTipoGestionClick = (item) => {
-    if (isLocked) return;
+    if (!canManage) return;
     const nuevoTipo = siguienteTipoGestion(
       localChanges[item.id] || item.tipoGestion
     );
@@ -120,6 +125,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   };
 
   const toggleSelect = (id) => {
+    if (!canManage) return;
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -201,6 +207,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   const bulkSplitInvalidCount = selectedRecords.length - selectedNonComplement.length;
 
   const toggleSelectAllVisible = () => {
+    if (!canManage) return;
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (allVisibleSelected) {
@@ -213,7 +220,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   };
 
   const applyBulkTipo = () => {
-    if (!bulkTipo || selectedIds.size === 0 || isLocked) return;
+    if (!bulkTipo || selectedIds.size === 0 || !canManage) return;
     setLocalChanges((prev) => {
       const next = { ...prev };
       selectedIds.forEach((id) => {
@@ -224,6 +231,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   };
 
   const handleBulkReunify = useCallback(async () => {
+    if (!canManage) return;
     if (!canReunify || bulkReunifyLoading) return;
     if (!reunifyIds.length) return;
 
@@ -249,7 +257,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
     } finally {
       setBulkReunifyLoading(false);
     }
-  }, [canReunify, bulkReunifyLoading, reunifyIds, runWithFeedback, refetch]);
+  }, [canManage, canReunify, bulkReunifyLoading, reunifyIds, runWithFeedback, refetch]);
 
   const getComplementParts = useCallback(
     (parentId) => {
@@ -272,7 +280,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
 
   const handleOpenManualDivision = useCallback(
     (detalle) => {
-      if (!detalle) return;
+      if (!detalle || !canManage) return;
       const partes = getComplementParts(detalle.id);
       setManualDivisionState({
         open: true,
@@ -282,7 +290,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
       });
       setManualDivisionError("");
     },
-    [getComplementParts]
+    [getComplementParts, canManage]
   );
 
   const handleCloseManualDivision = useCallback(() => {
@@ -296,6 +304,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   }, []);
 
   const handleManualFieldChange = (field, value) => {
+    if (!canManage) return;
     setManualDivisionState((prev) => ({
       ...prev,
       [field]: value,
@@ -304,7 +313,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   };
 
   const handleManualDivisionSubmit = async () => {
-    if (!manualDivisionState.detalle) return;
+    if (!canManage || !manualDivisionState.detalle) return;
 
     const total = Number(manualDivisionState.detalle.montoActualizado || 0);
     const parteUnoNumber = Number(manualDivisionState.parteUno);
@@ -353,6 +362,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   };
 
   const handlePrepareManualDivision = async () => {
+    if (!canManage) return;
     if (!selectedNonComplement.length || isLocked) {
       setPrepareManualError(
         isLocked
@@ -388,6 +398,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   };
 
   const handleManualExport = async () => {
+    if (!canManage) return;
     const ids = selectedRecords.map((item) =>
       item.esComplemento ? item.esComplementoDeId : item.id
     );
@@ -431,13 +442,19 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   };
 
   const handleManualImportClick = () => {
-    if (manualImportLoading) return;
+    if (!canManage || manualImportLoading) return;
     manualImportInputRef.current?.click();
   };
 
   const handleManualImportChange = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    if (!canManage) {
+      if (manualImportInputRef.current) {
+        manualImportInputRef.current.value = "";
+      }
+      return;
+    }
 
     setManualImportLoading(true);
     setManualImportError("");
@@ -469,6 +486,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   };
 
   const handleDeleteAll = useCallback(async () => {
+    if (!canManage) return;
     const registrosPorEliminar = total ?? 0;
     if (!registrosPorEliminar || registrosPorEliminar <= 0 || isLocked) return;
     const empresaTexto = gestionInfo?.empresaNombre
@@ -493,7 +511,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
     } catch (error) {
       console.error("Error al eliminar todos los detalles:", error);
     }
-  }, [total, isLocked, gestionInfo, runWithFeedback, gestionId, refetch]);
+  }, [canManage, total, isLocked, gestionInfo, runWithFeedback, gestionId, refetch]);
 
   const pendingChanges = Object.keys(localChanges).length;
   const totalRegistros = total ?? 0;
@@ -546,6 +564,10 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   );
 
   const handleGuardarYCerrar = async () => {
+    if (!canManage) {
+      onClose();
+      return;
+    }
     const cambios = Object.entries(localChanges).map(([id, tipoGestion]) => ({
       id: parseInt(id, 10),
       tipoGestion,
@@ -597,7 +619,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                 </p>
               )}
             </div>
-            {pendingChanges > 0 && (
+            {pendingChanges > 0 && canEdit && (
               <span className="inline-flex items-center gap-2 rounded-md bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
                 <span className="h-2 w-2 rounded-sm bg-amber-500"></span>
                 {pendingChanges} cambio{pendingChanges > 1 ? "s" : ""} pendiente{pendingChanges > 1 ? "s" : ""} por guardar
@@ -727,46 +749,47 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-        <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={bulkTipo}
-            onChange={(e) => setBulkTipo(e.target.value)}
-            className="min-w-[200px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            disabled={isLocked}
-          >
-            <option value="">Asignar estado...</option>
-            {tiposSecuencia.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-          <button
-            onClick={applyBulkTipo}
-            disabled={!bulkTipo || selectedIds.size === 0 || isLocked}
-            className="whitespace-nowrap rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            title={isLocked ? "Gestión cerrada" : "Aplicar a seleccionados"}
-          >
-            Aplicar ({selectedIds.size})
-          </button>
-          {selectedIds.size > 0 && (
-            <span className="text-xs text-gray-500 dark:text-gray-300">
-              {selectedIds.size} seleccionado{selectedIds.size === 1 ? "" : "s"}
-            </span>
-          )}
+      {canManage && (
+        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={bulkTipo}
+              onChange={(e) => setBulkTipo(e.target.value)}
+              className="min-w-[200px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            >
+              <option value="">Asignar estado...</option>
+              {tiposSecuencia.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+            <button
+              onClick={applyBulkTipo}
+              disabled={!bulkTipo || selectedIds.size === 0}
+              className="whitespace-nowrap rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              title="Aplicar a seleccionados"
+            >
+              Aplicar ({selectedIds.size})
+            </button>
+            {selectedIds.size > 0 && (
+              <span className="text-xs text-gray-500 dark:text-gray-300">
+                {selectedIds.size} seleccionado{selectedIds.size === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleDeleteAll}
+              disabled={totalRegistros === 0}
+              className="rounded-lg border border-red-200 bg-red-50 px-4 py-1.5 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:border-red-100 disabled:text-red-300"
+            >
+              Eliminar todos
+            </button>
+          </div>
         </div>
-        <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={handleDeleteAll}
-            disabled={isLocked || totalRegistros === 0}
-            className="rounded-lg border border-red-200 bg-red-50 px-4 py-1.5 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:border-red-100 disabled:text-red-300"
-          >
-            Eliminar todos
-          </button>
-        </div>
-      </div>
+      )}
 
-      {selectedRecords.length > 0 && (
+      {selectedRecords.length > 0 && canManage && (
         <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/60">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <div className="space-y-3 text-xs.text-slate-700 dark:text-indigo-100">
@@ -828,7 +851,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                   type="button"
                   className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-emerald-300"
                   onClick={handleBulkReunify}
-                  disabled={!canReunify || bulkReunifyLoading}
+                  disabled={!canManage || !canReunify || bulkReunifyLoading}
                 >
                   {bulkReunifyLoading ? "Reuniendo..." : "Reunificar selección"}
                 </button>
@@ -846,7 +869,11 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                     type="button"
                     className="rounded-lg border border-indigo-200 bg-white px-4 py-2 text-xs font-semibold text-indigo-600 transition hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 dark:border-indigo-500/30 dark:bg-slate-900/40 dark:text-indigo-200"
                     onClick={handleManualExport}
-                    disabled={manualExportLoading || selectedNonComplement.length === 0}
+                    disabled={
+                      !canManage ||
+                      manualExportLoading ||
+                      selectedNonComplement.length === 0
+                    }
                   >
                     {manualExportLoading ? "Generando..." : "Descargar plantilla"}
                   </button>
@@ -854,7 +881,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                     type="button"
                     className="rounded-lg border border-emerald-200 bg-white px-4 py-2 text-xs font-semibold text-emerald-600 transition hover:border-emerald-300 hover:text-emerald-700 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300 dark:border-emerald-500/30 dark:bg-slate-900/40 dark:text-emerald-200"
                     onClick={handleManualImportClick}
-                    disabled={manualImportLoading}
+                    disabled={!canManage || manualImportLoading}
                   >
                     {manualImportLoading ? "Importando..." : "Importar plantilla"}
                   </button>
@@ -880,14 +907,16 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
         <Table className="min-w-full table-auto text-sm text-slate-700 dark:text-slate-100">
           <TableHead>
             <TableRow className="bg-white text-xs font-semibold uppercase tracking-wide text-slate-500 shadow-sm dark:bg-slate-900">
-              <TableHeaderCell className="px-3 py-3">
-                <input
-                  type="checkbox"
-                  checked={allVisibleSelected}
-                  onChange={toggleSelectAllVisible}
-                  disabled={data.length === 0}
-                />
-              </TableHeaderCell>
+              {canManage && (
+                <TableHeaderCell className="px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleSelectAllVisible}
+                    disabled={data.length === 0}
+                  />
+                </TableHeaderCell>
+              )}
               <TableHeaderCell className="px-3 py-3">#</TableHeaderCell>
               <TableHeaderCell className="px-3 py-3">RUT</TableHeaderCell>
               <TableHeaderCell className="px-3 py-3">Nombre</TableHeaderCell>
@@ -896,7 +925,9 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
               <TableHeaderCell className="px-3 py-3">Estado</TableHeaderCell>
               <TableHeaderCell className="px-3 py-3">Monto</TableHeaderCell>
               <TableHeaderCell className="px-3 py-3">Incluido</TableHeaderCell>
-              <TableHeaderCell className="px-3 py-3">Acciones</TableHeaderCell>
+              {canManage && (
+                <TableHeaderCell className="px-3 py-3">Acciones</TableHeaderCell>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -926,13 +957,15 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                   ref={index === data.length - 1 ? lastRowRef : null}
                   className={`${baseRowClass} ${tipoColorClass}`}
                 >
-                  <TableCell className="px-3 py-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(item.id)}
-                      onChange={() => toggleSelect(item.id)}
-                    />
-                  </TableCell>
+                  {canManage && (
+                    <TableCell className="px-3 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                      />
+                    </TableCell>
+                  )}
                   <TableCell className="px-3 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
                     {index + 1}
                   </TableCell>
@@ -954,7 +987,10 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                   <TableCell className="px-3 py-3 text-sm text-slate-600 dark:text-slate-200">
                     {item.periodoPago}
                   </TableCell>
-                  <TableCell onClick={() => handleTipoGestionClick(item)} className="px-3 py-3">
+                  <TableCell
+                    onClick={canManage ? () => handleTipoGestionClick(item) : undefined}
+                    className={`px-3 py-3 ${canManage ? "cursor-pointer" : ""}`}
+                  >
                     <span
                       className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold capitalize tracking-wide shadow-sm ${
                         tipo === "analisis"
@@ -980,38 +1016,40 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                   <TableCell className="px-3 py-3 text-sm text-slate-600 dark:text-slate-200">
                     {item.incluidoEnProduccion ? "Sí" : "No"}
                   </TableCell>
-                  <TableCell className="px-3 py-3">
-                    {!item.esComplemento && (
-                      <button
-                        type="button"
-                        className="text-xs font-semibold text-indigo-600 underline-offset-4 transition hover:text-indigo-500 hover:underline disabled:text-slate-400"
-                        onClick={() => handleOpenManualDivision(item)}
-                        disabled={isLocked}
-                      >
-                        {item.estaDividido ? "Editar partes" : "Dividir manual"}
-                      </button>
-                    )}
-                  </TableCell>
+                  {canManage && (
+                    <TableCell className="px-3 py-3">
+                      {!item.esComplemento && (
+                        <button
+                          type="button"
+                          className="text-xs font-semibold text-indigo-600 underline-offset-4 transition hover:text-indigo-500 hover:underline disabled:text-slate-400"
+                          onClick={() => handleOpenManualDivision(item)}
+                          disabled={!canManage}
+                        >
+                          {item.estaDividido ? "Editar partes" : "Dividir manual"}
+                        </button>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}
             {loading && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-gray-500 py-3">
+                <TableCell colSpan={totalColumns} className="text-center text-gray-500 py-3">
                   Cargando más registros...
                 </TableCell>
               </TableRow>
             )}
             {!hasMore && !loading && data.length > 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-gray-400 py-3">
+                <TableCell colSpan={totalColumns} className="text-center text-gray-400 py-3">
                   No hay más registros.
                 </TableCell>
               </TableRow>
             )}
             {!loading && data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-gray-400 py-3">
+                <TableCell colSpan={totalColumns} className="text-center text-gray-400 py-3">
                   Sin resultados con los filtros actuales.
                 </TableCell>
               </TableRow>
@@ -1021,8 +1059,12 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
       </div>
 
       <div className="mt-6 text-right space-x-2">
-        {pendingChanges > 0 ? (
-          <Button color="green" onClick={handleGuardarYCerrar} disabled={loading || saving}>
+        {pendingChanges > 0 && canManage ? (
+          <Button
+            color="green"
+            onClick={handleGuardarYCerrar}
+            disabled={!canManage || loading || saving}
+          >
             {saving ? "Guardando..." : "Guardar y Cerrar"}
             <span className="ml-2 bg-white text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full shadow inline-block">
               {pendingChanges}
@@ -1064,6 +1106,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                   value={manualDivisionState.parteUno}
                   onChange={(e) => handleManualFieldChange("parteUno", e.target.value)}
                   className="mt-1 w-full rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-indigo-500/40 dark:bg-slate-900 dark:text-white"
+                  disabled={!canManage}
                 />
               </div>
               <div>
@@ -1077,6 +1120,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                   value={manualDivisionState.parteDos}
                   onChange={(e) => handleManualFieldChange("parteDos", e.target.value)}
                   className="mt-1 w-full rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-indigo-500/40 dark:bg-slate-900 dark:text-white"
+                  disabled={!canManage}
                 />
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-300">
@@ -1100,7 +1144,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                 type="button"
                 className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-indigo-300"
                 onClick={handleManualDivisionSubmit}
-                disabled={manualDivisionLoading}
+                disabled={!canManage || manualDivisionLoading}
               >
                 {manualDivisionLoading ? "Guardando..." : "Guardar"}
               </button>
