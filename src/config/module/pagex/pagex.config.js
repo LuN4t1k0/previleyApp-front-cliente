@@ -121,7 +121,7 @@ const PagexConfig = {
           label: "Editar",
           iconClass: "text-blue-600",
           rolesAllowed: ["admin", "editor", "trabajador"],
-          visibleWhen: (row) => ["sin folio", "trámite"].includes(row.estado),
+          visibleWhen: (row) => ["sin folio", "analisis"].includes(row.estado),
         },
         {
           id: "eliminar",
@@ -129,7 +129,7 @@ const PagexConfig = {
           label: "Eliminar",
           iconClass: "text-red-600",
           rolesAllowed: ["admin", "editor", "trabajador"],
-          visibleWhen: (row) => ["sin folio", "trámite"].includes(row.estado),
+          visibleWhen: (row) => ["sin folio", "analisis"].includes(row.estado),
         },
         {
           id: "cargarArchivo",
@@ -138,7 +138,7 @@ const PagexConfig = {
           iconClass: "text-blue-500",
           rolesAllowed: ["admin", "trabajador"],
           // visibleWhen: (row) => row.estado === "analisis",
-          visibleWhen: (row) => ["sin folio", "trámite"].includes(row.estado),
+          visibleWhen: (row) => ["sin folio", "analisis"].includes(row.estado),
         },
         {
           id: "cerrarGestion",
