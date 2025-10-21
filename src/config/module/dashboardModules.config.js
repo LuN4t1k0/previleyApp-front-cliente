@@ -61,7 +61,7 @@ const dashboardModules = {
     name: "Pagos en Exceso",
     description: "Recuperación de pagos previsionales mal aplicados.",
     icon: "💸",
-    path: "/servicios/pagex",
+    path: "/dashboard/pagex",
     roles: ["admin", "cliente", "trabajador"],
     category: "servicio",
     highlight: false,
