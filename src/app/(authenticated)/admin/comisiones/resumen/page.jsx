@@ -6,6 +6,7 @@ import {
   getResumenMensualComisiones,
   closePeriodoComisiones,
   reopenPeriodoComisiones,
+  ajustarComision,
 } from "@/services/comisionService";
 
 const ResumenMensualComisionesPage = () => {
@@ -17,6 +18,13 @@ const ResumenMensualComisionesPage = () => {
   const [rows, setRows] = useState([]);
   const [estadoPeriodo, setEstadoPeriodo] = useState("abierto");
   const [actionLoading, setActionLoading] = useState(null);
+  const [adjustModalOpen, setAdjustModalOpen] = useState(false);
+  const [selectedComision, setSelectedComision] = useState(null);
+  const [adjustForm, setAdjustForm] = useState({
+    ajusteManual: 0,
+    motivoAjuste: "",
+    estadoPago: "pendiente",
+  });
 
   const fetchResumen = async () => {
     try {
@@ -68,6 +76,50 @@ const ResumenMensualComisionesPage = () => {
   };
 
   const isClosed = estadoPeriodo === "cerrado";
+
+  const openAdjustModal = (row) => {
+    setSelectedComision(row);
+    setAdjustForm({
+      ajusteManual: row?.ajusteManualTotal ?? 0,
+      motivoAjuste: row?.motivoAjuste || "",
+      estadoPago: row?.estadoPago || "pendiente",
+    });
+    setAdjustModalOpen(true);
+  };
+
+  const closeAdjustModal = () => {
+    setSelectedComision(null);
+    setAdjustForm({
+      ajusteManual: 0,
+      motivoAjuste: "",
+      estadoPago: "pendiente",
+    });
+    setAdjustModalOpen(false);
+  };
+
+  const handleAdjustChange = (e) => {
+    const { name, value } = e.target;
+    setAdjustForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAdjustSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedComision?.id) return;
+    try {
+      setActionLoading("adjust");
+      await ajustarComision(selectedComision.id, {
+        ajusteManual: Number(adjustForm.ajusteManual || 0),
+        motivoAjuste: adjustForm.motivoAjuste || null,
+        estadoPago: adjustForm.estadoPago,
+      });
+      await fetchResumen();
+      closeAdjustModal();
+    } catch (err) {
+      setError(err?.response?.data?.message || err.message || "Error al ajustar");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -149,6 +201,8 @@ const ResumenMensualComisionesPage = () => {
               <th className="text-right p-2">Ingreso Previley</th>
               <th className="text-right p-2">Ajuste</th>
               <th className="text-right p-2">Comisión Total</th>
+              <th className="text-left p-2">Estado pago</th>
+              <th className="text-right p-2">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -178,12 +232,87 @@ const ResumenMensualComisionesPage = () => {
                   <td className="p-2 text-right font-semibold">
                     {Number(r.montoComisionTotal ?? 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                   </td>
+                  <td className="p-2">{r.estadoPago || "pendiente"}</td>
+                  <td className="p-2 text-right">
+                    {isClosed && r.id ? (
+                      <button
+                        type="button"
+                        onClick={() => openAdjustModal(r)}
+                        className="text-blue-600 hover:underline"
+                      >
+                        Ajustar
+                      </button>
+                    ) : (
+                      <span className="text-gray-400 text-sm">-</span>
+                    )}
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </Card>
+      {adjustModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Ajustar comisión</h2>
+            <form onSubmit={handleAdjustSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium">Monto de ajuste (puede ser negativo)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="ajusteManual"
+                  value={adjustForm.ajusteManual}
+                  onChange={handleAdjustChange}
+                  className="w-full border rounded px-3 py-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Motivo del ajuste</label>
+                <textarea
+                  name="motivoAjuste"
+                  value={adjustForm.motivoAjuste}
+                  onChange={handleAdjustChange}
+                  className="w-full border rounded px-3 py-2"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Estado de pago</label>
+                <select
+                  name="estadoPago"
+                  value={adjustForm.estadoPago}
+                  onChange={handleAdjustChange}
+                  className="w-full border rounded px-3 py-2"
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="aprobada">Aprobada</option>
+                  <option value="pagada">Pagada</option>
+                  <option value="rechazada">Rechazada</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeAdjustModal}
+                  className="px-4 py-2 rounded border border-gray-300"
+                  disabled={actionLoading === "adjust"}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded bg-blue-600 text-white"
+                  disabled={actionLoading === "adjust"}
+                >
+                  {actionLoading === "adjust" ? "Guardando..." : "Guardar ajuste"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

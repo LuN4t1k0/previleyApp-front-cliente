@@ -59,3 +59,15 @@ export const updateMetaComision = (trabajadorId, payload) => {
 export const ajustarComision = (id, payload) => {
   return apiService.patch(`/comisiones/${id}/ajuste`, payload);
 };
+
+export const getPeriodosCerrados = () => {
+  return apiService.get('/comisiones-periodos');
+};
+
+export const getDetallePeriodoCerrado = (periodo) => {
+  return apiService.get(`/comisiones-periodos/${periodo}`);
+};
+
+export const getComisionesAnalytics = (params) => {
+  return apiService.get('/comisiones-analytics', { params });
+};

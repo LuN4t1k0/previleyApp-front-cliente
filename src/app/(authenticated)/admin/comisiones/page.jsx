@@ -20,6 +20,20 @@ const AdminComisionesHubPage = () => {
       roles: ["admin"],
     },
     {
+      name: "Histórico y reportes",
+      description: "Descarga o revisa los meses ya cerrados.",
+      icon: "🗂️",
+      path: "/admin/comisiones/historicos",
+      roles: ["admin"],
+    },
+    {
+      name: "Inteligencia",
+      description: "KPIs y rankings para tomar decisiones.",
+      icon: "📈",
+      path: "/admin/comisiones/inteligencia",
+      roles: ["admin"],
+    },
+    {
       name: "Tramos de comisión",
       description: "Gestiona los tramos progresivos de cada trabajador.",
       icon: "📈",
