@@ -39,3 +39,23 @@ export const getTrabajadores = () => {
 export const getResumenMensualComisiones = (params) => {
   return apiService.get('/comisiones/resumen-mensual', { params });
 };
+
+export const closePeriodoComisiones = ({ anio, mes }) => {
+  return apiService.post(`/comisiones/cerrar/${anio}/${mes}`);
+};
+
+export const reopenPeriodoComisiones = ({ anio, mes }) => {
+  return apiService.post(`/comisiones/reabrir/${anio}/${mes}`);
+};
+
+export const getMetasComisiones = () => {
+  return apiService.get('/comisiones-config');
+};
+
+export const updateMetaComision = (trabajadorId, payload) => {
+  return apiService.put(`/comisiones-config/${trabajadorId}`, payload);
+};
+
+export const ajustarComision = (id, payload) => {
+  return apiService.patch(`/comisiones/${id}/ajuste`, payload);
+};

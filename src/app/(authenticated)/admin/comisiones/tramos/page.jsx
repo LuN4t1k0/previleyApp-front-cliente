@@ -3,122 +3,101 @@
 import React, { useEffect, useState } from "react";
 import { getTrabajadores } from "@/services/comisionService";
 import {
-  getTramosByTrabajador,
-  createTramo,
-  updateTramo,
-  deleteTramo,
-} from "@/services/comisionTramoService";
-import GenericModal from "@/components/modal/GenericModal";
-import TramoFormContent from "@/components/modal/comisiones/TramoFormContent";
+  getComisionConfig,
+  updateComisionConfig,
+} from "@/services/comisionConfigService";
+
+const formDefaults = {
+  metaProduccionMensual: "",
+  porcentajeComisionIndividual: "",
+};
 
 const TramosAdminPage = () => {
   const [trabajadores, setTrabajadores] = useState([]);
   const [selectedTrabajadorId, setSelectedTrabajadorId] = useState("");
-  const [tramos, setTramos] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState(formDefaults);
+  const [ultimaActualizacion, setUltimaActualizacion] = useState(null);
+  const [loadingTrabajadores, setLoadingTrabajadores] = useState(false);
+  const [loadingConfig, setLoadingConfig] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editId, setEditId] = useState(null);
-  const [form, setForm] = useState({ trabajadorId: "", desde: "", hasta: "", porcentaje: "" });
-  const [modalTitle, setModalTitle] = useState("Nuevo tramo");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const fetchTrabajadores = async () => {
       try {
-        setLoading(true);
+        setLoadingTrabajadores(true);
         setError(null);
         const { data } = await getTrabajadores();
         const list = data?.data || data || [];
-        setTrabajadores(list?.data || list); // soporta {total, data}
-        const arr = (list?.data || list) || [];
-        if (arr.length > 0) setSelectedTrabajadorId(arr[0].id);
+        const arr = list?.data || list || [];
+        setTrabajadores(arr);
+        if (arr.length > 0) {
+          setSelectedTrabajadorId(arr[0].id);
+        }
       } catch (e) {
         setError(e?.response?.data?.message || e.message || "Error cargando trabajadores");
       } finally {
-        setLoading(false);
+        setLoadingTrabajadores(false);
       }
     };
     fetchTrabajadores();
   }, []);
 
   useEffect(() => {
-    const fetchTramos = async () => {
+    const fetchConfig = async () => {
       if (!selectedTrabajadorId) return;
       try {
-        setLoading(true);
+        setLoadingConfig(true);
         setError(null);
-        const { data } = await getTramosByTrabajador(selectedTrabajadorId);
-        setTramos(data?.data || []);
+        setSuccessMessage("");
+        const { data } = await getComisionConfig(selectedTrabajadorId);
+        const config = data?.data || {};
+        setForm({
+          metaProduccionMensual: config.metaProduccionMensual ?? "",
+          porcentajeComisionIndividual: config.porcentajeComisionIndividual ?? "",
+        });
+        setUltimaActualizacion(config.ultimaActualizacion || null);
       } catch (e) {
-        setError(e?.response?.data?.message || e.message || "Error cargando tramos");
-        setTramos([]);
+        setError(e?.response?.data?.message || e.message || "Error cargando configuración");
+        setForm(formDefaults);
+        setUltimaActualizacion(null);
       } finally {
-        setLoading(false);
+        setLoadingConfig(false);
       }
     };
-    fetchTramos();
+    fetchConfig();
   }, [selectedTrabajadorId]);
 
-  const openCreateModal = () => {
-    setEditId(null);
-    setForm({ trabajadorId: selectedTrabajadorId, desde: "", hasta: "", porcentaje: "" });
-    setModalTitle("Nuevo tramo");
-    setIsModalOpen(true);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const openEditModal = (tramo) => {
-    setEditId(tramo.id);
-    setForm({
-      trabajadorId: tramo.trabajadorId,
-      desde: String(tramo.desde),
-      hasta: String(tramo.hasta),
-      porcentaje: String(tramo.porcentaje),
-    });
-    setModalTitle("Editar tramo");
-    setIsModalOpen(true);
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedTrabajadorId) return;
 
-  const closeModal = () => setIsModalOpen(false);
-
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
-
-  const handleSubmit = async (payload) => {
     try {
-      setLoading(true);
+      setSaving(true);
       setError(null);
-      if (editId) await updateTramo(editId, payload);
-      else await createTramo(payload);
-
-      const { data } = await getTramosByTrabajador(selectedTrabajadorId);
-      setTramos(data?.data || []);
-      setIsModalOpen(false);
+      setSuccessMessage("");
+      await updateComisionConfig(selectedTrabajadorId, {
+        metaProduccionMensual: Number(form.metaProduccionMensual),
+        porcentajeComisionIndividual: Number(form.porcentajeComisionIndividual),
+      });
+      setSuccessMessage("Configuración guardada correctamente.");
+      setUltimaActualizacion(new Date().toISOString());
     } catch (e) {
-      setError(e?.response?.data?.message || e.message || "Error guardando tramo");
+      setError(e?.response?.data?.message || e.message || "Error guardando configuración");
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm("¿Eliminar tramo?")) return;
-    try {
-      setLoading(true);
-      setError(null);
-      await deleteTramo(id);
-      const { data } = await getTramosByTrabajador(selectedTrabajadorId);
-      setTramos(data?.data || []);
-    } catch (e) {
-      setError(e?.response?.data?.message || e.message || "Error eliminando tramo");
-    } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-semibold mb-4">Tramos de Comisiones</h1>
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-semibold mb-4">Metas y porcentajes de comisión</h1>
 
       <div className="flex gap-3 items-end mb-3">
         <div>
@@ -127,7 +106,7 @@ const TramosAdminPage = () => {
             value={selectedTrabajadorId}
             onChange={(e) => setSelectedTrabajadorId(parseInt(e.target.value, 10))}
             className="border rounded px-2 py-1 min-w-[280px]"
-          >
+          disabled={loadingTrabajadores || loadingConfig}>
             {(trabajadores || []).map((t) => (
               <option key={t.id} value={t.id}>
                 {[t.nombre, t.apellido].filter(Boolean).join(" ") || `Trabajador #${t.id}`}
@@ -135,66 +114,57 @@ const TramosAdminPage = () => {
             ))}
           </select>
         </div>
-        <button
-          className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-2"
-          onClick={openCreateModal}
-          disabled={!selectedTrabajadorId || loading}
-        >
-          Nuevo tramo
-        </button>
       </div>
 
       {error && <div className="text-red-600 mb-3">{error}</div>}
+      {successMessage && <div className="text-emerald-600 mb-3">{successMessage}</div>}
 
-      <div className="overflow-x-auto border rounded bg-white">
-        <table className="min-w-full text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="text-left p-2">Desde</th>
-              <th className="text-left p-2">Hasta</th>
-              <th className="text-left p-2">% Comisión</th>
-              <th className="text-left p-2">Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tramos.length === 0 && !loading && (
-              <tr>
-                <td className="p-3" colSpan={4}>Sin tramos cargados.</td>
-              </tr>
-            )}
-            {tramos.map((tramo) => (
-              <tr key={tramo.id} className="border-t">
-                <td className="p-2">{tramo.desde}</td>
-                <td className="p-2">{tramo.hasta}</td>
-                <td className="p-2">{tramo.porcentaje}%</td>
-                <td className="p-2">
-                  <button
-                    className="text-blue-600 hover:underline mr-3"
-                    onClick={() => openEditModal(tramo)}
-                    disabled={loading}
-                  >Editar</button>
-                  <button
-                    className="text-red-600 hover:underline"
-                    onClick={() => handleDelete(tramo.id)}
-                    disabled={loading}
-                  >Eliminar</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <form onSubmit={handleSubmit} className="border rounded bg-white p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">Meta mensual (CLP)</label>
+          <input
+            type="number"
+            name="metaProduccionMensual"
+            value={form.metaProduccionMensual}
+            onChange={handleChange}
+            className="border rounded px-3 py-2 w-full"
+            min="0"
+            step="0.01"
+            required
+            disabled={loadingConfig || saving}
+          />
+        </div>
 
-      {isModalOpen && (
-        <GenericModal
-          title={modalTitle}
-          content={TramoFormContent}
-          onClose={closeModal}
-          initialValues={form}
-          loading={loading}
-          onSubmit={handleSubmit}
-        />
-      )}
+        <div>
+          <label className="block text-sm font-medium mb-1">% de comisión</label>
+          <input
+            type="number"
+            name="porcentajeComisionIndividual"
+            value={form.porcentajeComisionIndividual}
+            onChange={handleChange}
+            className="border rounded px-3 py-2 w-full"
+            min="0"
+            max="100"
+            step="0.01"
+            required
+            disabled={loadingConfig || saving}
+          />
+        </div>
+
+        {ultimaActualizacion && (
+          <p className="text-sm text-gray-500">
+            Última actualización: {new Date(ultimaActualizacion).toLocaleString("es-CL")}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700 text-white rounded px-4 py-2"
+          disabled={saving || loadingConfig}
+        >
+          {saving ? "Guardando..." : "Guardar configuración"}
+        </button>
+      </form>
     </div>
   );
 };

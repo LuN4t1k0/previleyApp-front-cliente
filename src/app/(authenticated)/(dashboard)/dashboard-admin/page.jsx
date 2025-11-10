@@ -87,7 +87,8 @@ const AdminComisionesDashboard = () => {
               <th className="text-left p-2">Trabajador</th>
               <th className="text-left p-2">Empresa</th>
               <th className="text-left p-2">Periodo</th>
-              <th className="text-right p-2">Ganancia Total</th>
+              <th className="text-right p-2">Producción Total</th>
+              <th className="text-right p-2">Ingreso Previley</th>
               <th className="text-right p-2">Comisión Total</th>
             </tr>
           </thead>
@@ -106,7 +107,8 @@ const AdminComisionesDashboard = () => {
                   <td className="p-2">{nombreCompleto || `Trabajador #${t.id}`}</td>
                   <td className="p-2">{emp.nombre || emp.empresaRut || "-"}</td>
                   <td className="p-2">{r.periodo}</td>
-                  <td className="p-2 text-right">{Number(r.gananciaTotal).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</td>
+                  <td className="p-2 text-right">{Number(r.produccionTotal).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</td>
+                  <td className="p-2 text-right">{Number(r.ingresoPrevileyTotal).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</td>
                   <td className="p-2 text-right font-semibold">{Number(r.montoComisionTotal).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</td>
                 </tr>
               );
