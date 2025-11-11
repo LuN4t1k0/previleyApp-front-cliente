@@ -5,7 +5,7 @@ const dashboardModules = {
     description: "Visualiza y administra la producción generada.",
     icon: "📊",
     path: "/produccion",
-    roles: ["admin", "trabajador"],
+    roles: ["admin", "trabajador","supervisor"],
     category: "admin",
     highlight: false,
     badge: { label: "Actualizado", color: "green" },
