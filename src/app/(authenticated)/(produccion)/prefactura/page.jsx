@@ -277,6 +277,45 @@ const refreshData = useCallback(async () => {
     }
   }, []);
 
+  const handleExportExcel = useCallback(async () => {
+    try {
+      const params = convertFiltersToQueryParams(filters, filterConfig);
+      const response = await apiService.get(`/prefacturas/prefacturas/exportar`, {
+        params,
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const disposition = response.headers["content-disposition"];
+      let filename = "prefacturas.xlsx";
+      if (disposition) {
+        const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (match?.[1]) {
+          filename = match[1].replace(/['"]/g, "");
+        }
+      }
+      link.href = url;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showSuccessAlert("Exportación lista", "Se descargó el Excel con las prefacturas.");
+    } catch (error) {
+      console.error("Error exportando prefacturas", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        "No se pudo exportar el Excel.";
+      showErrorAlert("Error", message);
+    }
+  }, [filters, filterConfig]);
+
   const handleRejectPrefactura = useCallback((rowData) => {
     console.log(rowData);
       openModal("rejectPrefactura", {
@@ -311,6 +350,7 @@ const handleRevertPrefactura = useCallback((rowData) => {
     sendFacturaReminder: handleSendFacturaReminder,
     sendBulk: handleSendBulk,
     sendSelected: handleSendSelected,
+    exportExcel: handleExportExcel,
     
   };
 

@@ -485,6 +485,15 @@ const PrefacturaConfig = {
       color: "blue",
       icon: "RiMailLine",
     },
+    {
+      id: "exportPrefacturas",
+      modalName: null,
+      buttonText: "Exportar Excel",
+      rolesAllowed: ["admin", "previley"],
+      actionType: "exportExcel",
+      color: "green",
+      icon: "RiFileExcel2Line",
+    },
   ],
 
   badgesConfig: {
