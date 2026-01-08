@@ -16,6 +16,7 @@ import TopTrabajadoresDeuda from "@/components/dashboard/mora-analitico/TopTraba
 import DistribucionRecuperadoTipo from "@/components/dashboard/mora-analitico/DistribucionRecuperadoTipo";
 import ExportarResumenGlobal from "@/components/dashboard/mora-analitico/ExportarResumenGlobal";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
+import ServiceTimeline from "@/components/servicios/ServiceTimeline";
 import {
   RiBuildingLine,
   RiCalendarLine,
@@ -348,6 +349,12 @@ const MoraOperativaDashboard = () => {
                   dateRange={dateRange}
                 />
               </section>
+
+              <ServiceTimeline
+                empresaRut={empresaSeleccionada}
+                serviceKey="mora"
+                dateRange={dateRange}
+              />
 
               <section className={surface}>
                 <ResumenCasosOperativos

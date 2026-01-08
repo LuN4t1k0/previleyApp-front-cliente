@@ -27,6 +27,7 @@ import {
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import apiService from "@/app/api/apiService";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
+import ServiceTimeline from "@/components/servicios/ServiceTimeline";
 
 const formatCurrency = (value) =>
   new Intl.NumberFormat("es-CL", {
@@ -551,6 +552,12 @@ const PagexDashboard = () => {
               </div>
             </div>
           </section>
+
+          <ServiceTimeline
+            empresaRut={empresaSeleccionada}
+            serviceKey="pagex"
+            dateRange={dateRange}
+          />
 
           <section className={surface}>
             <div className="flex flex-wrap items-center gap-3">

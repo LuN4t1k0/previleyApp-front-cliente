@@ -13,6 +13,7 @@ import {
 import apiService from "@/app/api/apiService";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import TrabajadorSkeleton from "@/components/skeleton/TrabajadorSkeleton";
+import ServiceTimeline from "@/components/servicios/ServiceTimeline";
 import { saveAs } from "file-saver";
 
 // --- Helpers ---
@@ -165,7 +166,7 @@ const EmptyState = () => (
   </section>
 );
 
-const ResumenEmpresa = ({ resumen }) => {
+const ResumenEmpresa = ({ resumen, empresaRut, selectedYear }) => {
   const metricas = resumen?.metricas ?? {};
   const cuentaCorriente = metricas.cuentaCorriente ?? { saldo: 0, estado: "" };
   const anticipos = metricas.anticipos ?? { total: 0, cantidad: 0 };
@@ -503,6 +504,12 @@ const ResumenEmpresa = ({ resumen }) => {
           </div>
         </div>
       </section>
+
+      <ServiceTimeline
+        empresaRut={empresaRut}
+        serviceKey="licencias"
+        year={selectedYear}
+      />
     </div>
   );
 };
@@ -684,7 +691,13 @@ const EmpresaLicenciasDashboard = () => {
 
           {!showSkeleton && !resumen && <EmptyState />}
 
-          {!showSkeleton && resumen && <ResumenEmpresa resumen={resumen} />}
+          {!showSkeleton && resumen && (
+            <ResumenEmpresa
+              resumen={resumen}
+              empresaRut={empresaSeleccionada}
+              selectedYear={selectedYear}
+            />
+          )}
         </div>
       </main>
     </div>
