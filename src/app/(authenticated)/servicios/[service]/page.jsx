@@ -16,10 +16,10 @@ import {
 import MetricCard from "@/components/dashboard/MetricCard";
 import apiService from "@/app/api/apiService";
 import { formatCurrency, formatDate } from "@/utils/formatters";
-import PagexDashboard from "@/modules/pagex/PagexDashboard";
 import PageShell from "@/components/PageShell/PageShell";
 import moraTabsConfig from "@/config/module/mora/moraTabs.config";
 import licenciasClientTabs from "@/config/module/licencias/licenciasClientTabs.config";
+import pagexTabsConfig from "@/config/module/pagex/pagexTabs";
 
 const toISODate = (value) => {
   if (!value) return undefined;
@@ -92,7 +92,7 @@ const ServiceDetailPage = () => {
   }
 
   if (inferredKey === "pagex") {
-    return <PagexDashboard />;
+    return <PageShell moduleTitle="Pagos en Exceso" tabsConfig={pagexTabsConfig} />;
   }
 
   return <GenericServiceContent definition={definition} slug={slug} />;

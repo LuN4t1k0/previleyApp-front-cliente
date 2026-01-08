@@ -1,6 +1,6 @@
 
-import MorasPresuntasGestion from '@/modules/morasPresuntas/MorasPresuntasGestion';
 import MoraOperativaDashboard from '@/modules/morasPresuntas/MoraOperativaDashboard';
+import MoraGlobalDashboard from '@/modules/morasPresuntas/MoraGlobalDashboard';
 
 const moraTabsConfig = [
   // {
@@ -10,16 +10,16 @@ const moraTabsConfig = [
   //   rolesAllowed: ['admin', 'cliente',],
   // },
   {
+    key: 'dashboard-global',
+    label: 'Dashboard Global',
+    component: <MoraGlobalDashboard />,
+    rolesAllowed: ['cliente'],
+  },
+  {
     key: 'dashboard-operativo',
     label: 'Dashboard Operativo',
     component: <MoraOperativaDashboard />,
-    rolesAllowed: ['admin', 'trabajador', 'cliente'],
-  },
-  {
-    key: 'gestion',
-    label: 'Gestión de Mora',
-    component: <MorasPresuntasGestion />,
-    rolesAllowed: ['admin', 'trabajador', 'cliente'],
+    rolesAllowed: ['cliente'],
   },
   // {
   //   key: 'detalle',

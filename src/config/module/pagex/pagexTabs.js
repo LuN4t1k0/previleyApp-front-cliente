@@ -1,25 +1,18 @@
 import PagexDashboard from "@/modules/pagex/PagexDashboard";
-import PagexDetalle from "@/modules/pagex/PagexDetalle";
-import PagexGestion from "@/modules/pagex/PagexGestion";
+import PagexGlobalDashboard from "@/modules/pagex/PagexGlobalDashboard";
 
 const pagexTabsConfig = [
   {
-    key: "dashboard",
-    label: "Dashboard",
+    key: "dashboard-global",
+    label: "Dashboard Global",
+    component: <PagexGlobalDashboard />,
+    rolesAllowed: ["cliente"],
+  },
+  {
+    key: "dashboard-operativo",
+    label: "Dashboard Operativo",
     component: <PagexDashboard />,
-    rolesAllowed: ["admin", "trabajador", "cliente"],
-  },
-  {
-    key: "gestion",
-    label: "Gestiones",
-    component: <PagexGestion />,
-    rolesAllowed: ["admin", "trabajador", "cliente"],
-  },
-  {
-    key: "detalle",
-    label: "Detalle",
-    component: <PagexDetalle />,
-    rolesAllowed: ["admin", "trabajador", "cliente"],
+    rolesAllowed: ["cliente"],
   },
 ];
 

@@ -8,7 +8,7 @@ export default function LicenciasPage() {
       config={licenciasSections}
       title="Licencias Médicas"
       icon="🏥"
-      subtitle="Selecciona una sección relacionada con licencias"
+      subtitle="Elige entre el dashboard global o el dashboard operativo."
       showBack={true}
       theme="licencias"
     />

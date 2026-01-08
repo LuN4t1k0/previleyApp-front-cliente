@@ -38,7 +38,7 @@ async function refreshAccessToken(token) {
   }
 }
 
-const handler = NextAuth({
+const authOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -151,7 +151,8 @@ const handler = NextAuth({
     signIn: '/signin',
   },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
 
-export { handler as GET, handler as POST };
+const handler = NextAuth(authOptions);
 
+export { authOptions, handler as GET, handler as POST };

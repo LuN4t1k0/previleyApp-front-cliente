@@ -1,18 +1,18 @@
 import EmpresaLicenciasDashboard from "@/modules/licencias/EmpresaLicenciasDashboard";
-import FichaTrabajadorDashboard from "@/modules/trabajador/FichaTrabajadorDashboard";
+import LicenciasGlobalDashboard from "@/modules/licencias/LicenciasGlobalDashboard";
 
 const licenciasClientTabs = [
   {
-    key: "resumen-empresa",
-    label: "Resumen por Empresa",
-    component: <EmpresaLicenciasDashboard />,
-    rolesAllowed: ["admin", "trabajador", "cliente"],
+    key: "dashboard-global",
+    label: "Dashboard Global",
+    component: <LicenciasGlobalDashboard />,
+    rolesAllowed: ["cliente"],
   },
   {
-    key: "ficha-trabajador",
-    label: "Ficha por RUT",
-    component: <FichaTrabajadorDashboard />,
-    rolesAllowed: ["admin", "trabajador", "cliente"],
+    key: "dashboard-operativo",
+    label: "Dashboard Operativo",
+    component: <EmpresaLicenciasDashboard />,
+    rolesAllowed: ["cliente"],
   },
 ];
 

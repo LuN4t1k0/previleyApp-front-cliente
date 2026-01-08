@@ -7,7 +7,7 @@ export default function PagexDashboardHub() {
       config={pagexSections}
       title="Pagos en Exceso"
       icon="💸"
-      subtitle="Accede al dashboard operativo o a las herramientas de gestión para tus pagos en exceso."
+      subtitle="Elige entre el dashboard global o el dashboard operativo."
       showBack
       theme="pagex"
     />

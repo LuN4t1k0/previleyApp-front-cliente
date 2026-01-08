@@ -1,19 +1,19 @@
 const moraModules = {
-  gestion: {
-    name: "Gestión de Mora",
-    description: "Administra casos y gestiona acciones operativas.",
-    icon: "🗂️",
-    path: "/servicios/mora-presunta?tab=gestion",
-    roles: ["admin", "trabajador", "cliente"],
-    category: "gestion",
+  dashboardGlobal: {
+    name: "Dashboard Global",
+    description: "Consolida métricas multi-empresa y permite comparar resultados.",
+    icon: "🌐",
+    path: "/dashboard/mora-presunta/dashboard-global",
+    roles: ["cliente"],
+    category: "analitica",
     theme: "mora",
   },
-  analisis: {
+  dashboardOperativo: {
     name: "Dashboard Operativo",
-    description: "Visualiza indicadores y analiza el comportamiento de la mora.",
+    description: "Indicadores y seguimiento por empresa específica.",
     icon: "📊",
-    path: "/servicios/mora-presunta?tab=dashboard-operativo",
-    roles: ["admin", "trabajador"],
+    path: "/dashboard/mora-presunta/dashboard-operativo",
+    roles: ["cliente"],
     category: "analitica",
     theme: "mora",
   },

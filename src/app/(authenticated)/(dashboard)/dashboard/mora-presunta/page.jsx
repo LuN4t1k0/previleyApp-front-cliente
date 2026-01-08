@@ -7,7 +7,7 @@ export default function MoraPresuntaPage() {
       config={moraSections}
       title="Mora Presunta"
       icon="🧾"
-      subtitle="Elige entre la gestión operativa o el dashboard analítico"
+      subtitle="Elige entre el dashboard global o el dashboard operativo."
       showBack={true}
       theme="mora"
     />
