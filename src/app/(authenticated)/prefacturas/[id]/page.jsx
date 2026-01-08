@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   RiArrowLeftLine,
-  RiExternalLinkLine,
   RiFileDownloadLine,
 } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
@@ -102,6 +101,42 @@ const PrefacturaDetailPage = () => {
       { subtotal: 0, total: 0, iva: 0 }
     );
   }, [detalles]);
+
+  const getPrefacturaPdfUrl = (pref) =>
+    pref?.pdfUrl ||
+    pref?.prefacturaPdfUrl ||
+    pref?.pdfKey ||
+    pref?.pdf ||
+    null;
+
+  const normalizeProducciones = (detalle) => {
+    const producciones = detalle?.producciones;
+    if (Array.isArray(producciones)) return producciones;
+    if (producciones) return [producciones];
+    const fallbackId = detalle?.produccionId || detalle?.produccionID || null;
+    return fallbackId ? [{ id: fallbackId }] : [];
+  };
+
+  const buildProduccionAttachments = (produccion) => {
+    const entries = [];
+    const pushIf = (label, url) => {
+      if (!url) return;
+      entries.push({ label, url });
+    };
+
+    pushIf("Certificado inicial", produccion?.certificadoInicial);
+    pushIf("Certificado final", produccion?.certificadoFinal);
+    pushIf("Detalle", produccion?.detalle);
+    pushIf(
+      "Comprobante de pago",
+      produccion?.comprobantePago ||
+        produccion?.comprobanteUrl ||
+        produccion?.comprobante ||
+        produccion?.comprobante_pago
+    );
+
+    return entries;
+  };
 
   return (
     <section className="theme-dashboard dashboard-gradient min-h-screen pb-12">
@@ -221,6 +256,24 @@ const PrefacturaDetailPage = () => {
                     <StatusPill estado={prefactura.estado} />
                   </dd>
                 </div>
+                {getPrefacturaPdfUrl(prefactura) ? (
+                  <div className="rounded-2xl border border-white/60 bg-white/80 p-4 text-sm shadow-sm">
+                    <dt className="font-semibold text-[color:var(--text-secondary)]">
+                      Documento prefactura
+                    </dt>
+                    <dd className="mt-2">
+                      <a
+                        href={getPrefacturaPdfUrl(prefactura)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-full border border-[color:var(--theme-primary)] bg-[color:var(--theme-primary)]/10 px-3 py-2 text-xs font-semibold text-[color:var(--theme-primary)] hover:bg-[color:var(--theme-primary)]/20"
+                      >
+                        <RiFileDownloadLine className="h-4 w-4" aria-hidden="true" />
+                        Descargar PDF
+                      </a>
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
             </section>
 
@@ -378,14 +431,19 @@ const PrefacturaDetailPage = () => {
                       <th scope="col" className="px-4 py-3 text-right">
                         Total
                       </th>
+                      <th scope="col" className="px-4 py-3">
+                        Adjuntos
+                      </th>
                       <th scope="col" className="px-4 py-3 text-right">
-                        Producción
+                        Gestiones
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/50 text-[color:var(--text-primary)]">
                     {detalles.length > 0 ? (
-                      detalles.map((detalle) => (
+                      detalles.map((detalle) => {
+                        const producciones = normalizeProducciones(detalle);
+                        return (
                         <tr key={detalle.id} className="hover:bg-[color:var(--theme-soft)]/60">
                           <td className="px-4 py-3 font-semibold">
                             {detalle.servicio?.nombre || "—"}
@@ -402,26 +460,57 @@ const PrefacturaDetailPage = () => {
                           <td className="px-4 py-3 text-right text-sm font-semibold">
                             {formatCurrency(detalle.totalFacturado)}
                           </td>
+                          <td className="px-4 py-3 text-sm">
+                            {producciones.length > 0 ? (
+                              <div className="flex flex-col gap-4">
+                                {producciones.map((prod, index) => {
+                                  const attachments = buildProduccionAttachments(prod);
+                                  const label = prod?.id
+                                    ? `Gestión #${prod.id}`
+                                    : `Gestión ${index + 1}`;
+                                  return (
+                                    <div key={prod?.id || index} className="flex flex-col gap-2">
+                                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-secondary)]">
+                                        {label}
+                                      </span>
+                                      {attachments.length > 0 ? (
+                                        <div className="flex flex-col gap-2">
+                                          {attachments.map((item) => (
+                                            <a
+                                              key={`${label}-${item.label}`}
+                                              href={item.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-2 text-xs font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
+                                            >
+                                              <RiFileDownloadLine className="h-3.5 w-3.5" aria-hidden="true" />
+                                              {item.label}
+                                            </a>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs text-[color:var(--text-secondary)]">
+                                          Sin adjuntos
+                                        </span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : "—"}
+                          </td>
                           <td className="px-4 py-3 text-right text-xs text-[color:var(--theme-primary)]">
-                            {detalle.producciones?.detalle ? (
-                              <a
-                                href={detalle.producciones.detalle}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 font-semibold"
-                              >
-                                Ver documento
-                                <RiExternalLinkLine
-                                  className="h-3.5 w-3.5"
-                                  aria-hidden="true"
-                                />
-                              </a>
-                            ) : (
-                              "—"
-                            )}
+                            {producciones.length > 0 ? (
+                              <span className="font-semibold">
+                                {producciones.length === 1
+                                  ? `1 gestión`
+                                  : `${producciones.length} gestiones`}
+                              </span>
+                            ) : "—"}
                           </td>
                         </tr>
-                      ))
+                      );
+                      })
                     ) : (
                       <tr>
                         <td
