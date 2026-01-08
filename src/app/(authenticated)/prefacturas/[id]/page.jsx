@@ -102,12 +102,33 @@ const PrefacturaDetailPage = () => {
     );
   }, [detalles]);
 
+  const FILES_BASE_URL =
+    process.env.NEXT_PUBLIC_FILES_BASE_URL ||
+    "https://previley-app-files.s3.us-east-1.amazonaws.com";
+
+  const resolveFileUrl = (value) => {
+    if (!value) return null;
+    if (value.startsWith("http://") || value.startsWith("https://")) {
+      return value;
+    }
+    if (value.startsWith("s3://")) {
+      const cleaned = value.replace("s3://", "");
+      const parts = cleaned.split("/");
+      parts.shift();
+      return `${FILES_BASE_URL}/${parts.join("/")}`;
+    }
+    if (value.startsWith("/")) return value;
+    return `${FILES_BASE_URL}/${value}`;
+  };
+
   const getPrefacturaPdfUrl = (pref) =>
-    pref?.pdfUrl ||
-    pref?.prefacturaPdfUrl ||
-    pref?.pdfKey ||
-    pref?.pdf ||
-    null;
+    resolveFileUrl(
+      pref?.pdfUrl ||
+        pref?.prefacturaPdfUrl ||
+        pref?.pdfKey ||
+        pref?.pdf ||
+        null
+    );
 
   const normalizeProducciones = (detalle) => {
     const producciones = detalle?.producciones;
@@ -120,8 +141,9 @@ const PrefacturaDetailPage = () => {
   const buildProduccionAttachments = (produccion) => {
     const entries = [];
     const pushIf = (label, url) => {
-      if (!url) return;
-      entries.push({ label, url });
+      const resolved = resolveFileUrl(url);
+      if (!resolved) return;
+      entries.push({ label, url: resolved });
     };
 
     pushIf("Certificado inicial", produccion?.certificadoInicial);

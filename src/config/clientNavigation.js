@@ -15,6 +15,11 @@ export const clientMenu = [
     href: "/prefacturas",
   },
   {
+    label: "Documentos",
+    description: "Centro de documentos y respaldos.",
+    href: "/documentos",
+  },
+  {
     label: "Perfil",
     description: "Tus datos de contacto y ajustes de cuenta.",
     href: "/perfil",
