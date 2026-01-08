@@ -151,8 +151,6 @@ const ServiceTimeline = ({
           empresaRut,
           servicioId: serviceId,
           limit,
-          sortField: "fechaProduccion",
-          sortOrder: "desc",
           ...buildDateParams(dateRange, year),
         };
 
