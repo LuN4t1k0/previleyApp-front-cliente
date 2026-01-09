@@ -161,33 +161,33 @@ const PrefacturaDetailPage = () => {
   };
 
   return (
-    <section className="theme-dashboard dashboard-gradient min-h-screen pb-12">
-      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10 md:px-6">
+    <section className="pb-16">
+      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 pt-10 md:px-6">
         <button
           type="button"
           onClick={() => router.back()}
-          className="inline-flex w-fit items-center gap-2 rounded-full border border-white/60 bg-white px-3 py-2 text-xs font-semibold text-[color:var(--text-secondary)] shadow-sm hover:text-[color:var(--theme-primary)]"
+          className="inline-flex w-fit items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-2 text-xs font-semibold text-[color:var(--text-secondary)] shadow-sm hover:text-[color:var(--theme-primary)]"
         >
           <RiArrowLeftLine className="h-4 w-4" aria-hidden="true" />
           Volver
         </button>
 
         {loading ? (
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-8 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+          <div className="glass-panel rounded-[2rem] p-8 text-sm text-[color:var(--text-secondary)]">
             Cargando detalle de la prefactura...
           </div>
         ) : error ? (
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-8 text-sm text-rose-500 shadow-sm backdrop-blur">
+          <div className="glass-panel rounded-[2rem] p-8 text-sm text-rose-500">
             Ocurrió un error al cargar la prefactura.
           </div>
         ) : !prefactura ? (
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-8 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+          <div className="glass-panel rounded-[2rem] p-8 text-sm text-[color:var(--text-secondary)]">
             No se encontró la prefactura solicitada.
           </div>
         ) : (
           <>
-            <header className="rounded-3xl border border-white/60 bg-white/80 p-8 shadow-elevated backdrop-blur">
-              <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[color:var(--theme-primary)]">
+            <header className="glass-panel relative overflow-hidden rounded-[2.5rem] p-8">
+              <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-blue-600">
                 Prefactura #{prefactura.folio}
               </span>
               <h1 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)] sm:text-4xl">
@@ -198,6 +198,7 @@ const PrefacturaDetailPage = () => {
                 <span>Generada el {formatDate(prefactura.fechaGeneracion)}</span>
                 <span>Folio: {prefactura.folio}</span>
               </div>
+              <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />
             </header>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -235,7 +236,7 @@ const PrefacturaDetailPage = () => {
               </div>
             </div>
 
-            <section className="rounded-3xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur">
+            <section className="glass-panel rounded-[2rem] p-6">
               <header className="flex flex-col gap-2 border-b border-white/50 pb-4">
                 <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
                   Información de la prefactura
@@ -299,7 +300,7 @@ const PrefacturaDetailPage = () => {
               </dl>
             </section>
 
-            <section className="rounded-3xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur">
+            <section className="glass-panel rounded-[2rem] p-6">
               <header className="flex flex-col gap-2 border-b border-white/50 pb-4">
                 <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
                   Datos de cobranza
@@ -359,7 +360,7 @@ const PrefacturaDetailPage = () => {
               </form>
             </section>
 
-            <section className="rounded-3xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur">
+            <section className="glass-panel rounded-[2rem] p-6">
               <header className="flex flex-col gap-2 border-b border-white/50 pb-4">
                 <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
                   Factura asociada
@@ -424,7 +425,7 @@ const PrefacturaDetailPage = () => {
               )}
             </section>
 
-            <section className="rounded-3xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur">
+            <section className="glass-panel rounded-[2rem] p-6">
               <header className="flex flex-col gap-2 border-b border-white/50 pb-4">
                 <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
                   Detalle de líneas

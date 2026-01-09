@@ -79,23 +79,24 @@ const PerfilPage = () => {
   };
 
   return (
-    <section className="theme-dashboard dashboard-gradient min-h-screen pb-12">
-      <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-10 md:px-6">
-        <header className="rounded-3xl border border-white/60 bg-white/80 p-8 shadow-elevated backdrop-blur">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[color:var(--theme-primary)]">
+    <section className="pb-16">
+      <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 pt-10 md:px-6">
+        <header className="glass-panel relative overflow-hidden rounded-[2.5rem] p-8 md:p-10">
+          <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-blue-600">
             Tu cuenta
           </span>
           <h1 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)] sm:text-4xl">
             Perfil personal
           </h1>
           <p className="mt-3 text-sm text-[color:var(--text-secondary)] sm:text-base">
-            Actualiza tus datos de contacto y asegúrate de que podamos comunicarnos contigo oportunamente.
+            Actualiza tus datos de contacto y asegurate de que podamos comunicarnos contigo oportunamente.
           </p>
+          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />
         </header>
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-3xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur"
+          className="glass-panel rounded-[2rem] p-6"
         >
           <fieldset className="grid gap-4 sm:grid-cols-2" disabled={loading || saving}>
             <div className="flex flex-col gap-2">

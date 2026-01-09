@@ -8,6 +8,9 @@
   --text-secondary: #5e6370;
   --border-soft: rgba(255, 255, 255, 0.6);
   --shadow-elevated: 0 30px 60px -40px rgba(33, 38, 52, 0.55);
+  --shell-bg: #f8fafc;
+  --shell-accent: #e2e8f0;
+  --shell-glow: rgba(37, 99, 235, 0.12);
 
   /* Valores por defecto (dashboard) */
   --dashboard-primary: #425aef;
@@ -35,6 +38,24 @@
       transparent 45%
     ),
     var(--dashboard-bg);
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, var(--shell-accent), transparent 20%),
+    var(--shell-bg);
+}
+
+.glass-panel {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.05);
+  backdrop-filter: blur(18px);
+}
+
+.section-title {
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .theme-dashboard {

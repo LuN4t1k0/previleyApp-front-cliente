@@ -74,10 +74,10 @@ const Header = ({
   onDownloadExcel,
   exportLoading,
 }) => (
-  <section className="rounded-3xl border border-white/60 bg-white/65 p-6 shadow-elevated backdrop-blur md:p-8">
+  <section className="glass-panel rounded-[2.5rem] p-6 md:p-8">
     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
       <div className="space-y-3">
-        <span className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
+        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[color:var(--theme-primary)]">
           Panel empresa
         </span>
         <h1 className="text-3xl font-semibold text-[color:var(--text-primary)] md:text-4xl">

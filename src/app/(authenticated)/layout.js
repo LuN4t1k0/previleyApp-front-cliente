@@ -50,7 +50,7 @@ export default function AuthenticatedLayout({ children }) {
   return (
     <div className="flex min-h-screen flex-col">
       <ClientHeader />
-      <main className="flex-1">{children}</main>
+      <main className="app-shell flex-1">{children}</main>
 
       {/* 🔥 Global toast feedback */}
       <Toaster

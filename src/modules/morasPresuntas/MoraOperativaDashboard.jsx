@@ -174,10 +174,10 @@ const MoraOperativaDashboard = () => {
     <div className="theme-mora">
       <main className="dashboard-gradient min-h-screen px-4 py-8 md:px-8 md:py-12">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-          <section className="rounded-3xl border border-white/60 bg-white/65 p-6 shadow-elevated backdrop-blur md:p-8">
+          <section className="glass-panel rounded-[2.5rem] p-6 md:p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
+                <span className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[color:var(--theme-primary)]">
                   Panel operativo
                 </span>
                 <h1 className="text-3xl font-semibold text-[color:var(--text-primary)] md:text-4xl">

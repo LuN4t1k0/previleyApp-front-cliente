@@ -41,12 +41,11 @@ export default function HubShell({
   if (!seccionesVisibles.length) return <p className="p-6">No tienes acceso a esta sección.</p>;
 
   return (
-    <section className={cx('theme-dashboard', `theme-${theme}`)}>
-      <div className="dashboard-gradient">
-        <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-12 px-6 py-12 lg:px-8 lg:py-16">
+    <section className={cx('pb-16', `theme-${theme}`)}>
+      <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 pt-10 md:px-6 lg:px-8">
           {showBack && <BackButton />}
 
-          <header className="card-surface rounded-3xl border border-white/60 bg-white/70 p-8 shadow-elevated backdrop-blur">
+          <header className="glass-panel relative overflow-hidden rounded-[2.5rem] p-8 md:p-10">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4">
@@ -66,6 +65,7 @@ export default function HubShell({
                 </p>
               </div>
             </div>
+            <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-[color:var(--theme-accent)]/40 blur-3xl" />
           </header>
 
           {seccionesVisibles.map((seccion, idx) => (
@@ -86,7 +86,7 @@ export default function HubShell({
                       key={sec.name}
                       onClick={() => router.push(sec.path)}
                       className={cx(
-                        'group relative flex h-full cursor-pointer flex-col gap-4 rounded-xl border border-white/50 bg-white/75 p-6 shadow-elevated backdrop-blur transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_32px_70px_-45px_rgba(31,34,41,0.5)]',
+                        'group relative flex h-full cursor-pointer flex-col gap-4 rounded-[1.75rem] border border-white/50 bg-white/75 p-6 shadow-sm backdrop-blur transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_32px_70px_-45px_rgba(31,34,41,0.5)]',
                         `theme-${moduleTheme}`,
                         sec.highlight && 'ring-2 ring-[color:var(--theme-accent)]'
                       )}

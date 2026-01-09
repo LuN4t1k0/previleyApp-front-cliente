@@ -83,26 +83,33 @@ export default function PageShell({ tabsConfig, moduleTitle = 'Módulo' }) {
 
   return (
     <>
-      {/* Header + Tabs */}
-      <div className="border-b border-tremor-border dark:border-dark-tremor-border">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center space-x-6">
-            <div className="text-tremor-title font-semibold flex items-center space-x-2">
-              <span className="text-xl">🧾</span>
-              <span>{moduleTitle}</span>
+      <div className="px-4 pt-6 md:px-6">
+        <div className="glass-panel rounded-[2rem] px-6 py-5 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[color:var(--theme-soft)] text-lg">
+                🧾
+              </span>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--text-secondary)]">
+                  Módulo
+                </p>
+                <h1 className="text-lg font-semibold text-[color:var(--text-primary)]">
+                  {moduleTitle}
+                </h1>
+              </div>
             </div>
 
-            {/* Tabs */}
-            <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+            <nav className="flex flex-wrap gap-2" aria-label="Tabs">
               {visibleTabs.map((tab) => (
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
                   className={cx(
                     activeTab === tab.key
-                      ? 'text-tremor-brand border-tremor-brand'
-                      : 'border-transparent text-tremor-content-emphasis hover:border-tremor-content-subtle hover:text-tremor-content-strong',
-                    'inline-flex items-center border-b-2 px-2 text-tremor-default font-medium'
+                      ? 'bg-[color:var(--theme-primary)] text-white'
+                      : 'bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--theme-primary)]',
+                    'inline-flex items-center rounded-full border border-white/60 px-4 py-2 text-xs font-semibold transition shadow-sm'
                   )}
                 >
                   {tab.label}
@@ -113,18 +120,7 @@ export default function PageShell({ tabsConfig, moduleTitle = 'Módulo' }) {
         </div>
       </div>
 
-      {/* Contenido */}
-      {/* <div className="p-4 sm:p-6 lg:p-8"> */}
-      <div >
-        {/* Breadcrumb simulado */}
-        {/* <p className="text-sm text-gray-500 mb-4">
-          {moduleTitle} &nbsp;/&nbsp;
-          <span className="font-medium">
-            {visibleTabs.find(t => t.key === activeTab)?.label}
-          </span>
-        </p> */}
-        {activeContent}
-      </div>
+      <div>{activeContent}</div>
     </>
   );
 }

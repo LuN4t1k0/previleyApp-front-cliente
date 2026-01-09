@@ -3,17 +3,26 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
+import {
+  RiArrowRightLine,
+  RiArrowRightUpLine,
+  RiBuildingLine,
+  RiCalendarLine,
+  RiCheckboxCircleLine,
+  RiDashboardLine,
+  RiErrorWarningLine,
+  RiFileTextLine,
+  RiLineChartLine,
+  RiReceiptLine,
+  RiTimeLine,
+} from "@remixicon/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { useEmpresasServicios } from "@/hooks/useEmpresasServicios";
-import {
-  usePrefacturas,
-  usePrefacturasSummary,
-} from "@/hooks/usePrefacturas";
+import { usePrefacturas, usePrefacturasSummary } from "@/hooks/usePrefacturas";
 import apiService from "@/app/api/apiService";
-import MetricCard from "@/components/dashboard/MetricCard";
 import CompanyServicesCard from "@/components/dashboard/CompanyServicesCard";
 import StatusPill from "@/components/status/StatusPill";
-import { formatCurrency, formatDate } from "@/utils/formatters";
+import { formatCurrency } from "@/utils/formatters";
 
 const DEFAULT_YEAR = 2025;
 
@@ -22,6 +31,7 @@ const DashboardPage = () => {
   const nombre = session?.user?.nombre || "";
   const currentYear = new Date().getFullYear();
   const initialYear = currentYear >= DEFAULT_YEAR ? DEFAULT_YEAR : currentYear;
+
   const [executiveYear, setExecutiveYear] = useState(initialYear);
   const [executiveLoading, setExecutiveLoading] = useState(false);
   const [executiveError, setExecutiveError] = useState("");
@@ -97,7 +107,6 @@ const DashboardPage = () => {
   }, [empresasConServicios]);
 
   const pendingCount = summary.byStatus?.pendiente || 0;
-  const billedCount = summary.byStatus?.facturada || 0;
   const paidCount = summary.byStatus?.pagada || 0;
 
   const loading =
@@ -276,81 +285,77 @@ const DashboardPage = () => {
     };
   }, [empresaRuts, executiveYear]);
 
-  const formatNumber = (value) =>
-    new Intl.NumberFormat("es-CL", {
-      maximumFractionDigits: 0,
-    }).format(Number(value || 0));
+  const prefacturasList = Array.isArray(prefacturasRecientes)
+    ? prefacturasRecientes
+    : [];
 
   return (
-    <section className="theme-dashboard dashboard-gradient min-h-screen pb-12">
-      <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-10 md:px-6">
-        <header className="rounded-3xl border border-white/60 bg-white/80 p-8 shadow-elevated backdrop-blur">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[color:var(--theme-primary)]">
-            Visión general
-          </span>
-          <h1 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)] sm:text-4xl">
-            Hola{nombre ? `, ${nombre}` : ""} 👋
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm text-[color:var(--text-secondary)] sm:text-base">
-            Bienvenido al panel de clientes. Aquí encontrarás un resumen de tus
-            empresas, servicios contratados y el estado de tus prefacturas.
-          </p>
-          <div className="mt-6">
+    <section className="min-h-screen bg-[#f8fafc] bg-[radial-gradient(at_top_right,_#e2e8f0,_20%)] pb-20 font-sans text-slate-900">
+      <div className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
+        <header className="relative overflow-hidden rounded-[2.5rem] border border-white/50 bg-white/70 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.05)] backdrop-blur-2xl md:p-12">
+          <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-600">
+                <RiDashboardLine className="h-3 w-3" />
+                Panel de Control
+              </div>
+              <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+                Hola<span className="text-blue-600">{nombre ? `, ${nombre}` : ""}</span> 👋
+              </h1>
+              <p className="max-w-xl text-lg font-medium text-slate-500/90 leading-relaxed">
+                Bienvenido de nuevo. Aquí tienes el balance actual de tus operaciones y prefacturación.
+              </p>
+            </div>
+
             <Link
               href="/servicios"
-              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--theme-primary)] bg-[color:var(--theme-primary)] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[color:var(--theme-primary-dark)]"
+              className="group inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-7 py-4 text-sm font-bold text-white transition-all hover:bg-blue-600 hover:shadow-[0_10px_20px_rgba(37,99,235,0.3)] active:scale-95"
             >
-              Ver detalle por servicio
-              <span aria-hidden>→</span>
+              Explorar Servicios
+              <RiArrowRightLine className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
+          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl"></div>
         </header>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            label="Empresas asociadas"
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            label="Empresas"
             value={loading ? "…" : empresas?.length || 0}
-            helperText="Empresas vinculadas a tu usuario."
-            tone="primary"
-            icon="🏢"
+            icon={<RiBuildingLine className="h-5 w-5" />}
+            color="blue"
+            loading={loading}
           />
-          <MetricCard
-            label="Servicios activos"
+          <StatCard
+            label="Servicios"
             value={loading ? "…" : totalServiciosActivos}
-            helperText="Cantidad de servicios habilitados."
-            tone="info"
-            icon="🧾"
+            icon={<RiLineChartLine className="h-5 w-5" />}
+            color="indigo"
+            loading={loading}
           />
-          <MetricCard
-            label="Prefacturas pendientes"
+          <StatCard
+            label="Pendientes"
             value={loading ? "…" : pendingCount}
-            helperText="Aún en revisión o a la espera de facturar."
-            tone="warning"
-            icon="⏳"
+            icon={<RiTimeLine className="h-5 w-5" />}
+            color="amber"
+            loading={loading}
           />
-          <MetricCard
-            label="Prefacturas pagadas"
+          <StatCard
+            label="Pagadas"
             value={loading ? "…" : paidCount}
-            helperText="Prefacturas cerradas y conciliadas."
-            tone="success"
-            icon="✅"
+            icon={<RiCheckboxCircleLine className="h-5 w-5" />}
+            color="emerald"
+            loading={loading}
           />
         </div>
 
-        <section className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
-                Servicios por empresa
-              </h2>
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                Revisa el detalle de los servicios contratados por cada empresa.
-              </p>
-            </div>
+        <section className="mt-16">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-slate-900">Servicios por empresa</h2>
+            <p className="text-slate-500">Revisa el detalle de los servicios contratados por cada empresa.</p>
           </div>
-
           {loadingServicios ? (
-            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-slate-500 shadow-sm backdrop-blur">
               Cargando información de servicios...
             </div>
           ) : empresasConServicios && empresasConServicios.length > 0 ? (
@@ -360,30 +365,24 @@ const DashboardPage = () => {
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-slate-500 shadow-sm backdrop-blur">
               Aún no hay servicios asociados a tus empresas.
             </div>
           )}
         </section>
 
-        <section className="flex flex-col gap-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        <section className="mt-20">
+          <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-8">
             <div>
-              <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
-                Resumen ejecutivo {executiveYear}
-              </h2>
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                Panorama anual por servicio para todas tus empresas.
-              </p>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900">Resumen Ejecutivo</h2>
+              <p className="mt-2 text-slate-500 font-medium">Análisis de rendimiento anual consolidado</p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--text-secondary)]">
-                Año
-              </span>
+            <div className="flex items-center gap-3 rounded-2xl border border-white bg-white/60 p-1.5 shadow-sm backdrop-blur-md">
+              <RiCalendarLine className="ml-3 h-4 w-4 text-slate-400" />
               <select
                 value={executiveYear}
                 onChange={(event) => setExecutiveYear(Number(event.target.value))}
-                className="rounded-full border border-white/70 bg-white/80 px-3 py-2 text-xs font-semibold text-[color:var(--text-primary)] shadow-sm backdrop-blur"
+                className="bg-transparent py-2 pl-1 pr-8 text-sm font-bold text-slate-700 focus:outline-none"
               >
                 {yearOptions.map((year) => (
                   <option key={year} value={year}>
@@ -395,7 +394,7 @@ const DashboardPage = () => {
           </div>
 
           {executiveLoading ? (
-            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-slate-500 shadow-sm backdrop-blur">
               Construyendo el resumen ejecutivo...
             </div>
           ) : executiveError ? (
@@ -403,306 +402,115 @@ const DashboardPage = () => {
               {executiveError}
             </div>
           ) : (
-            <div className="grid gap-4 lg:grid-cols-3">
-              <div className="rounded-2xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
-                  Mora Presunta
-                </p>
-                <p className="mt-3 text-sm text-[color:var(--text-secondary)]">
-                  Regularizado y pagado durante el año.
-                </p>
-                <div className="mt-4 space-y-2 text-sm text-[color:var(--text-primary)]">
-                  <div className="flex items-center justify-between">
-                    <span>Regularizado</span>
-                    <span className="font-semibold">
-                      {executiveData.mora
-                        ? formatCurrency(executiveData.mora.totalRegularizado)
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Pagado</span>
-                    <span className="font-semibold">
-                      {executiveData.mora
-                        ? formatCurrency(executiveData.mora.totalPagado)
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-[color:var(--text-secondary)]">
-                    <span>Recuperado total</span>
-                    <span className="font-semibold text-[color:var(--text-primary)]">
-                      {executiveData.mora
-                        ? formatCurrency(executiveData.mora.totalRecuperado)
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Link
-                    href="/servicios/mora-presunta?tab=dashboard-global"
-                    className="text-xs font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
-                  >
-                    Ver dashboard global →
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
-                  Pagos en Exceso
-                </p>
-                <p className="mt-3 text-sm text-[color:var(--text-secondary)]">
-                  Recuperación acumulada del año.
-                </p>
-                <div className="mt-4 space-y-2 text-sm text-[color:var(--text-primary)]">
-                  <div className="flex items-center justify-between">
-                    <span>Recuperado</span>
-                    <span className="font-semibold">
-                      {executiveData.pagex
-                        ? formatCurrency(executiveData.pagex.totalRecuperado)
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Solicitado</span>
-                    <span className="font-semibold">
-                      {executiveData.pagex
-                        ? formatCurrency(executiveData.pagex.totalSolicitado)
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-[color:var(--text-secondary)]">
-                    <span>Pendiente</span>
-                    <span className="font-semibold text-[color:var(--text-primary)]">
-                      {executiveData.pagex
-                        ? formatCurrency(executiveData.pagex.totalPendiente)
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Link
-                    href="/servicios/pagos-en-exceso?tab=dashboard-global"
-                    className="text-xs font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
-                  >
-                    Ver dashboard global →
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
-                  Licencias Médicas
-                </p>
-                <p className="mt-3 text-sm text-[color:var(--text-secondary)]">
-                  Volumen tramitado en el año.
-                </p>
-                <div className="mt-4 space-y-2 text-sm text-[color:var(--text-primary)]">
-                  <div className="flex items-center justify-between">
-                    <span>Licencias tramitadas</span>
-                    <span className="font-semibold">
-                      {executiveData.licencias
-                        ? formatNumber(executiveData.licencias.totalLicencias)
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Días totales</span>
-                    <span className="font-semibold">
-                      {executiveData.licencias
-                        ? formatNumber(executiveData.licencias.totalDias)
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-[color:var(--text-secondary)]">
-                    <span>Empresas con licencias</span>
-                    <span className="font-semibold text-[color:var(--text-primary)]">
-                      {executiveData.licencias
-                        ? formatNumber(executiveData.licencias.empresasConLicencias)
-                        : "—"}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Link
-                    href="/servicios/licencias-medicas?tab=dashboard-global"
-                    className="text-xs font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
-                  >
-                    Ver dashboard global →
-                  </Link>
-                </div>
-              </div>
+            <div className="grid gap-8 lg:grid-cols-3">
+              <GlassCard
+                title="Mora Presunta"
+                mainValue={executiveData.mora?.totalRecuperado}
+                label="Recuperado total"
+                link="/servicios/mora-presunta?tab=dashboard-global"
+              />
+              <GlassCard
+                title="Pagos en Exceso"
+                mainValue={executiveData.pagex?.totalRecuperado}
+                label="Total recuperado"
+                link="/servicios/pagos-en-exceso?tab=dashboard-global"
+              />
+              <GlassCard
+                title="Licencias Médicas"
+                mainValue={executiveData.licencias?.totalLicencias}
+                label="Licencias año"
+                isCurrency={false}
+                link="/servicios/licencias-medicas?tab=dashboard-global"
+              />
             </div>
           )}
         </section>
 
-        <section className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
-                Alertas accionables
-              </h2>
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                Tareas pendientes y documentos que requieren atención.
-              </p>
-            </div>
+        <section className="mt-20">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-slate-900">Alertas Accionables</h2>
+            <p className="text-slate-500">Documentos y tareas que requieren tu atención inmediata.</p>
           </div>
-
           {loadingAlertas ? (
-            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-slate-500 shadow-sm backdrop-blur">
               Analizando alertas...
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/60 bg-white/85 p-5 shadow-sm backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
-                  Facturas vencidas
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-                  {alertas.overdue}
-                </p>
-                <p className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                  Requieren seguimiento inmediato.
-                </p>
-                <div className="mt-4">
-                  <Link
-                    href="/prefacturas"
-                    className="text-xs font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
-                  >
-                    Ver prefacturas →
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/60 bg-white/85 p-5 shadow-sm backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
-                  Facturas por vencer
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-                  {alertas.dueSoon}
-                </p>
-                <p className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                  Vencen en los próximos 7 días.
-                </p>
-                <div className="mt-4">
-                  <Link
-                    href="/prefacturas"
-                    className="text-xs font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
-                  >
-                    Revisar vencimientos →
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/60 bg-white/85 p-5 shadow-sm backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
-                  Prefacturas sin PDF
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-                  {alertas.missingPrefPdf}
-                </p>
-                <p className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                  Adjuntos principales faltantes.
-                </p>
-                <div className="mt-4">
-                  <Link
-                    href="/documentos"
-                    className="text-xs font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
-                  >
-                    Ir a documentos →
-                  </Link>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/60 bg-white/85 p-5 shadow-sm backdrop-blur">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
-                  Facturas sin PDF
-                </p>
-                <p className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-                  {alertas.missingFacturaPdf}
-                </p>
-                <p className="mt-1 text-xs text-[color:var(--text-secondary)]">
-                  Revisa documentación pendiente.
-                </p>
-                <div className="mt-4">
-                  <Link
-                    href="/documentos"
-                    className="text-xs font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
-                  >
-                    Revisar adjuntos →
-                  </Link>
-                </div>
-              </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <AlertTile
+                label="Facturas vencidas"
+                count={alertas.overdue}
+                icon={<RiErrorWarningLine className="h-5 w-5" />}
+                urgent
+                link="/prefacturas"
+              />
+              <AlertTile
+                label="Por vencer"
+                count={alertas.dueSoon}
+                icon={<RiTimeLine className="h-5 w-5" />}
+                link="/prefacturas"
+              />
+              <AlertTile
+                label="Prefacturas sin PDF"
+                count={alertas.missingPrefPdf}
+                icon={<RiFileTextLine className="h-5 w-5" />}
+                link="/documentos"
+              />
+              <AlertTile
+                label="Facturas sin PDF"
+                count={alertas.missingFacturaPdf}
+                icon={<RiReceiptLine className="h-5 w-5" />}
+                link="/documentos"
+              />
             </div>
           )}
         </section>
 
-        <section className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
+        <section className="mt-20 overflow-hidden rounded-[2.5rem] border border-white/50 bg-white/60 shadow-[0_15px_35px_rgba(0,0,0,0.03)] backdrop-blur-xl">
+          <div className="flex items-center justify-between border-b border-slate-100 bg-white/40 px-10 py-8">
             <div>
-              <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
-                Prefacturas recientes
-              </h2>
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                Últimas prefacturas generadas ordenadas de más recientes a más antiguas.
-              </p>
+              <h2 className="text-xl font-bold text-slate-900">Prefacturas Recientes</h2>
+              <p className="text-sm text-slate-500">Últimas prefacturas generadas.</p>
             </div>
             <Link
               href="/prefacturas"
-              className="text-sm font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
+              className="flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-700"
             >
-              Ver todas →
+              Ver Historial Completo <RiArrowRightUpLine className="h-4 w-4" />
             </Link>
           </div>
-
           {loadingPrefacturas ? (
-            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
-              Cargando prefacturas...
-            </div>
-          ) : prefacturasRecientes && prefacturasRecientes.length > 0 ? (
-            <div className="overflow-hidden rounded-2xl border border-white/60 bg-white/85 shadow-sm backdrop-blur">
-              <table className="min-w-full divide-y divide-white/60 text-sm">
-                <thead className="bg-white/70 text-left text-xs font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
-                  <tr>
-                    <th scope="col" className="px-4 py-3">
-                      Folio
-                    </th>
-                    <th scope="col" className="px-4 py-3">
-                      Empresa
-                    </th>
-                    <th scope="col" className="px-4 py-3">
-                      Estado
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-right">
-                      Total
-                    </th>
-                    <th scope="col" className="px-4 py-3 text-right">
-                      Generada
-                    </th>
+            <div className="px-10 py-12 text-sm text-slate-500">Cargando prefacturas...</div>
+          ) : prefacturasList.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50/50 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                    <th className="px-10 py-5">Folio</th>
+                    <th className="px-10 py-5">Empresa</th>
+                    <th className="px-10 py-5">Estado</th>
+                    <th className="px-10 py-5 text-right">Monto Total</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/50 bg-white/80 text-[color:var(--text-primary)]">
-                  {prefacturasRecientes.map((prefactura) => (
-                    <tr key={prefactura.id} className="hover:bg-[color:var(--theme-soft)]/60">
-                      <td className="px-4 py-3 font-semibold">
+                <tbody className="divide-y divide-slate-50">
+                  {prefacturasList.map((pref) => (
+                    <tr key={pref.id} className="group transition-colors hover:bg-blue-50/40">
+                      <td className="px-10 py-6">
                         <Link
-                          href={`/prefacturas/${prefactura.id}`}
-                          className="text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
+                          href={`/prefacturas/${pref.id}`}
+                          className="font-bold text-blue-600 group-hover:underline"
                         >
-                          {prefactura.folio}
+                          #{pref.folio}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-                        {prefactura.empresaNombre || prefactura.empresaRut}
+                      <td className="px-10 py-6 text-sm font-medium text-slate-600">
+                        {pref.empresaNombre || pref.empresaRut || "N/A"}
                       </td>
-                      <td className="px-4 py-3">
-                        <StatusPill estado={prefactura.estado} />
+                      <td className="px-10 py-6">
+                        <StatusPill estado={pref.estado} />
                       </td>
-                      <td className="px-4 py-3 text-right text-sm font-semibold">
-                        {formatCurrency(prefactura.totalFacturado)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm text-[color:var(--text-secondary)]">
-                        {formatDate(prefactura.fechaGeneracion)}
+                      <td className="px-10 py-6 text-right font-mono font-bold text-slate-900">
+                        {formatCurrency(pref.totalFacturado)}
                       </td>
                     </tr>
                   ))}
@@ -710,17 +518,8 @@ const DashboardPage = () => {
               </table>
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+            <div className="px-10 py-12 text-sm text-slate-500">
               No se encontraron prefacturas recientes.
-            </div>
-          )}
-
-          {!loading && billedCount > 0 && (
-            <div className="rounded-2xl border border-white/60 bg-white/70 p-4 text-xs text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
-              <span className="font-semibold text-[color:var(--theme-primary)]">
-                {billedCount}
-              </span>{" "}
-              prefacturas se encuentran facturadas durante el período actual.
             </div>
           )}
         </section>
@@ -728,5 +527,85 @@ const DashboardPage = () => {
     </section>
   );
 };
+
+const StatCard = ({ label, value, icon, color, loading }) => {
+  const colors = {
+    blue: "text-blue-600 bg-blue-50 border-blue-100",
+    indigo: "text-indigo-600 bg-indigo-50 border-indigo-100",
+    amber: "text-amber-600 bg-amber-50 border-amber-100",
+    emerald: "text-emerald-600 bg-emerald-50 border-emerald-100",
+  };
+
+  return (
+    <div className="group rounded-3xl border border-white/60 bg-white/50 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md backdrop-blur-sm">
+      <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border ${colors[color] || colors.blue}`}>
+        {icon}
+      </div>
+      <p className="text-sm font-bold uppercase tracking-tight text-slate-400">{label}</p>
+      <div className="mt-1 flex items-baseline gap-2">
+        <p className="text-3xl font-black text-slate-900">
+          {loading ? (
+            <span className="inline-block h-8 w-12 animate-pulse rounded bg-slate-200" />
+          ) : (
+            value ?? 0
+          )}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const GlassCard = ({ title, mainValue, label, link, isCurrency = true }) => (
+  <div className="group relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/40 p-8 shadow-sm transition-all hover:bg-white/80 backdrop-blur-sm">
+    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-blue-600/80">{title}</h3>
+    <div className="mt-8">
+      <p className="text-sm font-medium text-slate-500">{label}</p>
+      <p className="mt-1 text-3xl font-black tracking-tighter text-slate-900">
+        {isCurrency ? formatCurrency(mainValue) : mainValue || "—"}
+      </p>
+    </div>
+    <Link
+      href={link}
+      className="mt-8 flex items-center gap-2 text-xs font-bold text-slate-400 transition-colors group-hover:text-blue-600"
+    >
+      Ver detalles <RiArrowRightLine className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+    </Link>
+    <div className="absolute -bottom-4 -right-4 h-24 w-24 rounded-full bg-blue-50/50 blur-2xl transition-colors group-hover:bg-blue-100/50"></div>
+  </div>
+);
+
+const AlertTile = ({ label, count, icon, urgent, link }) => (
+  <div
+    className={`rounded-3xl border p-6 transition-all ${
+      urgent && count > 0
+        ? "border-rose-100 bg-rose-50/50 shadow-[0_10px_30px_rgba(244,63,94,0.05)]"
+        : "border-white bg-white/40"
+    }`}
+  >
+    <div
+      className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl ${
+        urgent && count > 0 ? "bg-rose-100 text-rose-600" : "bg-slate-100 text-slate-500"
+      }`}
+    >
+      {icon}
+    </div>
+    <p className="text-sm font-bold text-slate-500 tracking-tight">{label}</p>
+    <p
+      className={`mt-1 text-3xl font-black ${
+        urgent && count > 0 ? "text-rose-600" : "text-slate-900"
+      }`}
+    >
+      {count}
+    </p>
+    {link ? (
+      <Link
+        href={link}
+        className="mt-3 inline-flex items-center text-xs font-semibold text-blue-600 hover:text-blue-700"
+      >
+        Ver detalle <RiArrowRightLine className="ml-1 h-3 w-3" />
+      </Link>
+    ) : null}
+  </div>
+);
 
 export default DashboardPage;

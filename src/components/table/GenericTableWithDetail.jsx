@@ -205,7 +205,7 @@ const GenericTableWithDetail = ({
   );
 
   return (
-    <div className="w-full px-2 sm:px-6 lg:px-8 pt-4 relative">
+    <div className="glass-panel relative w-full rounded-[2rem] p-6">
       {loading && !useInfiniteScroll && pageIndex > 0
   ? Array.from({ length: limit }).map((_, index) => (
       <SkeletonRow key={index} columns={columns} />

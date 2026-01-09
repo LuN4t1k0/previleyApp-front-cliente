@@ -120,21 +120,24 @@ const PrefacturasPage = () => {
   };
 
   return (
-    <section className="theme-dashboard dashboard-gradient min-h-screen pb-12">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 md:px-6">
-        <header className="flex flex-col gap-2">
-          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[color:var(--theme-primary)]">
-            Prefacturas
-          </span>
-          <h1 className="text-3xl font-semibold text-[color:var(--text-primary)] sm:text-4xl">
-            Gestión de prefacturas
-          </h1>
-          <p className="max-w-3xl text-sm text-[color:var(--text-secondary)] sm:text-base">
-            Filtra y revisa el estado de tus prefacturas. Puedes acceder al detalle y descargar los documentos asociados.
-          </p>
+    <section className="pb-16">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 pt-10 md:px-6">
+        <header className="glass-panel relative overflow-hidden rounded-[2.5rem] p-8 md:p-12">
+          <div className="relative z-10 flex flex-col gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-blue-600">
+              Prefacturas
+            </span>
+            <h1 className="text-3xl font-semibold text-[color:var(--text-primary)] sm:text-4xl">
+              Gestión de prefacturas
+            </h1>
+            <p className="max-w-3xl text-sm text-[color:var(--text-secondary)] sm:text-base">
+              Filtra y revisa el estado de tus prefacturas. Puedes acceder al detalle y descargar los documentos asociados.
+            </p>
+          </div>
+          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />
         </header>
 
-        <div className="rounded-3xl border border-white/60 bg-white/80 p-6 shadow-sm backdrop-blur">
+        <div className="glass-panel rounded-[2rem] p-6">
           <div className="flex flex-wrap items-center gap-4 text-sm text-[color:var(--text-secondary)]">
             <RiFilter3Line className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
             <span>
@@ -245,7 +248,7 @@ const PrefacturasPage = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-white/60 bg-white/85 shadow-sm backdrop-blur">
+        <div className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/80 shadow-sm backdrop-blur">
           <table className="min-w-full divide-y divide-white/60 text-sm">
             <thead className="bg-white/70 text-left text-xs font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
               <tr>

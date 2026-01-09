@@ -177,7 +177,7 @@ const GenericServiceContent = ({ definition, slug }) => {
     return (
       <section className="theme-dashboard dashboard-gradient min-h-screen pb-12">
         <div className="mx-auto flex max-w-4xl flex-col gap-4 px-4 py-10">
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-8 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+          <div className="glass-panel rounded-[2rem] p-8 text-sm text-[color:var(--text-secondary)] ">
             El servicio solicitado no existe. {" "}
             <Link
               href="/servicios"
@@ -199,12 +199,12 @@ const GenericServiceContent = ({ definition, slug }) => {
     loadingEmpresa;
 
   return (
-    <section className="theme-dashboard dashboard-gradient min-h-screen pb-12">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 md:px-6">
-        <header className="rounded-3xl border border-white/60 bg-white/80 p-8 shadow-elevated backdrop-blur">
+    <section className="pb-16">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pt-10 md:px-6">
+        <header className="glass-panel relative overflow-hidden rounded-[2.5rem] p-8 md:p-10">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-[0.35em] text-[color:var(--theme-primary)]">
+              <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-blue-600">
                 Servicio
               </span>
               <h1 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)] sm:text-4xl">
@@ -215,7 +215,7 @@ const GenericServiceContent = ({ definition, slug }) => {
               </p>
             </div>
             {empresasDisponibles.length > 0 ? (
-              <div className="flex flex-col gap-2 rounded-2xl border border-white/60 bg-white/70 p-4 text-xs text-[color:var(--text-secondary)]">
+              <div className="flex flex-col gap-2 rounded-2xl border border-white/60 bg-white/70 p-4 text-xs text-[color:var(--text-secondary)] shadow-sm">
                 <label
                   htmlFor="empresa-selector"
                   className="font-semibold text-[color:var(--text-primary)]"
@@ -249,14 +249,15 @@ const GenericServiceContent = ({ definition, slug }) => {
               enableClear
             />
           </div>
+          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />
         </header>
 
         {isLoading ? (
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 text-sm text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+          <div className="glass-panel rounded-[2rem] p-6 text-sm text-[color:var(--text-secondary)] ">
             Cargando datos del servicio...
           </div>
         ) : dashboardError ? (
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-6 text-sm text-rose-500 shadow-sm backdrop-blur">
+          <div className="glass-panel rounded-[2rem] p-6 text-sm text-rose-500 ">
             No pudimos cargar la información del servicio. Intenta nuevamente más tarde.
           </div>
         ) : (
@@ -373,7 +374,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                   Casos y tendencias
                 </h2>
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+                  <div className="glass-panel rounded-[2rem] p-5 ">
                     <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
                       Estado de los casos
                     </h3>
@@ -385,7 +386,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                       <li>Rechazados: {dashboardData?.cases?.rechazados || 0}</li>
                     </ul>
                   </div>
-                  <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+                  <div className="glass-panel rounded-[2rem] p-5 ">
                     <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
                       Top pendientes
                     </h3>
@@ -412,7 +413,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+                <div className="glass-panel rounded-[2rem] p-5 ">
                   <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
                     Recuperación mensual
                   </h3>
@@ -461,7 +462,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                   Distribución y pendientes
                 </h2>
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+                  <div className="glass-panel rounded-[2rem] p-5 ">
                     <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
                       Estado de los casos
                     </h3>
@@ -473,7 +474,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                       <li>Rechazados: {dashboardData?.cases?.rechazados || 0}</li>
                     </ul>
                   </div>
-                  <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+                  <div className="glass-panel rounded-[2rem] p-5 ">
                     <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
                       Top deudas pendientes
                     </h3>
@@ -500,7 +501,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                   </div>
                 </div>
 
-                <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+                <div className="glass-panel rounded-[2rem] p-5 ">
                   <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
                     Deuda por institución
                   </h3>
@@ -550,7 +551,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                 <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
                   Distribución y evolución
                 </h2>
-                <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+                <div className="glass-panel rounded-[2rem] p-5 ">
                   <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
                     Evolución mensual
                   </h3>
@@ -590,7 +591,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                     </table>
                   </div>
                 </div>
-                <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+                <div className="glass-panel rounded-[2rem] p-5 ">
                   <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
                     Comparativo anticipos vs subsidios
                   </h3>
@@ -629,7 +630,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                   Solicitar actualización
                 </Link>
               </div>
-              <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm backdrop-blur">
+              <div className="glass-panel rounded-[2rem] p-5 ">
                 {empresaError ? (
                   <p className="text-sm text-rose-500">
                     Ocurrió un error al cargar los documentos.
