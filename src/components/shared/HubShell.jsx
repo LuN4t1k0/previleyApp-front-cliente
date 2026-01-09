@@ -42,7 +42,8 @@ export default function HubShell({
 
   return (
     <section className={cx('pb-16', `theme-${theme}`)}>
-      <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 pt-10 md:px-6 lg:px-8">
+      <div className="dashboard-gradient">
+        <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 pt-10 md:px-6 lg:px-8">
           {showBack && <BackButton />}
 
           <header className="glass-panel relative overflow-hidden rounded-[2.5rem] p-8 md:p-10">
