@@ -28,6 +28,8 @@ const NavigationMenu = () => {
   const pathname = usePathname();
   const [userRole, setUserRole] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const signOutUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/signin` : "/signin";
 
   useEffect(() => {
     if (session?.user?.rol) {
@@ -76,7 +78,7 @@ const NavigationMenu = () => {
   };
 
   const handleSignOut = (close) => {
-    signOut();
+    signOut({ callbackUrl: signOutUrl });
     close?.();
   };
 

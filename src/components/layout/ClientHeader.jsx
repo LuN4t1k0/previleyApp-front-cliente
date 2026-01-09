@@ -17,6 +17,8 @@ const ClientHeader = () => {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const signOutUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/signin` : "/signin";
 
   const menuItems = useMemo(() => clientMenu, []);
 
@@ -71,7 +73,7 @@ const ClientHeader = () => {
           </div>
           <button
             type="button"
-            onClick={() => signOut()}
+            onClick={() => signOut({ callbackUrl: signOutUrl })}
             className="inline-flex items-center gap-1 rounded-full border border-transparent bg-[color:var(--theme-primary)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[color:var(--theme-primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme-primary)] focus-visible:ring-offset-2"
           >
             <RiDoorOpenLine className="h-4 w-4" aria-hidden="true" />
@@ -117,7 +119,7 @@ const ClientHeader = () => {
               type="button"
               onClick={() => {
                 setOpen(false);
-                signOut();
+                signOut({ callbackUrl: signOutUrl });
               }}
               className="inline-flex items-center gap-1 rounded-full border border-transparent bg-[color:var(--theme-primary)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[color:var(--theme-primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme-primary)] focus-visible:ring-offset-2"
             >
