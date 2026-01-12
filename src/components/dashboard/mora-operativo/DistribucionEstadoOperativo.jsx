@@ -92,7 +92,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
           category="value"
           index="name"
           valueFormatter={(valor) => formatCLP(valor)}
-          colors={["rose", "amber", "violet", "slate", "indigo", "cyan", "emerald"]}
+          colors={["emerald", "amber", "violet", "slate", "indigo", "cyan", "emerald"]}
           showLegend
         />
 
