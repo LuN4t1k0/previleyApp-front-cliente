@@ -80,25 +80,32 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
     return null;
   }
 
+  const chartMinWidth = Math.max(640, chartData.length * 80);
+
   return (
     <Card>
       <Title>Distribución de deuda por estado y entidad</Title>
       <Text className="text-sm text-gray-500 mb-4">
         Identifica qué entidades concentran los montos más altos por estado operativo.
       </Text>
-      <BarChart
-        data={chartData}
-        index="entidad"
-        categories={categorias}
-        valueFormatter={formatter}
-        colors={categorias.map((_, idx) => palette[idx % palette.length])}
-        stack
-        showLegend
-        showXAxis
-        showYAxis
-        yAxisWidth={90}
-        className="mt-6"
-      />
+      <div className="mt-6 overflow-x-auto">
+        <div className="pr-4" style={{ minWidth: chartMinWidth }}>
+          <BarChart
+            data={chartData}
+            index="entidad"
+            categories={categorias}
+            valueFormatter={formatter}
+            colors={categorias.map((_, idx) => palette[idx % palette.length])}
+            stack
+            showLegend
+            showXAxis
+            showYAxis
+            tickGap={0}
+            rotateLabelX={{ angle: 0, verticalShift: 12, xAxisHeight: 80 }}
+            yAxisWidth={90}
+          />
+        </div>
+      </div>
     </Card>
   );
 };

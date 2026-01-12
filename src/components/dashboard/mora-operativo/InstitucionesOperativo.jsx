@@ -50,22 +50,29 @@ const InstitucionesOperativo = ({ empresaRut, entidadId, dateRange }) => {
     return null;
   }
 
+  const chartMinWidth = Math.max(640, dataChart.length * 80);
+
   return (
     <Card>
       <Title>🏦 Consolidado por entidad</Title>
       <Text className="text-sm text-gray-500 mb-4">
         Compara la deuda total identificada, lo recuperado y el saldo pendiente por entidad.
       </Text>
-      <BarChart
-        data={dataChart}
-        index="entidad"
-        categories={["Deuda total", "Pendiente", "Recuperado"]}
-        colors={["rose", "amber", "emerald"]}
-        showLegend
-        valueFormatter={formatter}
-        yAxisWidth={90}
-        className="mt-4"
-      />
+      <div className="mt-4 overflow-x-auto">
+        <div className="pr-4" style={{ minWidth: chartMinWidth }}>
+          <BarChart
+            data={dataChart}
+            index="entidad"
+            categories={["Deuda total", "Pendiente", "Recuperado"]}
+            colors={["rose", "amber", "emerald"]}
+            showLegend
+            tickGap={0}
+            rotateLabelX={{ angle: 0, verticalShift: 12, xAxisHeight: 80 }}
+            valueFormatter={formatter}
+            yAxisWidth={90}
+          />
+        </div>
+      </div>
     </Card>
   );
 };

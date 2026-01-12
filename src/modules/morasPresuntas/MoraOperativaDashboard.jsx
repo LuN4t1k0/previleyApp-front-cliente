@@ -173,7 +173,7 @@ const MoraOperativaDashboard = () => {
   return (
     <div className="theme-mora">
       <main className="dashboard-gradient min-h-screen px-4 py-8 md:px-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-8">
           <section className="glass-panel rounded-[2.5rem] p-6 md:p-8">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-3">
