@@ -30,6 +30,12 @@ const riesgoBadge = {
   bajo: <BadgeDelta deltaType="increase">Bajo</BadgeDelta>,
 };
 
+const riesgoOrden = {
+  alto: 0,
+  medio: 1,
+  bajo: 2,
+};
+
 const PriorizacionGestiones = ({ empresaRut, entidadId, dateRange, onSelectGestion }) => {
   const [gestiones, setGestiones] = useState([]);
 
@@ -51,7 +57,24 @@ const PriorizacionGestiones = ({ empresaRut, entidadId, dateRange, onSelectGesti
     fetchGestiones();
   }, [empresaRut, entidadId, dateRange]);
 
-  const filas = useMemo(() => gestiones, [gestiones]);
+  const filas = useMemo(() => {
+    if (!Array.isArray(gestiones)) return [];
+    return [...gestiones].sort((a, b) => {
+      const riesgoA = riesgoOrden[a?.nivelRiesgo] ?? 3;
+      const riesgoB = riesgoOrden[b?.nivelRiesgo] ?? 3;
+      if (riesgoA !== riesgoB) return riesgoA - riesgoB;
+
+      if (riesgoA === riesgoOrden.medio) {
+        const deudaA = Number(a?.deudaPendiente || 0);
+        const deudaB = Number(b?.deudaPendiente || 0);
+        if (deudaA !== deudaB) return deudaB - deudaA;
+      }
+
+      const rankingA = Number(a?.prioridadRanking || 0);
+      const rankingB = Number(b?.prioridadRanking || 0);
+      return rankingA - rankingB;
+    });
+  }, [gestiones]);
 
   if (!filas.length) {
     return null;
