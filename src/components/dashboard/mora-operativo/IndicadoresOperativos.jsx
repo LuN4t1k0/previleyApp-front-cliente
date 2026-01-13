@@ -93,9 +93,9 @@ const IndicadoresOperativos = ({ empresaRut, entidadId, dateRange }) => {
       description: "Saldo aún en gestión.",
     },
     {
-      label: "Recuperación",
+      label: "Regularización",
       value: `${resumen.recuperacionPorcentaje.toFixed(1)}%`,
-      description: "Porcentaje recuperado vs deuda total.",
+      description: "Porcentaje regularizado vs deuda total.",
       highlight: true,
     },
     {
