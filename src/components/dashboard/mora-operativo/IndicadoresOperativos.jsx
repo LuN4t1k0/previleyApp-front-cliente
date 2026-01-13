@@ -43,6 +43,7 @@ const IndicadoresOperativos = ({ empresaRut, entidadId, dateRange }) => {
       totalRecuperado = 0,
       totalPendiente = 0,
       totalCasos = 0,
+      estadoPrevired = null,
     } = metrics;
 
     const recuperacionPorcentaje = totalDeuda > 0 ? (totalRecuperado / totalDeuda) * 100 : 0;
@@ -54,6 +55,7 @@ const IndicadoresOperativos = ({ empresaRut, entidadId, dateRange }) => {
       totalRecuperado,
       totalPendiente,
       totalCasos,
+      estadoPrevired,
       recuperacionPorcentaje,
     };
   }, [metrics]);

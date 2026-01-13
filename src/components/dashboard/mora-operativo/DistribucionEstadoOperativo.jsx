@@ -102,21 +102,21 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
               <TableHeaderCell>Estado</TableHeaderCell>
               <TableHeaderCell className="text-right">Casos</TableHeaderCell>
               <TableHeaderCell className="text-right">Monto</TableHeaderCell>
-              <TableHeaderCell className="text-right">Participación</TableHeaderCell>
+              <TableHeaderCell className="text-right">Porcentaje</TableHeaderCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {estados.map((item) => {
               const casos = Number(item.casos || item.cantidad || 0);
               const monto = Number(item.monto || 0);
-              const participacion = totalMonto > 0 ? (monto / totalMonto) * 100 : 0;
+              const porcentaje = totalMonto > 0 ? (monto / totalMonto) * 100 : 0;
 
               return (
                 <TableRow key={item.estado}>
                   <TableCell className="font-medium">{formatEstado(item.estado)}</TableCell>
                   <TableCell className="text-right">{casos.toLocaleString("es-CL")}</TableCell>
                   <TableCell className="text-right">{formatCLP(monto)}</TableCell>
-                  <TableCell className="text-right">{participacion.toFixed(1)}%</TableCell>
+                  <TableCell className="text-right">{porcentaje.toFixed(1)}%</TableCell>
                 </TableRow>
               );
             })}

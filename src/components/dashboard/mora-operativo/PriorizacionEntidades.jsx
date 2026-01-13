@@ -61,7 +61,24 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
   }, [empresaRut, entidadId, dateRange]);
 
   const filas = useMemo(() => {
-    return [...priorizacion].sort((a, b) => (b.prioridad || 0) - (a.prioridad || 0));
+    if (!Array.isArray(priorizacion)) return [];
+    return [...priorizacion].sort((a, b) => {
+      const casosA = Number(a?.casosJudiciales || 0);
+      const casosB = Number(b?.casosJudiciales || 0);
+      const tieneJudicialA = casosA > 0 ? 1 : 0;
+      const tieneJudicialB = casosB > 0 ? 1 : 0;
+
+      if (tieneJudicialA !== tieneJudicialB) {
+        return tieneJudicialB - tieneJudicialA;
+      }
+      if (casosA !== casosB) {
+        return casosB - casosA;
+      }
+
+      const pendienteA = Number(a?.deudaPendiente || 0);
+      const pendienteB = Number(b?.deudaPendiente || 0);
+      return pendienteB - pendienteA;
+    });
   }, [priorizacion]);
 
   if (!filas.length) {
@@ -72,7 +89,7 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
     <Card>
       <Title>🎯 Priorización de entidades</Title>
       <Text className="text-sm text-gray-500 mb-4">
-        Ordena la gestión iniciando por las entidades con mayor riesgo y deuda pendiente.
+        Ordena la gestión iniciando por las entidades con casos judiciales y deuda pendiente.
       </Text>
 
       <Table className="text-sm">
@@ -83,7 +100,7 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
             <TableHeaderCell className="text-right">Pendiente</TableHeaderCell>
             <TableHeaderCell className="text-right">Regularizado</TableHeaderCell>
             <TableHeaderCell className="text-right">Riesgo</TableHeaderCell>
-            <TableHeaderCell className="text-right">Casos riesgo</TableHeaderCell>
+            <TableHeaderCell className="text-right">Casos judiciales</TableHeaderCell>
             <TableHeaderCell className="text-right">Acción</TableHeaderCell>
           </TableRow>
         </TableHead>
@@ -97,7 +114,9 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
                 <TableCell className="text-right">{formatCLP(item.deudaPendiente)}</TableCell>
                 <TableCell className="text-right">{formatCLP(item.deudaResuelta)}</TableCell>
                 <TableCell className="text-right">{riesgo.badge}</TableCell>
-                <TableCell className="text-right">{item.casosRiesgo?.toLocaleString("es-CL")}</TableCell>
+                <TableCell className="text-right">
+                  {(item.casosJudiciales || 0).toLocaleString("es-CL")}
+                </TableCell>
                 <TableCell className="text-right">
                   {typeof onSelectEntidad === "function" ? (
                     <button

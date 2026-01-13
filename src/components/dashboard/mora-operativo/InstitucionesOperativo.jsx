@@ -40,7 +40,7 @@ const InstitucionesOperativo = ({ empresaRut, entidadId, dateRange }) => {
         entidad: item.entidadNombre,
         "Deuda total": Number(item.totalDeuda || 0),
         "Pendiente": Number(item.deudaPendiente || 0),
-        "Recuperado": Number(item.deudaResuelta || 0),
+        "Regularizado": Number(item.deudaResuelta || 0),
       }))
       .sort((a, b) => b["Deuda total"] - a["Deuda total"])
       .slice(0, 15);
@@ -63,7 +63,7 @@ const InstitucionesOperativo = ({ empresaRut, entidadId, dateRange }) => {
           <BarChart
             data={dataChart}
             index="entidad"
-            categories={["Deuda total", "Pendiente", "Recuperado"]}
+            categories={["Deuda total", "Pendiente", "Regularizado"]}
             colors={["rose", "amber", "emerald"]}
             showLegend
             tickGap={0}

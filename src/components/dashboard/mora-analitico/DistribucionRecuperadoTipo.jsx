@@ -23,7 +23,7 @@ const DistribucionRecuperadoTipo = ({ empresaRut }) => {
           },
           {
             name: "Pagado",
-            value: resumen.totalPago || 0,
+            value: resumen.totalPagado ?? resumen.totalPago ?? 0,
           },
         ]);
       } catch (error) {
