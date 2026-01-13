@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, Title, Text, DonutChart } from "@tremor/react";
+import { Card, Title, Text, BarChart } from "@tremor/react";
 import apiService from "@/app/api/apiService";
 
 const DistribucionRecuperadoTipo = ({ empresaRut }) => {
@@ -16,16 +16,10 @@ const DistribucionRecuperadoTipo = ({ empresaRut }) => {
 
         const resumen = res.data.data;
 
-        setData([
-          {
-            name: "Regularizado",
-            value: resumen.totalRegularizado || 0,
-          },
-          {
-            name: "Pagado",
-            value: resumen.totalPagado ?? resumen.totalPago ?? 0,
-          },
-        ]);
+        setData({
+          Regularizado: resumen.totalRegularizado || 0,
+          Pagado: resumen.totalPagado ?? resumen.totalPago ?? 0,
+        });
       } catch (error) {
         console.error("❌ Error cargando distribución tipo recuperación:", error);
       }
@@ -34,9 +28,16 @@ const DistribucionRecuperadoTipo = ({ empresaRut }) => {
     if (empresaRut) fetchResumen();
   }, [empresaRut]);
 
-  if (!data || !data.length) return null;
+  if (!data) return null;
 
-  const total = data.reduce((acc, curr) => acc + curr.value, 0);
+  const chartData = [
+    {
+      tipo: "Regularizado vs Pagado",
+      Regularizado: data.Regularizado,
+      Pagado: data.Pagado,
+    },
+  ];
+  const total = data.Regularizado + data.Pagado;
 
   const formatter = (value) =>
     new Intl.NumberFormat("es-CL", {
@@ -47,21 +48,21 @@ const DistribucionRecuperadoTipo = ({ empresaRut }) => {
 
   return (
     <Card>
-      <Title>🏷️ Distribución del Recuperado por Tipo</Title>
+      <Title>🏷️ Distribución del Regularizado por Tipo</Title>
       <Text className="text-sm text-gray-500 mb-4">
-        Visualiza si la recuperación proviene de regularizaciones o pagos.
+        Visualiza si la regularización proviene de regularizaciones o pagos.
       </Text>
-      <DonutChart
-        data={data}
-        category="value"
-        index="name"
+      <BarChart
+        data={chartData}
+        index="tipo"
+        categories={["Regularizado", "Pagado"]}
         colors={["indigo", "emerald"]}
         valueFormatter={formatter}
-        showLabel
         showLegend
+        className="mt-6"
       />
       <Text className="mt-2 text-xs text-gray-500">
-        Total recuperado: {formatter(total)}
+        Total regularizado: {formatter(total)}
       </Text>
     </Card>
   );
