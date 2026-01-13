@@ -41,33 +41,7 @@ export default function AppFooter({ theme = "dashboard" }) {
           ))}
         </div>
 
-        <div className="grid gap-4 rounded-3xl border border-white/50 bg-white/70 p-6 text-xs text-[color:var(--text-secondary)] shadow-sm backdrop-blur sm:grid-cols-3">
-          {footerContact.map((item) => (
-            <div key={item.label} className="flex flex-col gap-1">
-              <span className="font-semibold text-[color:var(--text-primary)]">
-                {item.label}
-              </span>
-              {item.href ? (
-                <Link
-                  href={item.href}
-                  className="inline-flex items-center gap-2 text-[color:var(--theme-primary)]"
-                >
-                  {item.icon ? (
-                    <item.icon className="h-3.5 w-3.5" aria-hidden="true" />
-                  ) : null}
-                  {item.value}
-                </Link>
-              ) : (
-                <span className="inline-flex items-center gap-2">
-                  {item.icon ? (
-                    <item.icon className="h-3.5 w-3.5" aria-hidden="true" />
-                  ) : null}
-                  {item.value}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+
 
         <div className="flex flex-col gap-2 border-t border-white/50 pt-4 text-center text-xs text-[color:var(--text-secondary)] sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <span>
