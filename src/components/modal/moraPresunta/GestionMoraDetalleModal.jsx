@@ -15,6 +15,83 @@ import useInfiniteScroll from "@/hooks/useInfiniteScroll";
 import { useRole } from "@/context/RoleContext";
 
 const tiposSecuencia = ["analisis", "pago requerido", "pagado", "regularizado"];
+const MOTIVO_OPTIONS = [
+  { value: "Trabajador Finiquitado", label: "Trabajador Finiquitado" },
+  {
+    value: "Trabajador Contratado posterior al periodo adeudado",
+    label: "Trabajador Contratado posterior al periodo adeudado",
+  },
+  {
+    value: "Sin pago de cotizaciones obligatoria",
+    label: "Sin pago de cotizaciones obligatoria",
+  },
+  { value: "Sin pago SIS", label: "Sin pago SIS" },
+  {
+    value: "Error de cálculo en SIS y cotizaciones obligatoria",
+    label: "Error de cálculo en SIS y cotizaciones obligatoria",
+  },
+  {
+    value: "Productos voluntarios sin notificación (AFP)",
+    label: "Productos voluntarios sin notificación (AFP)",
+  },
+  { value: "Trabajador exento de cotizar", label: "Trabajador exento de cotizar" },
+  { value: "Menor pago al plan de salud", label: "Menor pago al plan de salud" },
+  {
+    value: "Pago correcto en planilla de Previred",
+    label: "Pago correcto en planilla de Previred",
+  },
+  {
+    value: "Pago de cotizaciones realizadas en otra Isapre",
+    label: "Pago de cotizaciones realizadas en otra Isapre",
+  },
+  {
+    value: "Pago de cotizaciones realizadas en otra AFP",
+    label: "Pago de cotizaciones realizadas en otra AFP",
+  },
+  {
+    value: "Error de cálculo en plan de salud en periodo con licencia médica",
+    label: "Error de cálculo en plan de salud en periodo con licencia médica",
+  },
+  {
+    value: "Descuento de licencia médica en el mes posterior al periodo correcto",
+    label: "Descuento de licencia médica en el mes posterior al periodo correcto",
+  },
+  {
+    value: "licencia rechazada, cargo del trabajado",
+    label: "licencia rechazada, cargo del trabajado",
+  },
+  {
+    value: "Pago de cotizaciones correcto, trabajador con licencia médica en este periodo .",
+    label: "Pago de cotizaciones correcto, trabajador con licencia médica en este periodo .",
+  },
+  {
+    value: "Trabajador pensionados (mayor a 65 años, Capredena, Dipreca)",
+    label: "Trabajador pensionados (mayor a 65 años, Capredena, Dipreca)",
+  },
+  {
+    value: "Error de pago de cotización trabajo pesado",
+    label: "Error de pago de cotización trabajo pesado",
+  },
+  {
+    value: "Pago correcto Fondo Solidario por AFC, trabajador con 11 años en la empresa.",
+    label: "Pago correcto Fondo Solidario por AFC, trabajador con 11 años en la empresa.",
+  },
+  {
+    value: "Trabajador sin afiliación en AFC",
+    label: "Trabajador sin afiliación en AFC",
+  },
+  {
+    value: "Deuda por TAF ( pago realizado en AFP)",
+    label: "Deuda por TAF ( pago realizado en AFP)",
+  },
+  {
+    value:
+      "No se realizó la actualización de datos de empleador ( Notificación informado en otra empresa)",
+    label:
+      "No se realizó la actualización de datos de empleador ( Notificación informado en otra empresa)",
+  },
+];
+const BULK_MOTIVO_UNSET = "__unset__";
 
 const siguienteTipoGestion = (actual) => {
   const idx = tiposSecuencia.indexOf(actual);
@@ -34,7 +111,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   const isLocked = estadoGestion === "cerrada";
   const canEdit = ["admin", "supervisor", "editor", "trabajador"].includes(role);
   const canManage = canEdit && !isLocked;
-  const totalColumns = canManage ? 10 : 8;
+  const totalColumns = canManage ? 11 : 9;
   const [localChanges, setLocalChanges] = useState({});
   const [saving, setSaving] = useState(false);
   const { runWithFeedback } = useActionFeedback();
@@ -59,6 +136,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   // Selección masiva y filtros locales
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkTipo, setBulkTipo] = useState("");
+  const [bulkMotivo, setBulkMotivo] = useState(BULK_MOTIVO_UNSET);
 
   const [filters, setFilters] = useState(initialFilters);
   const [draftFilters, setDraftFilters] = useState(initialFilters);
@@ -115,13 +193,24 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
 
   const handleTipoGestionClick = (item) => {
     if (!canManage) return;
-    const nuevoTipo = siguienteTipoGestion(
-      localChanges[item.id] || item.tipoGestion
-    );
-    setLocalChanges((prev) => ({
-      ...prev,
-      [item.id]: nuevoTipo,
-    }));
+    const currentTipo =
+      localChanges[item.id]?.tipoGestion ?? item.tipoGestion;
+    const nuevoTipo = siguienteTipoGestion(currentTipo);
+    setLocalChanges((prev) => {
+      const prevEntry = prev[item.id] || {};
+      const nextEntry = { ...prevEntry };
+      if (nuevoTipo === item.tipoGestion) {
+        delete nextEntry.tipoGestion;
+      } else {
+        nextEntry.tipoGestion = nuevoTipo;
+      }
+      if (!Object.keys(nextEntry).length) {
+        if (!prev[item.id]) return prev;
+        const { [item.id]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [item.id]: nextEntry };
+    });
   };
 
   const toggleSelect = (id) => {
@@ -224,9 +313,49 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
     setLocalChanges((prev) => {
       const next = { ...prev };
       selectedIds.forEach((id) => {
-        next[id] = bulkTipo;
+        const prevEntry = next[id] || {};
+        next[id] = {
+          ...prevEntry,
+          tipoGestion: bulkTipo,
+        };
       });
       return next;
+    });
+  };
+
+  const applyBulkMotivo = () => {
+    if (bulkMotivo === BULK_MOTIVO_UNSET || selectedIds.size === 0 || !canManage) return;
+    setLocalChanges((prev) => {
+      const next = { ...prev };
+      selectedIds.forEach((id) => {
+        const prevEntry = next[id] || {};
+        next[id] = {
+          ...prevEntry,
+          motivo: bulkMotivo,
+        };
+      });
+      return next;
+    });
+  };
+
+  const handleMotivoChange = (item, value) => {
+    if (!canManage) return;
+    setLocalChanges((prev) => {
+      const prevEntry = prev[item.id] || {};
+      const nextEntry = { ...prevEntry };
+      const baseValue = item.motivo ?? "";
+      const normalizedValue = value ?? "";
+      if (normalizedValue === baseValue) {
+        delete nextEntry.motivo;
+      } else {
+        nextEntry.motivo = normalizedValue;
+      }
+      if (!Object.keys(nextEntry).length) {
+        if (!prev[item.id]) return prev;
+        const { [item.id]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [item.id]: nextEntry };
     });
   };
 
@@ -568,10 +697,16 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
       onClose();
       return;
     }
-    const cambios = Object.entries(localChanges).map(([id, tipoGestion]) => ({
-      id: parseInt(id, 10),
-      tipoGestion,
-    }));
+    const cambios = Object.entries(localChanges)
+      .map(([id, changes]) => ({
+        id: parseInt(id, 10),
+        ...changes,
+      }))
+      .filter(
+        (change) =>
+          typeof change.tipoGestion !== "undefined" ||
+          typeof change.motivo !== "undefined"
+      );
     if (cambios.length === 0) return onClose();
 
     try {
@@ -770,6 +905,27 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
             >
               Aplicar ({selectedIds.size})
             </button>
+            <select
+              value={bulkMotivo}
+              onChange={(e) => setBulkMotivo(e.target.value)}
+              className="min-w-[240px] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            >
+              <option value={BULK_MOTIVO_UNSET}>Asignar motivo...</option>
+              <option value="">Sin motivo</option>
+              {MOTIVO_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={applyBulkMotivo}
+              disabled={bulkMotivo === BULK_MOTIVO_UNSET || selectedIds.size === 0}
+              className="whitespace-nowrap rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              title="Aplicar motivo a seleccionados"
+            >
+              Aplicar motivo ({selectedIds.size})
+            </button>
             {selectedIds.size > 0 && (
               <span className="text-xs text-gray-500 dark:text-gray-300">
                 {selectedIds.size} seleccionado{selectedIds.size === 1 ? "" : "s"}
@@ -925,6 +1081,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
               <TableHeaderCell className="px-3 py-3">Estado</TableHeaderCell>
               <TableHeaderCell className="px-3 py-3">Monto</TableHeaderCell>
               <TableHeaderCell className="px-3 py-3">Incluido</TableHeaderCell>
+              <TableHeaderCell className="px-3 py-3">Motivo</TableHeaderCell>
               {canManage && (
                 <TableHeaderCell className="px-3 py-3">Acciones</TableHeaderCell>
               )}
@@ -932,11 +1089,13 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
           </TableHead>
           <TableBody>
             {data.map((item, index) => {
-              const tipo = localChanges[item.id] || item.tipoGestion;
+              const rowChanges = localChanges[item.id] || {};
+              const tipo = rowChanges.tipoGestion ?? item.tipoGestion;
               const estado =
                 tipo === "pagado" || tipo === "regularizado"
                   ? "completado"
                   : "pendiente";
+              const currentMotivo = rowChanges.motivo ?? item.motivo ?? "";
 
               const baseRowClass =
                 "border-b border-slate-100 bg-white transition-colors hover:bg-indigo-50/60 dark:border-slate-700 dark:bg-slate-900/60 dark:hover:bg-slate-800";
@@ -1015,6 +1174,26 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                   </TableCell>
                   <TableCell className="px-3 py-3 text-sm text-slate-600 dark:text-slate-200">
                     {item.incluidoEnProduccion ? "Sí" : "No"}
+                  </TableCell>
+                  <TableCell className="px-3 py-3">
+                    {canManage ? (
+                      <select
+                        className="w-full rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                        value={currentMotivo}
+                        onChange={(e) => handleMotivoChange(item, e.target.value)}
+                      >
+                        <option value="">Sin motivo</option>
+                        {MOTIVO_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-sm text-slate-700 dark:text-slate-100">
+                        {currentMotivo || "—"}
+                      </span>
+                    )}
                   </TableCell>
                   {canManage && (
                     <TableCell className="px-3 py-3">
