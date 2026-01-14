@@ -15,82 +15,19 @@ import useInfiniteScroll from "@/hooks/useInfiniteScroll";
 import { useRole } from "@/context/RoleContext";
 
 const tiposSecuencia = ["analisis", "pago requerido", "pagado", "regularizado"];
-const MOTIVO_OPTIONS = [
-  { value: "Trabajador Finiquitado", label: "Trabajador Finiquitado" },
-  {
-    value: "Trabajador Contratado posterior al periodo adeudado",
-    label: "Trabajador Contratado posterior al periodo adeudado",
-  },
-  {
-    value: "Sin pago de cotizaciones obligatoria",
-    label: "Sin pago de cotizaciones obligatoria",
-  },
-  { value: "Sin pago SIS", label: "Sin pago SIS" },
-  {
-    value: "Error de cálculo en SIS y cotizaciones obligatoria",
-    label: "Error de cálculo en SIS y cotizaciones obligatoria",
-  },
-  {
-    value: "Productos voluntarios sin notificación (AFP)",
-    label: "Productos voluntarios sin notificación (AFP)",
-  },
-  { value: "Trabajador exento de cotizar", label: "Trabajador exento de cotizar" },
-  { value: "Menor pago al plan de salud", label: "Menor pago al plan de salud" },
-  {
-    value: "Pago correcto en planilla de Previred",
-    label: "Pago correcto en planilla de Previred",
-  },
-  {
-    value: "Pago de cotizaciones realizadas en otra Isapre",
-    label: "Pago de cotizaciones realizadas en otra Isapre",
-  },
-  {
-    value: "Pago de cotizaciones realizadas en otra AFP",
-    label: "Pago de cotizaciones realizadas en otra AFP",
-  },
-  {
-    value: "Error de cálculo en plan de salud en periodo con licencia médica",
-    label: "Error de cálculo en plan de salud en periodo con licencia médica",
-  },
-  {
-    value: "Descuento de licencia médica en el mes posterior al periodo correcto",
-    label: "Descuento de licencia médica en el mes posterior al periodo correcto",
-  },
-  {
-    value: "licencia rechazada, cargo del trabajado",
-    label: "licencia rechazada, cargo del trabajado",
-  },
-  {
-    value: "Pago de cotizaciones correcto, trabajador con licencia médica en este periodo .",
-    label: "Pago de cotizaciones correcto, trabajador con licencia médica en este periodo .",
-  },
-  {
-    value: "Trabajador pensionados (mayor a 65 años, Capredena, Dipreca)",
-    label: "Trabajador pensionados (mayor a 65 años, Capredena, Dipreca)",
-  },
-  {
-    value: "Error de pago de cotización trabajo pesado",
-    label: "Error de pago de cotización trabajo pesado",
-  },
-  {
-    value: "Pago correcto Fondo Solidario por AFC, trabajador con 11 años en la empresa.",
-    label: "Pago correcto Fondo Solidario por AFC, trabajador con 11 años en la empresa.",
-  },
-  {
-    value: "Trabajador sin afiliación en AFC",
-    label: "Trabajador sin afiliación en AFC",
-  },
-  {
-    value: "Deuda por TAF ( pago realizado en AFP)",
-    label: "Deuda por TAF ( pago realizado en AFP)",
-  },
-  {
-    value:
-      "No se realizó la actualización de datos de empleador ( Notificación informado en otra empresa)",
-    label:
-      "No se realizó la actualización de datos de empleador ( Notificación informado en otra empresa)",
-  },
-];
+const buildMotivoOptions = (payload) => {
+  if (Array.isArray(payload)) {
+    return payload
+      .map((value) => ({ value, label: value }))
+      .filter((opt) => opt.value);
+  }
+  if (payload && typeof payload === "object") {
+    return Object.values(payload)
+      .map((value) => ({ value, label: value }))
+      .filter((opt) => opt.value);
+  }
+  return [];
+};
 const BULK_MOTIVO_UNSET = "__unset__";
 
 const siguienteTipoGestion = (actual) => {
@@ -113,6 +50,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   const canManage = canEdit && !isLocked;
   const totalColumns = canManage ? 11 : 9;
   const [localChanges, setLocalChanges] = useState({});
+  const [motivoOptions, setMotivoOptions] = useState([]);
   const [saving, setSaving] = useState(false);
   const { runWithFeedback } = useActionFeedback();
   const [gestionInfo, setGestionInfo] = useState(null);
@@ -188,6 +126,28 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   useEffect(() => {
     setDraftFilters(filters);
   }, [filters]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchMotivos = async () => {
+      try {
+        const res = await apiService.get("/enum/motivo-mora");
+        const options = buildMotivoOptions(res?.data);
+        if (isMounted) {
+          setMotivoOptions(options);
+        }
+      } catch (error) {
+        console.error("Error cargando motivos de mora:", error);
+        if (isMounted) {
+          setMotivoOptions([]);
+        }
+      }
+    };
+    fetchMotivos();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const selectedCount = selectedIds.size;
 
@@ -912,7 +872,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
             >
               <option value={BULK_MOTIVO_UNSET}>Asignar motivo...</option>
               <option value="">Sin motivo</option>
-              {MOTIVO_OPTIONS.map((option) => (
+              {motivoOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -1183,7 +1143,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
                         onChange={(e) => handleMotivoChange(item, e.target.value)}
                       >
                         <option value="">Sin motivo</option>
-                        {MOTIVO_OPTIONS.map((option) => (
+                        {motivoOptions.map((option) => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
