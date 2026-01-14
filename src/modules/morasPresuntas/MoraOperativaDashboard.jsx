@@ -6,6 +6,7 @@ import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import apiService from "@/app/api/apiService";
 import IndicadoresOperativos from "@/components/dashboard/mora-operativo/IndicadoresOperativos";
 import DistribucionEstadoOperativo from "@/components/dashboard/mora-operativo/DistribucionEstadoOperativo";
+import DistribucionMotivoOperativo from "@/components/dashboard/mora-operativo/DistribucionMotivoOperativo";
 import DistribucionEntidadOperativo from "@/components/dashboard/mora-operativo/DistribucionEntidadOperativo";
 import PriorizacionEntidades from "@/components/dashboard/mora-operativo/PriorizacionEntidades";
 import PriorizacionGestiones from "@/components/dashboard/mora-operativo/PriorizacionGestiones";
@@ -298,6 +299,14 @@ const MoraOperativaDashboard = () => {
 
               <section className={surface}>
                 <DistribucionEstadoOperativo
+                  empresaRut={empresaSeleccionada}
+                  entidadId={entidadSeleccionada || undefined}
+                  dateRange={dateRange}
+                />
+              </section>
+
+              <section className={surface}>
+                <DistribucionMotivoOperativo
                   empresaRut={empresaSeleccionada}
                   entidadId={entidadSeleccionada || undefined}
                   dateRange={dateRange}

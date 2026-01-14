@@ -31,8 +31,8 @@ const heroMessages = [
 const LoginV2 = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState([]);
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const router = useRouter();
 
   const [currentIndex, setCurrentIndex] = useState(0);
