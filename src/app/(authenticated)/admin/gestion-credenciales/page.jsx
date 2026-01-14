@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useContext, useCallback } from "react";
@@ -19,6 +20,7 @@ import useRealtimeEntity from "@/hooks/useRealtimeEntity";
 import { useSession } from "next-auth/react";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 import RealtimeNotices from "@/components/notifications/RealtimeNotices";
+import Restricted from "@/components/restricted/Restricted";
 // import Credenciales from "@/config/module/Credenciales.config";
 
 import Credenciales from "@/config/module/empresasCredenciales.config";
@@ -163,16 +165,7 @@ const CreencialesContent = () => {
   });
 
   if (!canView) {
-    return (
-      <div className="text-center mt-10">
-        <h2 className="text-xl font-bold text-gray-700">
-          No tienes permiso para ver esta página.
-        </h2>
-        <p className="text-gray-500 mt-2">
-          Contacta al administrador si crees que esto es un error.
-        </p>
-      </div>
-    );
+    return <Restricted />;
   }
 
   return (

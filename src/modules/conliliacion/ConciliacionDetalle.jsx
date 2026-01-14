@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useContext, useCallback } from "react";
@@ -17,6 +18,7 @@ import Titulo from "@/components/title/Title";
 import useInfiniteScroll from "@/hooks/useInfiniteScroll";
 
 import ConciliacionConfig from "@/config/module/conciliacion/conciliacion.config";
+import Restricted from "@/components/restricted/Restricted";
 
 const ConciliacionPageContent = () => {
   const { openModal } = useModal();
@@ -259,16 +261,7 @@ const {
   ]);
 
   if (!canView) {
-    return (
-      <div className="text-center mt-10">
-        <h2 className="text-xl font-bold text-gray-700">
-          No tienes permiso para ver esta página.
-        </h2>
-        <p className="text-gray-500 mt-2">
-          Contacta al administrador si crees que esto es un error.
-        </p>
-      </div>
-    );
+    return <Restricted />;
   }
 
   return (

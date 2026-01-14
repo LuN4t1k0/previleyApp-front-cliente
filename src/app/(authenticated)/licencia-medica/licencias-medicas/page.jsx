@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useContext, useCallback } from "react";
@@ -24,6 +25,7 @@ import useActionFeedback from "@/hooks/useActionFeedback";
 import { useSession } from "next-auth/react";
 import { useRouter } from 'next/navigation';
 import { showConfirmationAlert, showSuccessAlert, showErrorAlert } from "@/utils/alerts"; // Asegúrate de importar las alertas
+import Restricted from "@/components/restricted/Restricted";
 
 const LicenciasContent = () => {
   const { openModal } = useModal();
@@ -236,18 +238,7 @@ const LicenciasContent = () => {
   // ]);
 
  if (!canView) {
-    return (
-      <div className="text-center mt-10">
-        <h2 className="text-xl font-bold text-gray-700">No tienes permiso para ver esta página.</h2>
-        <p className="text-gray-500 mt-2">Contacta al administrador si crees que esto es un error.</p>
-        <button
-          className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={() => router.push('/dashboard')}
-        >
-          Volver al inicio
-        </button>
-      </div>
-    );
+    return <Restricted />;
   }
 
   return (

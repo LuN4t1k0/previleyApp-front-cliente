@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useContext, useCallback } from "react";
@@ -14,6 +15,7 @@ import { useCrud } from "@/hooks/useCrud";
 
 import { convertFiltersToQueryParams } from "@/utils/filters";
 import Titulo from "@/components/title/Title";
+import Restricted from "@/components/restricted/Restricted";
 
 
 // import Prefactura from "@/config/module/Prefactura.config";
@@ -385,16 +387,7 @@ const handleRevertPrefactura = useCallback((rowData) => {
   ]);
 
   if (!canView) {
-    return (
-      <div className="text-center mt-10">
-        <h2 className="text-xl font-bold text-gray-700">
-          No tienes permiso para ver esta página.
-        </h2>
-        <p className="text-gray-500 mt-2">
-          Contacta al administrador si crees que esto es un error.
-        </p>
-      </div>
-    );
+    return <Restricted />;
   }
 
   return (

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -19,6 +20,7 @@ import { showConfirmationAlert, showErrorAlert, showSuccessAlert } from "@/utils
 import useSocket from "@/hooks/useSocket";
 import useRealtimeEntity from "@/hooks/useRealtimeEntity";
 import apiService from "@/app/api/apiService";
+import Restricted from "@/components/restricted/Restricted";
 
 const GestionVisitasContent = () => {
   const router = useRouter();
@@ -229,16 +231,7 @@ const GestionVisitasContent = () => {
   };
 
   if (!canView) {
-    return (
-      <div className="text-center mt-10">
-        <h2 className="text-xl font-bold text-gray-700">
-          No tienes permiso para ver esta página.
-        </h2>
-        <p className="text-gray-500 mt-2">
-          Contacta al administrador si crees que esto es un error.
-        </p>
-      </div>
-    );
+    return <Restricted />;
   }
 
   return (

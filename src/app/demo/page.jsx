@@ -1,5 +1,7 @@
 "use client";
+
 import React, {
+import Restricted from "@/components/restricted/Restricted";
   useState,
   useEffect,
   useContext,
@@ -291,7 +293,7 @@ const handleBulkUploadModal = useCallback(() => {
   }, [limit, pageIndex, finalFilters, fetchData, convertFiltersToQueryParams]);
 
   if (!canView) {
-    return <div>No tienes permiso para ver esta página.</div>;
+    return <Restricted />;
   }
 
   if (loadingFilters) {

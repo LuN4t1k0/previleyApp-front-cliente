@@ -381,6 +381,7 @@
 
 
 // NUEVO:
+
 "use client";
 
 import React, { useState, useEffect, useContext, useCallback } from "react";
@@ -400,6 +401,7 @@ import { showConfirmationAlert, showSuccessAlert, showErrorAlert } from "@/utils
 
 import { convertFiltersToQueryParams } from "@/utils/filters";
 import Titulo from "@/components/title/Title";
+import Restricted from "@/components/restricted/Restricted";
 // import UsuariosConfig from "@/config/module/empresasUsuariosConfig.config";
 import UsuariosConfig from "@/config/module/usuarios.config";
 import useSocket from "@/hooks/useSocket";
@@ -624,16 +626,7 @@ const actionHandlers = {
   ]);
 
   if (!canView) {
-    return (
-      <div className="text-center mt-10">
-        <h2 className="text-xl font-bold text-gray-700">
-          No tienes permiso para ver esta página.
-        </h2>
-        <p className="text-gray-500 mt-2">
-          Contacta al administrador si crees que esto es un error.
-        </p>
-      </div>
-    );
+    return <Restricted />;
   }
 
   return (
