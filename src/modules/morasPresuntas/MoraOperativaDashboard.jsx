@@ -363,6 +363,7 @@ const MoraOperativaDashboard = () => {
                 empresaRut={empresaSeleccionada}
                 serviceKey="mora"
                 dateRange={dateRange}
+                entidadId={entidadSeleccionada || undefined}
               />
 
               <section className={surface}>

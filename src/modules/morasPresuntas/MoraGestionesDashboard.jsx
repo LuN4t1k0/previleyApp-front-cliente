@@ -5,7 +5,8 @@ import { DateRangePicker } from "@tremor/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import ServiceTimeline from "@/components/servicios/ServiceTimeline";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
-import { RiBuildingLine, RiCalendarLine } from "@remixicon/react";
+import apiService from "@/app/api/apiService";
+import { RiBankLine, RiBuildingLine, RiCalendarLine } from "@remixicon/react";
 
 const MoraGestionesDashboard = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
@@ -13,6 +14,9 @@ const MoraGestionesDashboard = () => {
   const [empresaInput, setEmpresaInput] = useState("");
   const lastEmpresaLabel = useRef("");
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
+  const [entidadesDisponibles, setEntidadesDisponibles] = useState([]);
+  const [entidadSeleccionada, setEntidadSeleccionada] = useState("");
+  const [cargandoEntidades, setCargandoEntidades] = useState(false);
 
   const empresaOptions = useMemo(
     () =>
@@ -39,6 +43,66 @@ const MoraGestionesDashboard = () => {
     setEmpresaInput(label);
     lastEmpresaLabel.current = label;
   }, [empresaOptions, empresaSeleccionada]);
+
+  useEffect(() => {
+    const fetchEntidades = async () => {
+      if (!empresaSeleccionada) {
+        setEntidadesDisponibles([]);
+        setEntidadSeleccionada("");
+        return;
+      }
+
+      try {
+        setCargandoEntidades(true);
+        const res = await apiService.get(
+          "/mora-dashboard/operativo/distribucion-estado-por-entidad",
+          { params: { empresaRut: empresaSeleccionada } }
+        );
+        const data = res.data.data || [];
+        const vistos = new Set();
+        const opciones = [];
+
+        data.forEach((item) => {
+          if (!item.entidadId || vistos.has(item.entidadId)) return;
+          vistos.add(item.entidadId);
+          opciones.push({
+            value: String(item.entidadId),
+            label: item.entidadNombre || item.entidad || "Entidad sin nombre",
+          });
+        });
+
+        const ordenadas = opciones.sort((a, b) => a.label.localeCompare(b.label, "es"));
+        setEntidadesDisponibles(ordenadas);
+        if (!ordenadas.find((op) => op.value === entidadSeleccionada)) {
+          setEntidadSeleccionada("");
+        }
+      } catch (error) {
+        console.error("Error cargando entidades disponibles", error);
+        setEntidadesDisponibles([]);
+        setEntidadSeleccionada("");
+      } finally {
+        setCargandoEntidades(false);
+      }
+    };
+
+    fetchEntidades();
+  }, [empresaSeleccionada]);
+
+  const handleEntitiesResolved = useCallback((entities) => {
+    if (!Array.isArray(entities) || entities.length === 0) return;
+    setEntidadesDisponibles((prev) => {
+      const byValue = new Map(
+        (Array.isArray(prev) ? prev : []).map((item) => [item.value, item])
+      );
+      entities.forEach((entity) => {
+        if (!entity?.value) return;
+        byValue.set(entity.value, entity);
+      });
+      return Array.from(byValue.values()).sort((a, b) =>
+        a.label.localeCompare(b.label, "es")
+      );
+    });
+  }, []);
 
   const handleEmpresaInputChange = useCallback(
     (value) => {
@@ -134,6 +198,25 @@ const MoraGestionesDashboard = () => {
                   </datalist>
                 </div>
 
+                <div className="flex min-w-[220px] items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
+                  <RiBankLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
+                  <select
+                    className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none"
+                    value={entidadSeleccionada}
+                    onChange={(event) => setEntidadSeleccionada(event.target.value)}
+                    disabled={cargandoEntidades || entidadesDisponibles.length === 0}
+                  >
+                    <option value="">
+                      {cargandoEntidades ? "Cargando entidades..." : "Todas las entidades"}
+                    </option>
+                    {entidadesDisponibles.map((entidad) => (
+                      <option key={entidad.value} value={entidad.value}>
+                        {entidad.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
                   <RiCalendarLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
                   <DateRangePicker
@@ -152,6 +235,8 @@ const MoraGestionesDashboard = () => {
               empresaRut={empresaSeleccionada}
               serviceKey="mora"
               dateRange={dateRange}
+              entidadId={entidadSeleccionada || undefined}
+              onEntitiesResolved={handleEntitiesResolved}
             />
           ) : (
             <section className="rounded-3xl border border-white/70 bg-white/80 p-6 text-center shadow-sm backdrop-blur">

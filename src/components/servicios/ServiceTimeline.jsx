@@ -455,6 +455,8 @@ const ServiceTimeline = ({
   dateRange,
   year,
   limit = 12,
+  entidadId,
+  onEntitiesResolved,
 }) => {
   const [serviceId, setServiceId] = useState(null);
   const [loadingService, setLoadingService] = useState(false);
@@ -511,10 +513,26 @@ const ServiceTimeline = ({
           servicioId: serviceId,
           limit,
           ...buildDateParams(dateRange, year),
+          ...(entidadId ? { entidadId } : {}),
         };
         const response = await apiService.get("/produccion", { params });
         const list = response?.data?.data || [];
-        if (isActive) setItems(Array.isArray(list) ? list : []);
+        if (isActive) {
+          const safeList = Array.isArray(list) ? list : [];
+          setItems(safeList);
+          if (typeof onEntitiesResolved === "function") {
+            const byId = new Map();
+            safeList.forEach((item) => {
+              const value = item?.entidadId != null ? String(item.entidadId) : "";
+              if (!value || byId.has(value)) return;
+              byId.set(value, {
+                value,
+                label: item?.entidad || item?.entidadNombre || "Entidad sin nombre",
+              });
+            });
+            onEntitiesResolved(Array.from(byId.values()));
+          }
+        }
       } catch (err) {
         if (isActive) {
           setItems([]);
@@ -526,7 +544,7 @@ const ServiceTimeline = ({
     };
     fetchTimeline();
     return () => { isActive = false; };
-  }, [empresaRut, serviceId, dateRange, year, limit]);
+  }, [empresaRut, serviceId, dateRange, year, limit, entidadId]);
 
   const loading = loadingService || loadingTimeline;
 
