@@ -4,13 +4,8 @@
 
 "use client";
 
-import React, {
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import Restricted from "@/components/restricted/Restricted";
-  useState,
-  useEffect,
-  useContext,
-  useCallback,
-} from "react";
 import { useRole } from "@/context/RoleContext";
 import { useFilters } from "@/hooks/useFilters";
 import { FilterContext, FilterProvider } from "@/context/FilterContext";

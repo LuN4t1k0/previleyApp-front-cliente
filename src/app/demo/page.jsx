@@ -1,13 +1,13 @@
 "use client";
 
 import React, {
-import Restricted from "@/components/restricted/Restricted";
   useState,
   useEffect,
   useContext,
   useCallback,
   useMemo,
 } from "react";
+import Restricted from "@/components/restricted/Restricted";
 import { useRole } from "@/context/RoleContext";
 import { useSession } from "next-auth/react";
 import { useFilters } from "@/hooks/useFilters";
