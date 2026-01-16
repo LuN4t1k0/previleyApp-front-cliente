@@ -166,12 +166,15 @@ const ChangePassword = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState("");
+  const [isActivation, setIsActivation] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const tokenFromUrl = url.searchParams.get("token");
     setToken(tokenFromUrl || "");
+    const payload = decodeJwtPayload(tokenFromUrl || "");
+    setIsActivation(payload?.pr === "activate");
   }, []);
 
   const validatePassword = (password) => {
@@ -205,9 +208,15 @@ const ChangePassword = () => {
     }
 
     try {
-      const { data } = await api.post("/auth/change-password", { token, newPassword });
-      setMessage(data?.message || "Contraseña actualizada correctamente. Redirigiendo...");
-      setTimeout(() => router.push("/"), 2000);
+      const endpoint = isActivation ? "/auth/activate" : "/auth/change-password";
+      const { data } = await api.post(endpoint, { token, newPassword });
+      setMessage(
+        data?.message ||
+          (isActivation
+            ? "Cuenta activada correctamente. Redirigiendo..."
+            : "Contraseña actualizada correctamente. Redirigiendo...")
+      );
+      setTimeout(() => router.push("/signin"), 2000);
     } catch (err) {
       setError(err?.response?.data?.message || "Error al actualizar la contraseña.");
     } finally {
@@ -316,6 +325,23 @@ const ChangePassword = () => {
       </div>
     </div>
   );
+};
+
+const decodeJwtPayload = (token) => {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => `%${("00" + c.charCodeAt(0).toString(16)).slice(-2)}`)
+        .join("")
+    );
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
 };
 
 // Componente auxiliar para las validaciones
