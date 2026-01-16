@@ -64,7 +64,15 @@ const LoginV2 = () => {
       });
 
       if (responseNextAuth?.error) {
-        setErrors(["Acceso denegado. Verifique sus credenciales corporativas."]);
+        if (responseNextAuth.error === "MUST_CHANGE_PASSWORD") {
+          router.push("/activate");
+          return;
+        }
+        if (responseNextAuth.error === "ACCOUNT_SUSPENDED") {
+          setErrors(["Tu cuenta está suspendida. Contacta al administrador."]);
+        } else {
+          setErrors(["Acceso denegado. Verifique sus credenciales corporativas."]);
+        }
         setLoading(false);
         return;
       }

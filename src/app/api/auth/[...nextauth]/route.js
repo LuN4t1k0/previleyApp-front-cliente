@@ -47,42 +47,34 @@ const authOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: credentials?.email,
-              password: credentials?.password,
-            }),
-          });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: credentials?.email,
+            password: credentials?.password,
+          }),
+        });
 
-          const data = await res.json();
+        const data = await res.json();
 
-          if (!res.ok) {
-            throw new Error(data.message || 'Error al iniciar sesión.');
-          }
-
-          // Decodificar el token para obtener el tiempo de expiración
-          const decodedToken = jwt.decode(data.accessToken);
-          const accessTokenExpires = decodedToken.exp * 1000; // Convertir a milisegundos
-
-          // Retornar el usuario con las propiedades necesarias
-          return {
-            accessToken: data.accessToken,
-            refreshToken: data.refreshToken,
-            accessTokenExpires,
-            id: data.id,
-            email: data.email,
-            nombre: data.nombre,
-            apellido: data.apellido,
-            rol: data.rol,
-          };
-        } catch (error) {
-          console.error('Authorize error:', error);
-          // Retorna null para indicar que la autorización falló
-          return null;
+        if (!res.ok) {
+          throw new Error(data.message || 'Error al iniciar sesión.');
         }
+
+        const decodedToken = jwt.decode(data.accessToken);
+        const accessTokenExpires = decodedToken.exp * 1000;
+
+        return {
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          accessTokenExpires,
+          id: data.id,
+          email: data.email,
+          nombre: data.nombre,
+          apellido: data.apellido,
+          rol: data.rol,
+        };
       },
     }),
   ],
@@ -142,6 +134,7 @@ const authOptions = {
       };
       session.accessToken = token.accessToken;
       session.accessTokenExpires = token.accessTokenExpires;
+      session.refreshToken = token.refreshToken;
       session.error = token.error;
 
       return session;
