@@ -30,7 +30,9 @@ const heroMessages = [
 
 const LoginV2 = () => {
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState([]);
+  const [authError, setAuthError] = useState(null);
+  const [lockoutUntil, setLockoutUntil] = useState(null);
+  const [, setLockoutTick] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
@@ -51,9 +53,111 @@ const LoginV2 = () => {
 
   const currentMessage = heroMessages[currentIndex];
 
+  useEffect(() => {
+    if (!email || typeof window === "undefined") {
+      setLockoutUntil(null);
+      return;
+    }
+    const storedUntil = localStorage.getItem("authLockoutUntil");
+    const storedEmail = localStorage.getItem("authLockoutEmail");
+    if (storedUntil && storedEmail === email) {
+      const parsed = new Date(storedUntil);
+      if (!Number.isNaN(parsed.getTime()) && parsed > new Date()) {
+        setLockoutUntil(parsed);
+        setAuthError({
+          message: "Cuenta bloqueada temporalmente por intentos fallidos.",
+        });
+        return;
+      }
+    }
+    localStorage.removeItem("authLockoutUntil");
+    localStorage.removeItem("authLockoutEmail");
+    setLockoutUntil(null);
+  }, [email]);
+
+  useEffect(() => {
+    if (!lockoutUntil) return undefined;
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((lockoutUntil.getTime() - Date.now()) / 1000));
+      setLockoutTick(Date.now());
+      if (remaining <= 0) {
+        setLockoutUntil(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("authLockoutUntil");
+          localStorage.removeItem("authLockoutEmail");
+        }
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockoutUntil]);
+
+  const parseAuthError = (rawError) => {
+    if (!rawError) return null;
+    try {
+      return JSON.parse(rawError);
+    } catch (_) {
+      return { message: rawError };
+    }
+  };
+
+  const formatRemaining = (totalSeconds) => {
+    const seconds = Math.max(0, Math.floor(totalSeconds || 0));
+    const minutes = Math.floor(seconds / 60);
+    const remainderSeconds = seconds % 60;
+    if (minutes <= 0) return `${remainderSeconds}s`;
+    return `${minutes}m ${remainderSeconds}s`;
+  };
+
+  const getRemainingSeconds = () => {
+    if (!lockoutUntil) return null;
+    return Math.max(0, Math.ceil((lockoutUntil.getTime() - Date.now()) / 1000));
+  };
+
+  const isValidEmail = (value) => /\S+@\S+\.\S+/.test(String(value || ""));
+  const isLocked = lockoutUntil && getRemainingSeconds() > 0;
+
+  useEffect(() => {
+    if (!isValidEmail(email)) return;
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/auth/lockout-status`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+          }
+        );
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data?.locked && data?.lockoutUntil) {
+          const until = new Date(data.lockoutUntil);
+          if (!Number.isNaN(until.getTime())) {
+            setLockoutUntil(until);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("authLockoutUntil", until.toISOString());
+              localStorage.setItem("authLockoutEmail", email);
+            }
+            setAuthError({
+              message: "Cuenta bloqueada temporalmente por intentos fallidos.",
+            });
+          }
+        } else if (typeof window !== "undefined") {
+          const storedEmail = localStorage.getItem("authLockoutEmail");
+          if (storedEmail === email) {
+            localStorage.removeItem("authLockoutUntil");
+            localStorage.removeItem("authLockoutEmail");
+          }
+          setLockoutUntil(null);
+        }
+      } catch (_) {}
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [email]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrors([]);
+    setAuthError(null);
     setLoading(true);
 
     try {
@@ -64,23 +168,51 @@ const LoginV2 = () => {
       });
 
       if (responseNextAuth?.error) {
-        if (responseNextAuth.error === "MUST_CHANGE_PASSWORD") {
+        const parsedError = parseAuthError(responseNextAuth.error);
+        const errorCode = parsedError?.message;
+        if (errorCode === "MUST_CHANGE_PASSWORD") {
           router.push("/activate");
           return;
         }
-        if (responseNextAuth.error === "ACCOUNT_SUSPENDED") {
-          setErrors(["Tu cuenta está suspendida. Contacta al administrador."]);
+        if (errorCode === "ACCOUNT_SUSPENDED") {
+          setAuthError({ message: "Tu cuenta está suspendida. Contacta al administrador." });
+        } else if (errorCode === "ACCOUNT_LOCKED") {
+          const until = parsedError?.lockoutUntil
+            ? new Date(parsedError.lockoutUntil)
+            : parsedError?.retryAfterSeconds
+              ? new Date(Date.now() + parsedError.retryAfterSeconds * 1000)
+              : null;
+          if (until && !Number.isNaN(until.getTime())) {
+            setLockoutUntil(until);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("authLockoutUntil", until.toISOString());
+              localStorage.setItem("authLockoutEmail", email || "");
+            }
+          }
+          setAuthError({
+            message: "Cuenta bloqueada temporalmente por intentos fallidos.",
+          });
+        } else if (typeof parsedError?.remainingAttempts === "number") {
+          setAuthError({
+            message: "Acceso denegado. Verifique sus credenciales corporativas.",
+            remainingAttempts: parsedError.remainingAttempts,
+          });
         } else {
-          setErrors(["Acceso denegado. Verifique sus credenciales corporativas."]);
+          setAuthError({ message: "Acceso denegado. Verifique sus credenciales corporativas." });
         }
         setLoading(false);
         return;
       }
 
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("authLockoutUntil");
+        localStorage.removeItem("authLockoutEmail");
+      }
+      setLockoutUntil(null);
       router.push("/dashboard");
       router.refresh();
     } catch (error) {
-      setErrors(["Error inesperado en el sistema de gestión."]);
+      setAuthError({ message: "Error inesperado en el sistema de gestión." });
       setLoading(false);
     }
   };
@@ -139,15 +271,28 @@ const LoginV2 = () => {
                 id="password"
                 required
                 type="password"
+                disabled={isLocked}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1"
               />
             </div>
 
-            {errors.length > 0 && (
+            {authError && (
               <Callout title="Fallo de ingreso" icon={RiErrorWarningLine} color="rose">
-                {errors[0]}
+                <div className="space-y-1">
+                  <p>{authError.message}</p>
+                  {typeof authError.remainingAttempts === "number" && (
+                    <p className="text-xs text-slate-600">
+                      Intentos restantes: {authError.remainingAttempts}
+                    </p>
+                  )}
+                  {lockoutUntil && getRemainingSeconds() > 0 && (
+                    <p className="text-xs text-slate-600">
+                      Tiempo restante: {formatRemaining(getRemainingSeconds())}
+                    </p>
+                  )}
+                </div>
               </Callout>
             )}
 
@@ -155,6 +300,7 @@ const LoginV2 = () => {
               className="w-full h-12 text-sm font-bold shadow-lg bg-[#1D4ED8] hover:bg-[#1e40af] transition-all transform active:scale-[0.98] border-none"
               type="submit"
               loading={loading}
+              disabled={isLocked}
             >
               INGRESAR AL PANEL
             </Button>

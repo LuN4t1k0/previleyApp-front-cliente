@@ -59,7 +59,7 @@ const authOptions = {
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.message || 'Error al iniciar sesión.');
+          throw new Error(JSON.stringify(data));
         }
 
         const decodedToken = jwt.decode(data.accessToken);
