@@ -61,13 +61,22 @@ export default function AuthenticatedLayout({ children }) {
 
     const onRevoked = async (payload = {}) => {
       if (handledRef.current) return;
+      const reason = payload?.reason;
+      const isAdmin =
+        reason === "ADMIN_REVOKE" ||
+        reason === "ADMIN_REVOKE_ALL" ||
+        reason === "ADMIN_FORCE_LOGOUT";
       const newSessionId = payload?.newSessionId;
-      if (!newSessionId || newSessionId === currentSessionId) return;
+      if (!isAdmin && (!newSessionId || newSessionId === currentSessionId)) return;
       handledRef.current = true;
       await Swal.fire({
         icon: "warning",
         title: "Sesión cerrada",
-        text: payload?.message || "Se inició sesión en otro dispositivo.",
+        text:
+          payload?.message ||
+          (isAdmin
+            ? "Tu sesión fue cerrada por un administrador."
+            : "Se inició sesión en otro dispositivo."),
         confirmButtonText: "Entendido",
         allowOutsideClick: false,
         allowEscapeKey: false,

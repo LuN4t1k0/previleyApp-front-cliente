@@ -176,6 +176,7 @@ import {
   RiShieldUserLine,
 } from "@remixicon/react";
 import api from "@/app/api/apiService";
+import Swal from "sweetalert2";
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -265,11 +266,18 @@ const UsuariosActivosPage = () => {
   }, [autoRefresh, fetchActiveUsers]);
 
   const handleRevokeSessions = async (userId) => {
-    const confirmed = window.confirm("¿Seguro que quieres desconectar a este usuario?");
-    if (!confirmed) return;
+    const confirmed = await Swal.fire({
+      icon: "warning",
+      title: "Desconectar usuario",
+      text: "¿Seguro que quieres desconectar a este usuario?",
+      showCancelButton: true,
+      confirmButtonText: "Sí, desconectar",
+      cancelButtonText: "Cancelar",
+    });
+    if (!confirmed.isConfirmed) return;
     try {
       await api.post(`/admin/auth/users/${userId}/revoke-sessions`, {
-        reason: "ADMIN_FORCE_LOGOUT",
+        reason: "ADMIN_REVOKE_ALL",
       });
       await fetchActiveUsers();
     } catch (err) {
