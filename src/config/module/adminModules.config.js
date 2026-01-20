@@ -64,6 +64,15 @@ const adminModules = {
     roles: ["admin"],
     category: "administracion",
   },
+  usuariosActivos: {
+    name: "Usuarios Activos",
+    description: "Monitorea sesiones activas y desconecta usuarios.",
+    icon: "🟢",
+    path: "/admin/usuarios-activos",
+    roles: ["admin"],
+    category: "administracion",
+    badge: { label: "Nuevo", color: "green" },
+  },
 };
 
 export default adminModules;

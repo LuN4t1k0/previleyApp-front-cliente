@@ -202,6 +202,13 @@ const menuItems = [
         roles: ["admin"],
       },
       {
+        name: "Usuarios Activos",
+        description: "Monitorea y desconecta sesiones activas.",
+        href: "/admin/usuarios-activos",
+        icon: RiShieldKeyholeLine,
+        roles: ["admin"],
+      },
+      {
         name: "Gestión de Servicios",
         description: "Administra los servicios disponibles.",
         href: "/admin/gestion-servicios",

@@ -22,6 +22,7 @@ import {
 } from '@remixicon/react';
 import { menuItems } from '@/config/menuItems';
 import { cx } from '@/lib/utils';
+import api from '@/app/api/apiService';
 
 const NavigationMenu = () => {
   const { data: session } = useSession();
@@ -77,9 +78,17 @@ const NavigationMenu = () => {
     return pathname === baseHref || pathname.startsWith(`${baseHref}/`);
   };
 
-  const handleSignOut = (close) => {
-    signOut({ callbackUrl: signOutUrl });
-    close?.();
+  const handleSignOut = async (close) => {
+    try {
+      if (session?.refreshToken) {
+        await api.post('/auth/logout', { refreshToken: session.refreshToken });
+      }
+    } catch (error) {
+      console.warn('Logout backend failed:', error?.response?.data?.message || error?.message);
+    } finally {
+      signOut({ callbackUrl: signOutUrl });
+      close?.();
+    }
   };
 
   const renderMenuItem = (item, closeMenu, isUserAction = false) => (

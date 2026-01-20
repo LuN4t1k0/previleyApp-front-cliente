@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { RiDoorOpenLine, RiMenuLine, RiCloseLine } from "@remixicon/react";
 import { clientMenu } from "@/config/clientNavigation";
+import api from "@/app/api/apiService";
 
 const initialsFromName = (nombre = "", apellido = "") => {
   const first = nombre?.trim()?.[0] || "";
@@ -24,6 +25,18 @@ const ClientHeader = () => {
 
   const nombre = session?.user?.nombre || "";
   const apellido = session?.user?.apellido || "";
+
+  const handleSignOut = async () => {
+    try {
+      if (session?.refreshToken) {
+        await api.post("/auth/logout", { refreshToken: session.refreshToken });
+      }
+    } catch (error) {
+      console.warn("Logout backend failed:", error?.response?.data?.message || error?.message);
+    } finally {
+      signOut({ callbackUrl: signOutUrl });
+    }
+  };
 
   const renderNavLink = (item) => {
     const isActive =
@@ -73,7 +86,7 @@ const ClientHeader = () => {
           </div>
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: signOutUrl })}
+            onClick={handleSignOut}
             className="inline-flex items-center gap-1 rounded-full border border-transparent bg-[color:var(--theme-primary)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[color:var(--theme-primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme-primary)] focus-visible:ring-offset-2"
           >
             <RiDoorOpenLine className="h-4 w-4" aria-hidden="true" />
@@ -119,7 +132,7 @@ const ClientHeader = () => {
               type="button"
               onClick={() => {
                 setOpen(false);
-                signOut({ callbackUrl: signOutUrl });
+                handleSignOut();
               }}
               className="inline-flex items-center gap-1 rounded-full border border-transparent bg-[color:var(--theme-primary)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[color:var(--theme-primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme-primary)] focus-visible:ring-offset-2"
             >

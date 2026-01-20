@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getSession, signIn } from 'next-auth/react';
+import { getSession, signOut } from 'next-auth/react';
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -41,9 +41,20 @@ apiService.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const message = String(error?.response?.data?.message || '').toLowerCase();
+    const forceSignOut =
+      message.includes('revoc') ||
+      message.includes('suspend') ||
+      message.includes('sesion') ||
+      message.includes('session');
 
     // Verifica si el error es 401 y no es un intento de refresco
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      if (forceSignOut) {
+        await signOut({ callbackUrl: '/signin' });
+        return Promise.reject(error);
+      }
+
       // Marca la solicitud original para evitar bucles infinitos
       originalRequest._retry = true;
 
@@ -93,42 +104,46 @@ apiService.interceptors.response.use(
       // });
     
       return new Promise(async (resolve, reject) => {
-  try {
-    // Intentar obtener una nueva sesión (lo que debería refrescar el token)
-    const session = await getSession({ trigger: 'refresh' });
+        try {
+          // Intentar obtener una nueva sesión (lo que debería refrescar el token)
+          const session = await getSession({ trigger: 'refresh' });
 
-    if (session?.accessToken) {
-      // Actualizar el token en las solicitudes pendientes
-      processQueue(null, session.accessToken);
+          if (session?.accessToken) {
+            // Actualizar el token en las solicitudes pendientes
+            processQueue(null, session.accessToken);
 
-      // Actualizar la cabecera Authorization
-      originalRequest.headers.Authorization = 'Bearer ' + session.accessToken;
+            // Actualizar la cabecera Authorization
+            originalRequest.headers.Authorization = 'Bearer ' + session.accessToken;
 
-      resolve(apiService(originalRequest));
-    } else {
-      // Si no hay sesión, redirigir al inicio de sesión (volver a la misma página después)
-      processQueue(new Error('No se pudo refrescar el token'), null);
-      const cb =
-        (typeof window !== 'undefined' &&
-          (window.location.pathname + window.location.search + window.location.hash)) ||
-        '/';
-      await signIn(undefined, { callbackUrl: cb });
-      reject(error);
-    }
-  } catch (err) {
-    console.error('Error al refrescar el token:', err);
-    processQueue(err, null);
-    const cb =
-      (typeof window !== 'undefined' &&
-        (window.location.pathname + window.location.search + window.location.hash)) ||
-      '/';
-    await signIn(undefined, { callbackUrl: cb });
-    reject(err);
-  } finally {
-    isRefreshing = false;
-  }
-});
+            resolve(apiService(originalRequest));
+          } else {
+            // Si no hay sesión, cerrar sesión y volver al login
+            processQueue(new Error('No se pudo refrescar el token'), null);
+            const cb =
+              (typeof window !== 'undefined' &&
+                (window.location.pathname + window.location.search + window.location.hash)) ||
+              '/';
+            await signOut({ callbackUrl: cb });
+            reject(error);
+          }
+        } catch (err) {
+          console.error('Error al refrescar el token:', err);
+          processQueue(err, null);
+          const cb =
+            (typeof window !== 'undefined' &&
+              (window.location.pathname + window.location.search + window.location.hash)) ||
+            '/';
+          await signOut({ callbackUrl: cb });
+          reject(err);
+        } finally {
+          isRefreshing = false;
+        }
+      });
     
+    }
+
+    if (error.response && error.response.status === 403 && forceSignOut) {
+      await signOut({ callbackUrl: '/signin' });
     }
 
     return Promise.reject(error);
@@ -136,6 +151,5 @@ apiService.interceptors.response.use(
 );
 
 export default apiService;
-
 
 
