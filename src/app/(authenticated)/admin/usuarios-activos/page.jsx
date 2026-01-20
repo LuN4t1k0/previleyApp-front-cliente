@@ -224,6 +224,8 @@ const UsuariosActivosPage = () => {
   const [isLive, setIsLive] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   const liveIntervalRef = useRef(null);
 
@@ -286,6 +288,19 @@ const UsuariosActivosPage = () => {
   };
 
   const users = useMemo(() => data?.users || [], [data]);
+  const filteredUsers = useMemo(() => {
+    const term = String(search || "").trim().toLowerCase();
+    return users.filter((user) => {
+      const role = String(user.rol || "").toLowerCase();
+      const matchesRole = roleFilter === "all" || role === roleFilter;
+      if (!matchesRole) return false;
+      if (!term) return true;
+      const fullName = `${user.nombre || ""} ${user.apellido || ""}`.toLowerCase();
+      const email = String(user.email || "").toLowerCase();
+      const id = String(user.id || "");
+      return fullName.includes(term) || email.includes(term) || id.includes(term);
+    });
+  }, [users, search, roleFilter]);
   const cutoff = data?.cutoffMinutes || minutes;
 
   return (
@@ -377,6 +392,40 @@ const UsuariosActivosPage = () => {
           </Card>
         </div>
 
+        {/* FILTERS */}
+        <Card className="shadow-sm ring-1 ring-slate-200">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Buscar (nombre, email o ID)
+              </label>
+              <TextInput
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Ej: cristian@previley.cl"
+                className="mt-2"
+              />
+            </div>
+            <div className="w-full sm:w-56">
+              <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Rol
+              </label>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300"
+              >
+                <option value="all">Todos</option>
+                <option value="admin">Admin</option>
+                <option value="supervisor">Supervisor</option>
+                <option value="facturacion">Facturación</option>
+                <option value="trabajador">Trabajador</option>
+                <option value="cliente">Cliente</option>
+              </select>
+            </div>
+          </div>
+        </Card>
+
         {/* STATS */}
         <Grid numItemsSm={2} numItemsLg={2} className="gap-6">
           <Card className="shadow-sm ring-1 ring-slate-200">
@@ -421,7 +470,7 @@ const UsuariosActivosPage = () => {
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-slate-900">Usuarios activos</span>
               <Badge size="xs" color="slate" variant="light">
-                {users.length}
+                {filteredUsers.length}
               </Badge>
             </div>
             <Text className="text-xs text-slate-500">Fuente: /admin/auth/active-users</Text>
@@ -443,20 +492,20 @@ const UsuariosActivosPage = () => {
             </TableHead>
 
             <TableBody>
-              {loading && users.length === 0 ? (
+              {loading && filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center text-slate-400">
                     Cargando usuarios activos…
                   </TableCell>
                 </TableRow>
-              ) : users.length === 0 ? (
+              ) : filteredUsers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="py-12 text-center text-slate-400 italic">
                     No se encontraron usuarios activos en este rango.
                   </TableCell>
                 </TableRow>
               ) : (
-                users.map((user) => {
+                filteredUsers.map((user) => {
                   const rb = roleBadge(user.rol);
                   return (
                     <TableRow key={user.id} className="hover:bg-slate-50/60 transition-colors">
