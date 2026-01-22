@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Tab,
   TabGroup,
@@ -32,14 +32,91 @@ import {
 
 import { formatDateChile } from "@/utils/formatDate";
 import usePasswordReveal from "@/hooks/usePasswordReveal";
+import apiService from "@/app/api/apiService";
+import {
+  showConfirmationAlert,
+  showErrorAlert,
+  showSuccessAlert,
+} from "@/utils/alerts";
 
 const EmpresaDetailsContent = ({ empresaData, onClose }) => {
   const { passwords, loading, countdown, revealPassword } = usePasswordReveal();
+  const [empresa, setEmpresa] = useState(empresaData);
 
-  if (!empresaData)
+  useEffect(() => {
+    setEmpresa(empresaData);
+  }, [empresaData]);
+
+  const handleDeleteDocumento = useCallback(
+    async (documento) => {
+      if (!documento?.id) {
+        showErrorAlert("Error", "No se pudo identificar el documento.");
+        return;
+      }
+      const confirm = await showConfirmationAlert(
+        "¿Eliminar documento?",
+        "Este documento será eliminado definitivamente."
+      );
+      if (!confirm) return;
+      try {
+        await apiService.delete(`/empresa-documentos/${documento.id}`);
+        showSuccessAlert(
+          "Documento eliminado",
+          "El documento fue eliminado correctamente."
+        );
+        setEmpresa((prev) => ({
+          ...prev,
+          documentos: (prev?.documentos || []).filter((doc) => doc.id !== documento.id),
+        }));
+      } catch (error) {
+        const apiMessage =
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "No se pudo eliminar el documento.";
+        showErrorAlert("Error", apiMessage);
+      }
+    },
+    []
+  );
+
+  const handleDeleteCredencial = useCallback(
+    async (credencial) => {
+      if (!credencial?.id) {
+        showErrorAlert("Error", "No se pudo identificar la credencial.");
+        return;
+      }
+      const confirm = await showConfirmationAlert(
+        "¿Eliminar credencial?",
+        "Esta credencial será eliminada definitivamente."
+      );
+      if (!confirm) return;
+      try {
+        await apiService.delete(`/empresa-credenciales/${credencial.id}`);
+        showSuccessAlert(
+          "Credencial eliminada",
+          "La credencial fue eliminada correctamente."
+        );
+        setEmpresa((prev) => ({
+          ...prev,
+          credenciales: (prev?.credenciales || []).filter((cred) => cred.id !== credencial.id),
+        }));
+      } catch (error) {
+        const apiMessage =
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "No se pudo eliminar la credencial.";
+        showErrorAlert("Error", apiMessage);
+      }
+    },
+    []
+  );
+
+  if (!empresa)
     return <Text className="p-6">No hay datos para mostrar.</Text>;
 
-  const estadoColor = empresaData.estado === "activo" ? "green" : "red";
+  const estadoColor = empresa.estado === "activo" ? "green" : "red";
 
   return (
     <div className="p-6 space-y-6">
@@ -48,13 +125,13 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
         <Grid className="grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Title className="text-lg font-bold">
-              Detalle de Empresa - {empresaData.nombre}
+              Detalle de Empresa - {empresa.nombre}
             </Title>
             <Text className="text-sm text-gray-600">
-              RUT: {empresaData.empresaRut}
+              RUT: {empresa.empresaRut}
             </Text>
             <Text className="text-sm text-gray-600">
-              Fecha Creación: {formatDateChile(empresaData.createdAt).formattedDate}
+              Fecha Creación: {formatDateChile(empresa.createdAt).formattedDate}
             </Text>
           </div>
           <div className="text-right">
@@ -85,25 +162,25 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
                 <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8 text-sm pt-2">
                   <div>
                     <Text className="uppercase font-bold text-gray-700">RUT</Text>
-                    <Text>{empresaData.empresaRut}</Text>
+                    <Text>{empresa.empresaRut}</Text>
                   </div>
                   <div>
                     <Text className="uppercase font-bold text-gray-700">Nombre</Text>
-                    <Text>{empresaData.nombre}</Text>
+                    <Text>{empresa.nombre}</Text>
                   </div>
                   <div>
                     <Text className="uppercase font-bold text-gray-700">Estado</Text>
                     <Badge color={estadoColor} className="capitalize">
-                      {empresaData.estado}
+                      {empresa.estado}
                     </Badge>
                   </div>
                   <div>
                     <Text className="uppercase font-bold text-gray-700">Dirección</Text>
-                    <Text>{empresaData.direccion}</Text>
+                    <Text>{empresa.direccion}</Text>
                   </div>
                   <div>
                     <Text className="uppercase font-bold text-gray-700">Fecha Creación</Text>
-                    <Text>{formatDateChile(empresaData.createdAt).formattedDate}</Text>
+                    <Text>{formatDateChile(empresa.createdAt).formattedDate}</Text>
                   </div>
                 </Grid>
               </div>
@@ -114,22 +191,22 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
                 <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8 text-sm pt-2">
                   <div>
                     <Text className="uppercase font-bold text-gray-700">Teléfono</Text>
-                    <Text>{empresaData.telefono}</Text>
+                    <Text>{empresa.telefono}</Text>
                   </div>
                   <div>
                     <Text className="uppercase font-bold text-gray-700">Email</Text>
-                    <Text>{empresaData.email}</Text>
+                    <Text>{empresa.email}</Text>
                   </div>
-                  {empresaData.banco && (
+                  {empresa.banco && (
                     <div>
                       <Text className="uppercase font-bold text-gray-700">Banco</Text>
-                      <Text>{empresaData.banco}</Text>
+                      <Text>{empresa.banco}</Text>
                     </div>
                   )}
-                  {empresaData.cuentaCorriente && (
+                  {empresa.cuentaCorriente && (
                     <div>
                       <Text className="uppercase font-bold text-gray-700">Cuenta Corriente</Text>
-                      <Text>{empresaData.cuentaCorriente}</Text>
+                      <Text>{empresa.cuentaCorriente}</Text>
                     </div>
                   )}
                 </Grid>
@@ -143,7 +220,7 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <Title className="text-lg font-bold">Documentos</Title>
                 <Text className="text-sm text-gray-600">
-                  Lista de documentos registrados para {empresaData.nombre}
+                  Lista de documentos registrados para {empresa.nombre}
                 </Text>
                 <Table className="mt-4">
                   <TableHead>
@@ -155,8 +232,8 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {empresaData.documentos?.length > 0 ? (
-                      empresaData.documentos.map((doc) => {
+                    {empresa.documentos?.length > 0 ? (
+                      empresa.documentos.map((doc) => {
                         const { formattedDate, isExpired } = formatDateChile(doc.fecha_vencimiento);
                         return (
                           <TableRow key={doc.id} className="hover:bg-gray-50">
@@ -166,9 +243,22 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
                               {formattedDate} {isExpired && "(Vencido)"}
                             </TableCell>
                             <TableCell>
-                              <Button size="sm" variant="primary" onClick={() => window.open(doc.url_firmada, "_blank")}>
-                                Ver
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="primary"
+                                  onClick={() => window.open(doc.url_firmada, "_blank")}
+                                >
+                                  Ver
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  color="red"
+                                  onClick={() => handleDeleteDocumento(doc)}
+                                >
+                                  Eliminar
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         );
@@ -204,24 +294,33 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {empresaData.credenciales?.length > 0 ? (
-                      empresaData.credenciales.map((cred) => (
+                    {empresa.credenciales?.length > 0 ? (
+                      empresa.credenciales.map((cred) => (
                         <TableRow key={cred.id} className="hover:bg-gray-50">
                           <TableCell>{cred.entidad}</TableCell>
                           <TableCell>{cred.usuario}</TableCell>
                           <TableCell>{passwords[cred.id] || "******"}</TableCell>
                           <TableCell>
-                            <Button
-                              size="sm"
-                              onClick={() => revealPassword(cred.id)}
-                              disabled={loading[cred.id] || countdown[cred.id] > 0}
-                            >
-                              {loading[cred.id]
-                                ? "Cargando..."
-                                : countdown[cred.id] > 0
-                                ? `Ocultar en ${countdown[cred.id]}s`
-                                : "Mostrar"}
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => revealPassword(cred.id)}
+                                disabled={loading[cred.id] || countdown[cred.id] > 0}
+                              >
+                                {loading[cred.id]
+                                  ? "Cargando..."
+                                  : countdown[cred.id] > 0
+                                  ? `Ocultar en ${countdown[cred.id]}s`
+                                  : "Mostrar"}
+                              </Button>
+                              <Button
+                                size="sm"
+                                color="red"
+                                onClick={() => handleDeleteCredencial(cred)}
+                              >
+                                Eliminar
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -244,7 +343,7 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <Title className="text-lg font-bold">Servicios</Title>
                 <Text className="text-sm text-gray-600">
-                  Detalles de los servicios asociados a {empresaData.nombre}.
+                  Detalles de los servicios asociados a {empresa.nombre}.
                 </Text>
                 <Table className="mt-4">
                   <TableHead>
@@ -255,8 +354,8 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {empresaData.servicios?.length > 0 ? (
-                      empresaData.servicios.map((servicio) => (
+                    {empresa.servicios?.length > 0 ? (
+                      empresa.servicios.map((servicio) => (
                         <TableRow key={servicio.id} className="hover:bg-gray-50">
                           <TableCell>{servicio.id}</TableCell>
                           <TableCell>{servicio.nombre}</TableCell>
@@ -298,8 +397,8 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {empresaData.usuarios?.length > 0 ? (
-                      empresaData.usuarios.map((usuario) => (
+                    {empresa.usuarios?.length > 0 ? (
+                      empresa.usuarios.map((usuario) => (
                         <TableRow key={usuario.id} className="hover:bg-gray-50">
                           <TableCell>{usuario.id}</TableCell>
                           <TableCell>{usuario.nombre}</TableCell>
@@ -337,8 +436,8 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {empresaData.correosConfigurados?.length > 0 ? (
-            empresaData.correosConfigurados.map((correo, index) => (
+          {empresa.correosConfigurados?.length > 0 ? (
+            empresa.correosConfigurados.map((correo, index) => (
               <TableRow key={index} className="hover:bg-gray-50">
                 <TableCell>{correo.tipo}</TableCell>
                 <TableCell>{correo.email}</TableCell>
