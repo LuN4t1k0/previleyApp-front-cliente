@@ -2,38 +2,30 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import {
-  RiBuildingLine,
-  RiArrowRightLine,
-  RiBriefcaseLine,
-  RiSparkling2Line,
-} from "@remixicon/react";
+import { RiArrowRightLine, RiBriefcaseLine, RiSparkling2Line } from "@remixicon/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { useEmpresasServicios } from "@/hooks/useEmpresasServicios";
 import { resolveServiceDefinition } from "@/config/clientServices.config";
-import { formatServiceCharge } from "@/utils/formatters";
 
 const buildServiceLink = (definition) => {
   if (!definition?.slug) return null;
   return `/servicios/${definition.slug}`;
 };
 
-const resolveServiceCode = (definition, empresaServicio) => {
-  if (empresaServicio?.abreviatura) return empresaServicio.abreviatura;
-  const nombre = String(empresaServicio?.nombre || "").toLowerCase();
-  if (definition?.key === "mora") {
-    if (nombre.includes("regular")) return "MP-R";
-    if (nombre.includes("presunta")) return "MP-P";
-    return "MP";
-  }
-  if (definition?.key === "pagex") return "PX";
-  if (definition?.key === "licencias") return "LM";
-  return definition?.key ? definition.key.toUpperCase() : "SRV";
+const serviceTabsByKey = {
+  mora: ["Dashboard Global", "Dashboard Operativo", "Gestiones"],
+  pagex: ["Dashboard Global", "Dashboard Operativo"],
+  licencias: ["Dashboard Global", "Dashboard Operativo"],
+  "pagos-previsionales": ["Dashboard"],
+  "reembolso-sil": ["Dashboard"],
+  "cargas-familiares": ["Dashboard"],
+  "depositos-convenidos": ["Dashboard"],
+  funes: ["Dashboard"],
 };
 
 const ServicesPage = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
-  const { servicesByAssignment, loading: loadingServicios } =
+  const { servicesByType, loading: loadingServicios } =
     useEmpresasServicios(empresas);
 
   const content = useMemo(() => {
@@ -45,7 +37,7 @@ const ServicesPage = () => {
       );
     }
 
-    if (!servicesByAssignment.length) {
+    if (!servicesByType.length) {
       return (
         <div className="glass-panel rounded-[2rem] p-6 text-sm text-slate-500">
           Aún no tienes servicios contratados. Si crees que esto es un error, por
@@ -56,22 +48,16 @@ const ServicesPage = () => {
 
     return (
       <div className="grid gap-6 lg:grid-cols-2">
-        {servicesByAssignment.map((service) => {
+        {servicesByType.map((service) => {
           const definition =
             service.definition || resolveServiceDefinition(service.serviceKey);
-          const fallbackDefinition = {
-            key: service.serviceKey || null,
-            slug: null,
-            label: service.nombre || "Servicio",
-            description: "Servicio contratado por tu empresa.",
-            icon: "🧾",
-          };
-          const activeDefinition = definition || fallbackDefinition;
+          if (!definition) return null;
           const empresasConServicio = service.empresas || [];
-          const link = definition ? buildServiceLink(definition) : null;
+          const link = buildServiceLink(definition);
+          const tabs = serviceTabsByKey[definition.key] || [];
           return (
             <article
-              key={service.servicioId || service.nombre || service.serviceKey}
+              key={service.serviceKey}
               className="group relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(15,23,42,0.08)]"
             >
               <div className="flex items-start justify-between gap-4">
@@ -80,7 +66,7 @@ const ServicesPage = () => {
                     Servicio
                   </span>
                   <h2 className="mt-2 text-xl font-semibold text-slate-900">
-                    {activeDefinition.icon} {activeDefinition.label}
+                    {definition.icon} {definition.label}
                   </h2>
                 </div>
                 <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
@@ -90,46 +76,24 @@ const ServicesPage = () => {
               </div>
 
               <p className="mt-4 text-sm text-slate-500">
-                {activeDefinition.description}
+                {definition.description}
               </p>
 
-              <div className="mt-5 overflow-hidden rounded-2xl border border-white/60 bg-white/80 text-xs text-slate-500">
-                <div className="flex items-center gap-2 border-b border-white/60 px-4 py-3 text-xs font-semibold text-slate-700">
-                  <RiBuildingLine className="h-4 w-4" />
-                  Empresas con este servicio
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-white/70 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                      <tr>
-                        <th className="px-4 py-2">Empresa</th>
-                        <th className="px-4 py-2">RUT</th>
-                        <th className="px-4 py-2 text-center">Sigla</th>
-                        <th className="px-4 py-2 text-right">Valor</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/60 text-slate-600">
-                      {empresasConServicio.map((empresa) => (
-                        <tr key={empresa.empresaRut} className="hover:bg-blue-50/40">
-                          <td className="px-4 py-3 font-semibold text-slate-700">
-                            {empresa.empresaNombre}
-                          </td>
-                          <td className="px-4 py-3 text-[11px] text-slate-400">
-                            {empresa.empresaRut}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                              {resolveServiceCode(activeDefinition, empresa.servicio)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold text-blue-600">
-                            {formatServiceCharge(empresa.servicio)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+              <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
+                {tabs.length > 0 ? (
+                  tabs.map((tab) => (
+                    <span
+                      key={tab}
+                      className="rounded-full border border-slate-200 bg-white/80 px-3 py-1"
+                    >
+                      {tab}
+                    </span>
+                  ))
+                ) : (
+                  <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1">
+                    Dashboard disponible
+                  </span>
+                )}
               </div>
 
               {link ? (
@@ -137,7 +101,7 @@ const ServicesPage = () => {
                   href={link}
                   className="mt-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white"
                 >
-                  Ver dashboard y documentos
+                  Ir al servicio
                   <RiArrowRightLine className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               ) : null}
@@ -148,7 +112,7 @@ const ServicesPage = () => {
         })}
       </div>
     );
-  }, [loadingEmpresas, loadingServicios, servicesByAssignment]);
+  }, [loadingEmpresas, loadingServicios, servicesByType]);
 
   return (
     <section className="pb-16">
@@ -170,7 +134,7 @@ const ServicesPage = () => {
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-xs font-semibold text-slate-500">
               <RiBriefcaseLine className="h-4 w-4" />
-              Total de servicios: {servicesByAssignment.length}
+              Total de servicios: {servicesByType.length}
             </div>
           </div>
           <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />

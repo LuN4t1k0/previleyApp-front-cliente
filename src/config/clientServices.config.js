@@ -15,7 +15,7 @@ export const CLIENT_SERVICE_DEFINITIONS = {
     description:
       "Control de solicitudes, estados y montos recuperados por pagos previsionales en exceso.",
     icon: "💸",
-    keywords: ["pagos en exceso", "pagex"],
+    keywords: ["pagos en exceso", "pago en exceso", "pagex"],
   },
   licencias: {
     key: "licencias",
@@ -24,7 +24,51 @@ export const CLIENT_SERVICE_DEFINITIONS = {
     description:
       "Visibilidad de licencias, anticipos y subsidios, junto con tasas de rechazo y tendencias.",
     icon: "🏥",
-    keywords: ["licencia", "licencias médicas"],
+    keywords: [
+      "licencia",
+      "licencias medicas",
+      "conciliacion de licencias medicas",
+      "conciliacion licencias medicas",
+      "anticipos",
+      "subsidios",
+      "reembolso sil",
+    ],
+  },
+  pagosPrevisionales: {
+    key: "pagos-previsionales",
+    slug: "pagos-previsionales",
+    label: "Pagos Previsionales",
+    description:
+      "Gestión y validación de pagos previsionales mensuales.",
+    icon: "📥",
+    keywords: ["pagos previsionales", "pagos previsional"],
+  },
+  cargasFamiliares: {
+    key: "cargas-familiares",
+    slug: "cargas-familiares",
+    label: "Cargas Familiares",
+    description:
+      "Administración y revisión de cargas familiares.",
+    icon: "👨‍👩‍👧‍👦",
+    keywords: ["cargas familiares", "carga familiar"],
+  },
+  depositosConvenidos: {
+    key: "depositos-convenidos",
+    slug: "depositos-convenidos",
+    label: "Depósitos Convenidos",
+    description:
+      "Seguimiento y conciliación de depósitos previsionales convenidos.",
+    icon: "🏦",
+    keywords: ["depositos convenidos", "depósitos convenidos"],
+  },
+  funes: {
+    key: "funes",
+    slug: "funes",
+    label: "FUNES",
+    description:
+      "Gestión del Fondo Único de Enfermedades de Salud.",
+    icon: "🧬",
+    keywords: ["funes", "fondo unico", "fondo único"],
   },
 };
 
