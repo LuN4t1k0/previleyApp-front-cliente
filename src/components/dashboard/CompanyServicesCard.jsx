@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { resolveServiceDefinition } from "@/config/clientServices.config";
+import { formatServiceCharge } from "@/utils/formatters";
 
 const CompanyServicesCard = ({ empresa }) => {
   const servicios = empresa?.serviciosAsignados || [];
@@ -45,12 +46,9 @@ const CompanyServicesCard = ({ empresa }) => {
                 ) : (
                   <span>{servicio.nombre}</span>
                 )}
-                {servicio.porcentajeCobro !== undefined &&
-                servicio.porcentajeCobro !== null ? (
-                  <span className="text-[color:var(--theme-primary)]">
-                    {Number(servicio.porcentajeCobro).toFixed(2)}%
-                  </span>
-                ) : null}
+                <span className="text-[color:var(--theme-primary)]">
+                  {formatServiceCharge(servicio)}
+                </span>
               </li>
             );
           })}

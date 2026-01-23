@@ -11,6 +11,7 @@ import {
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { useEmpresasServicios } from "@/hooks/useEmpresasServicios";
 import { resolveServiceDefinition } from "@/config/clientServices.config";
+import { formatServiceCharge } from "@/utils/formatters";
 
 const buildServiceLink = (service) => {
   if (!service?.definition) return null;
@@ -97,7 +98,7 @@ const ServicesPage = () => {
                         <th className="px-4 py-2">Empresa</th>
                         <th className="px-4 py-2">RUT</th>
                         <th className="px-4 py-2 text-center">Sigla</th>
-                        <th className="px-4 py-2 text-right">%</th>
+                        <th className="px-4 py-2 text-right">Valor</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/60 text-slate-600">
@@ -115,9 +116,7 @@ const ServicesPage = () => {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right font-semibold text-blue-600">
-                            {empresa.servicio?.porcentajeCobro !== undefined
-                              ? `${Number(empresa.servicio.porcentajeCobro).toFixed(2)}%`
-                              : "—"}
+                            {formatServiceCharge(empresa.servicio)}
                           </td>
                         </tr>
                       ))}
