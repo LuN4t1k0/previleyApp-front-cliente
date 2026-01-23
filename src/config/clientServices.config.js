@@ -61,6 +61,15 @@ export const CLIENT_SERVICE_DEFINITIONS = {
     icon: "🏦",
     keywords: ["depositos convenidos", "depósitos convenidos"],
   },
+  notificacionesPrevisionales: {
+    key: "notificaciones-previsionales",
+    slug: "notificaciones-previsionales",
+    label: "Notificaciones Previsionales",
+    description:
+      "Seguimiento y gestión de notificaciones previsionales.",
+    icon: "📣",
+    keywords: ["notificaciones previsionales", "notificacion previsional"],
+  },
   funes: {
     key: "funes",
     slug: "funes",

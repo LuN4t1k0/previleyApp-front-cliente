@@ -22,11 +22,20 @@ const serviceTabsByKey = {
     "Ficha Trabajador",
   ],
   "pagos-previsionales": ["Dashboard"],
-  "reembolso-sil": ["Dashboard"],
   "cargas-familiares": ["Dashboard"],
   "depositos-convenidos": ["Dashboard"],
+  "notificaciones-previsionales": ["Dashboard"],
   funes: ["Dashboard"],
 };
+
+const serviceOrder = [
+  "mora",
+  "licencias",
+  "pagex",
+  "cargas-familiares",
+  "notificaciones-previsionales",
+  "depositos-convenidos",
+];
 
 const ServicesPage = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
@@ -51,9 +60,17 @@ const ServicesPage = () => {
       );
     }
 
+    const orderedServices = [...servicesByType].sort((a, b) => {
+      const aIndex = serviceOrder.indexOf(a.serviceKey);
+      const bIndex = serviceOrder.indexOf(b.serviceKey);
+      const safeA = aIndex === -1 ? serviceOrder.length + 1 : aIndex;
+      const safeB = bIndex === -1 ? serviceOrder.length + 1 : bIndex;
+      return safeA - safeB;
+    });
+
     return (
       <div className="grid gap-6 lg:grid-cols-2">
-        {servicesByType.map((service) => {
+        {orderedServices.map((service) => {
           const definition =
             service.definition || resolveServiceDefinition(service.serviceKey);
           if (!definition) return null;
