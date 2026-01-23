@@ -13,9 +13,9 @@ import { useEmpresasServicios } from "@/hooks/useEmpresasServicios";
 import { resolveServiceDefinition } from "@/config/clientServices.config";
 import { formatServiceCharge } from "@/utils/formatters";
 
-const buildServiceLink = (service) => {
-  if (!service?.definition) return null;
-  return `/servicios/${service.definition.slug}`;
+const buildServiceLink = (definition) => {
+  if (!definition?.slug) return null;
+  return `/servicios/${definition.slug}`;
 };
 
 const resolveServiceCode = (definition, empresaServicio) => {
@@ -33,7 +33,7 @@ const resolveServiceCode = (definition, empresaServicio) => {
 
 const ServicesPage = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
-  const { servicesByType, loading: loadingServicios } =
+  const { servicesByAssignment, loading: loadingServicios } =
     useEmpresasServicios(empresas);
 
   const content = useMemo(() => {
@@ -45,7 +45,7 @@ const ServicesPage = () => {
       );
     }
 
-    if (!servicesByType.length) {
+    if (!servicesByAssignment.length) {
       return (
         <div className="glass-panel rounded-[2rem] p-6 text-sm text-slate-500">
           Aún no tienes servicios contratados. Si crees que esto es un error, por
@@ -56,15 +56,22 @@ const ServicesPage = () => {
 
     return (
       <div className="grid gap-6 lg:grid-cols-2">
-        {servicesByType.map((service) => {
+        {servicesByAssignment.map((service) => {
           const definition =
             service.definition || resolveServiceDefinition(service.serviceKey);
-          if (!definition) return null;
+          const fallbackDefinition = {
+            key: service.serviceKey || null,
+            slug: null,
+            label: service.nombre || "Servicio",
+            description: "Servicio contratado por tu empresa.",
+            icon: "🧾",
+          };
+          const activeDefinition = definition || fallbackDefinition;
           const empresasConServicio = service.empresas || [];
-          const link = buildServiceLink(service);
+          const link = definition ? buildServiceLink(definition) : null;
           return (
             <article
-              key={service.serviceKey}
+              key={service.servicioId || service.nombre || service.serviceKey}
               className="group relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(15,23,42,0.08)]"
             >
               <div className="flex items-start justify-between gap-4">
@@ -73,7 +80,7 @@ const ServicesPage = () => {
                     Servicio
                   </span>
                   <h2 className="mt-2 text-xl font-semibold text-slate-900">
-                    {definition.icon} {definition.label}
+                    {activeDefinition.icon} {activeDefinition.label}
                   </h2>
                 </div>
                 <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
@@ -83,7 +90,7 @@ const ServicesPage = () => {
               </div>
 
               <p className="mt-4 text-sm text-slate-500">
-                {definition.description}
+                {activeDefinition.description}
               </p>
 
               <div className="mt-5 overflow-hidden rounded-2xl border border-white/60 bg-white/80 text-xs text-slate-500">
@@ -112,7 +119,7 @@ const ServicesPage = () => {
                           </td>
                           <td className="px-4 py-3 text-center">
                             <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                              {resolveServiceCode(definition, empresa.servicio)}
+                              {resolveServiceCode(activeDefinition, empresa.servicio)}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right font-semibold text-blue-600">
@@ -141,7 +148,7 @@ const ServicesPage = () => {
         })}
       </div>
     );
-  }, [loadingEmpresas, loadingServicios, servicesByType]);
+  }, [loadingEmpresas, loadingServicios, servicesByAssignment]);
 
   return (
     <section className="pb-16">
@@ -163,7 +170,7 @@ const ServicesPage = () => {
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-xs font-semibold text-slate-500">
               <RiBriefcaseLine className="h-4 w-4" />
-              Total de servicios: {servicesByType.length}
+              Total de servicios: {servicesByAssignment.length}
             </div>
           </div>
           <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />

@@ -10,6 +10,11 @@ export const clientMenu = [
     href: "/servicios",
   },
   {
+    label: "Contratos",
+    description: "Detalle de servicios contratados por empresa.",
+    href: "/contratos",
+  },
+  {
     label: "Prefacturas",
     description: "Panel de seguimiento de prefacturas.",
     href: "/prefacturas",

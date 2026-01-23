@@ -135,11 +135,51 @@ export const useEmpresasServicios = (empresas) => {
     return Array.from(aggregator.values());
   }, [data]);
 
+  const servicesByAssignment = useMemo(() => {
+    if (!data.length) return [];
+
+    const aggregator = new Map();
+
+    data.forEach((empresa) => {
+      empresa.serviciosAsignados.forEach((servicio) => {
+        const key = servicio?.servicioId || servicio?.id || servicio?.nombre;
+        if (!key) return;
+        const existing = aggregator.get(key);
+        const definition =
+          servicio.definition ||
+          resolveServiceDefinition(servicio.serviceKey || servicio.nombre);
+        const serviceKey =
+          servicio.serviceKey || resolveServiceKeyFromName(servicio?.nombre || "");
+
+        const empresaEntry = {
+          empresaRut: empresa.empresaRut,
+          empresaNombre: empresa.nombre,
+          servicio,
+        };
+
+        if (existing) {
+          existing.empresas.push(empresaEntry);
+        } else {
+          aggregator.set(key, {
+            servicioId: servicio?.servicioId || servicio?.id || null,
+            nombre: servicio?.nombre || "",
+            serviceKey,
+            definition,
+            empresas: [empresaEntry],
+          });
+        }
+      });
+    });
+
+    return Array.from(aggregator.values());
+  }, [data]);
+
   return {
     data,
     loading,
     error,
     refetch: fetch,
     servicesByType,
+    servicesByAssignment,
   };
 };

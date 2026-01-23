@@ -20,7 +20,6 @@ import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { useEmpresasServicios } from "@/hooks/useEmpresasServicios";
 import { usePrefacturas, usePrefacturasSummary } from "@/hooks/usePrefacturas";
 import apiService from "@/app/api/apiService";
-import CompanyServicesCard from "@/components/dashboard/CompanyServicesCard";
 import StatusPill from "@/components/status/StatusPill";
 import { formatCurrency } from "@/utils/formatters";
 
@@ -355,28 +354,6 @@ const DashboardPage = () => {
             loading={loading}
           />
         </div>
-
-        <section className="mt-16">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-slate-900">Servicios por empresa</h2>
-            <p className="text-slate-500">Revisa el detalle de los servicios contratados por cada empresa.</p>
-          </div>
-          {loadingServicios ? (
-            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-slate-500 shadow-sm backdrop-blur">
-              Cargando información de servicios...
-            </div>
-          ) : empresasConServicios && empresasConServicios.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              {empresasConServicios.map((empresa) => (
-                <CompanyServicesCard key={empresa.empresaRut} empresa={empresa} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-slate-500 shadow-sm backdrop-blur">
-              Aún no hay servicios asociados a tus empresas.
-            </div>
-          )}
-        </section>
 
         <section className="mt-20">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-8">
