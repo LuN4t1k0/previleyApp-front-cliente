@@ -100,10 +100,17 @@ const DashboardPage = () => {
 
   const totalServiciosActivos = useMemo(() => {
     if (!empresasConServicios) return 0;
-    return empresasConServicios.reduce(
-      (acc, empresa) => acc + (empresa.serviciosAsignados?.length || 0),
-      0
-    );
+    const uniqueKeys = new Set();
+    empresasConServicios.forEach((empresa) => {
+      (empresa.serviciosAsignados || []).forEach((servicio) => {
+        if (servicio?.serviceKey) {
+          uniqueKeys.add(servicio.serviceKey);
+        } else if (servicio?.nombre) {
+          uniqueKeys.add(servicio.nombre);
+        }
+      });
+    });
+    return uniqueKeys.size;
   }, [empresasConServicios]);
 
   const pendingCount = summary.byStatus?.pendiente || 0;
