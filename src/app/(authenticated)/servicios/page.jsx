@@ -15,7 +15,12 @@ const buildServiceLink = (definition) => {
 const serviceTabsByKey = {
   mora: ["Dashboard Global", "Dashboard Operativo", "Gestiones"],
   pagex: ["Dashboard Global", "Dashboard Operativo"],
-  licencias: ["Dashboard Global", "Dashboard Operativo"],
+  licencias: [
+    "Dashboard Global",
+    "Dashboard Operativo",
+    "Gestiones",
+    "Ficha Trabajador",
+  ],
   "pagos-previsionales": ["Dashboard"],
   "reembolso-sil": ["Dashboard"],
   "cargas-familiares": ["Dashboard"],
