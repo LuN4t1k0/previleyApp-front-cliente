@@ -16,6 +16,17 @@ import {
   TabPanels,
   Badge,
 } from "@tremor/react";
+import {
+  BoltIcon,
+  XCircleIcon,
+  ArrowPathIcon,
+  ArrowUpOnSquareIcon,
+  FolderOpenIcon,
+  Bars3BottomLeftIcon,
+  DocumentTextIcon,
+  BanknotesIcon,
+  ReceiptPercentIcon,
+} from "@heroicons/react/24/outline";
 import useActionFeedback from "@/hooks/useActionFeedback";
 import { useModal, ModalProvider } from "@/context/ModalContext";
 import { showConfirmationAlert } from "@/utils/alerts";
@@ -29,71 +40,191 @@ import subsidiosConfig from "@/config/module/subsidios/subsidios.config";
 import useDynamicActions from "@/hooks/useDynamicActions";
 import useInfiniteScroll from "@/hooks/useInfiniteScroll";
 
-// --- REINCORPORA ESTE COMPONENTE ---
-const StatCard = ({ title, count, onUploadClick, onDeleteClick, canDelete, isLoading }) => (
-  <div className="border p-4 rounded-lg shadow-sm text-center flex flex-col justify-between bg-tremor-background-muted dark:bg-dark-tremor-background-muted">
-    <div>
-      <h4 className="text-tremor-default font-medium text-tremor-content dark:text-dark-tremor-content">
-        {title}
-      </h4>
-      {isLoading ? (
-        <div className="h-9 flex items-center justify-center">
-          <span className="text-tremor-default text-tremor-content-subtle">
-            Cargando...
-          </span>
-        </div>
-      ) : (
-        <p className="text-tremor-metric font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-          {count}
-        </p>
-      )}
-    </div>
-    <div className="mt-4 grid grid-cols-1 gap-2">
-      <button
-        onClick={onUploadClick}
-        className="w-full whitespace-nowrap rounded-tremor-small bg-tremor-brand px-3 py-2 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input transition hover:bg-tremor-brand-emphasis dark:bg-dark-tremor-brand dark:hover:bg-dark-tremor-brand-emphasis"
+const StatCard = ({ title, count, icon: Icon, isLoading, color = "blue" }) => (
+  <Card className="flex flex-row items-center justify-between p-4 shadow-tremor-input transition duration-150 ease-in-out hover:shadow-tremor-ring">
+    <div className="flex items-center space-x-4">
+      <div
+        className={`flex-shrink-0 rounded-full p-3 ${
+          color === "blue"
+            ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
+            : ""
+        } ${
+          color === "orange"
+            ? "bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300"
+            : ""
+        } ${
+          color === "emerald"
+            ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900 dark:text-emerald-300"
+            : ""
+        }`}
       >
-        Cargar Archivo
-      </button>
-      {canDelete && (
-        <button
-          onClick={onDeleteClick}
-          className="w-full whitespace-nowrap rounded-tremor-small border border-red-300 px-3 py-2 text-tremor-default font-medium text-red-600 shadow-tremor-input hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30"
-        >
-          Borrar todo
-        </button>
-      )}
-    </div>
-  </div>
-);
-
-
-const TabHeader = ({ title, count, onUploadClick, onAddClick, isLoading }) => (
-  <div className="mb-4">
-    <div className="flex justify-between items-center">
-      <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
-        {title}{" "}
-        <span className="text-tremor-default text-tremor-content">
-          ({isLoading ? "..." : count})
-        </span>
-      </h3>
-      <div className="flex space-x-2">
-        <button
-          onClick={onAddClick}
-          className="whitespace-nowrap rounded-tremor-small border border-tremor-border px-3 py-2 text-tremor-default font-medium text-tremor-content shadow-tremor-input"
-        >
-          Agregar Manualmente
-        </button>
-        <button
-          onClick={onUploadClick}
-          className="whitespace-nowrap rounded-tremor-small bg-tremor-brand px-3 py-2 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input transition hover:bg-tremor-brand-emphasis"
-        >
-          Cargar Archivo
-        </button>
+        <Icon className="h-6 w-6" aria-hidden="true" />
+      </div>
+      <div>
+        <h4 className="text-tremor-default font-medium text-tremor-content-subtle dark:text-dark-tremor-content-subtle">
+          {title}
+        </h4>
+        {isLoading ? (
+          <p className="text-tremor-metric font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong animate-pulse">
+            Cargando...
+          </p>
+        ) : (
+          <p className="text-tremor-metric font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+            {count}
+          </p>
+        )}
       </div>
     </div>
-  </div>
+  </Card>
 );
+
+const ActionHeader = ({
+  gestion,
+  isEditable,
+  onCerrar,
+  onReconciliar,
+  onAnularYReasignar,
+  onReabrir,
+  onVolver,
+  onCargarArchivo,
+  canDeleteAll,
+  onDeleteAll,
+  isReadOnly,
+}) => {
+  const dataTypes = [
+    {
+      key: "licencias",
+      label: "Licencias",
+      onUpload: () => onCargarArchivo("licencias"),
+      onDelete: () => onDeleteAll("licencias"),
+    },
+    {
+      key: "anticipos",
+      label: "Anticipos",
+      onUpload: () => onCargarArchivo("anticipos"),
+      onDelete: () => onDeleteAll("anticipos"),
+    },
+    {
+      key: "subsidios",
+      label: "Subsidios",
+      onUpload: () => onCargarArchivo("subsidios"),
+      onDelete: () => onDeleteAll("subsidios"),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-start">
+        <div>
+          <Titulo
+            title={`EXPEDIENTE: ${gestion.folioInterno}`}
+            subtitle={`Periodo: ${gestion.periodo}`}
+          />
+          <p className="mt-1 text-tremor-default text-tremor-content">
+            Empresa: <span className="font-semibold">{gestion.empresaRut}</span>
+          </p>
+        </div>
+        <Badge
+          size="lg"
+          color={
+            gestion.estado === "cerrada"
+              ? "emerald"
+              : gestion.estado === "reabierta"
+              ? "orange"
+              : gestion.estado === "anulada"
+              ? "red"
+              : "gray"
+          }
+          className="capitalize"
+        >
+          {gestion.estado.replace("_", " ")}
+        </Badge>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 border-y py-3">
+        {!isReadOnly &&
+          (gestion.estado === "cerrada" ? (
+            <button
+              onClick={onReabrir}
+              className="flex items-center space-x-1 whitespace-nowrap rounded-tremor-small bg-red-600 px-4 py-2 text-tremor-default font-medium text-white shadow-tremor-input transition hover:bg-red-700"
+            >
+              <ArrowPathIcon className="h-4 w-4" />
+              <span>Reabrir (Rechazar Producción)</span>
+            </button>
+          ) : gestion.estado === "anulada" ? (
+            <p className="font-semibold text-red-600">
+              Esta gestión está ANULADA y no permite acciones.
+            </p>
+          ) : (
+            isEditable && (
+              <>
+                <button
+                  onClick={onCerrar}
+                  className="flex items-center space-x-1 whitespace-nowrap rounded-tremor-small bg-tremor-brand px-4 py-2 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input transition hover:bg-tremor-brand-emphasis"
+                >
+                  <BoltIcon className="h-4 w-4" />
+                  <span>Cerrar Gestión</span>
+                </button>
+                <button
+                  onClick={onReconciliar}
+                  className="flex items-center space-x-1 whitespace-nowrap rounded-tremor-small border border-tremor-border px-4 py-2 text-tremor-default font-medium text-tremor-content shadow-tremor-input hover:bg-tremor-background-subtle dark:hover:bg-dark-tremor-background-subtle"
+                >
+                  <FolderOpenIcon className="h-4 w-4" />
+                  <span>Reconciliar Huérfanos</span>
+                </button>
+                <button
+                  onClick={onAnularYReasignar}
+                  className="flex items-center space-x-1 whitespace-nowrap rounded-tremor-small bg-yellow-500 px-4 py-2 text-tremor-default font-medium text-white shadow-tremor-input transition hover:bg-yellow-600"
+                >
+                  <XCircleIcon className="h-4 w-4" />
+                  <span>Anular Gestión</span>
+                </button>
+              </>
+            )
+          ))}
+        <button
+          onClick={onVolver}
+          className="ml-auto flex items-center space-x-1 whitespace-nowrap rounded-tremor-small border border-tremor-border px-4 py-2 text-tremor-default font-medium text-tremor-content shadow-tremor-input"
+        >
+          <Bars3BottomLeftIcon className="h-4 w-4" />
+          <span>Volver a la Lista</span>
+        </button>
+      </div>
+
+      {!isReadOnly && (
+        <div className="grid grid-cols-3 gap-4">
+          {dataTypes.map(({ key, label, onUpload, onDelete }) => (
+            <div key={key} className="flex flex-col space-y-2">
+              <h4 className="text-tremor-default font-medium text-tremor-content-strong">
+                {label}
+              </h4>
+              <div className="flex space-x-2">
+                <button
+                  onClick={onUpload}
+                  className="flex-1 flex items-center justify-center space-x-1 whitespace-nowrap rounded-tremor-small bg-tremor-brand px-3 py-2 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input transition hover:bg-tremor-brand-emphasis disabled:opacity-50"
+                  disabled={!isEditable}
+                >
+                  <ArrowUpOnSquareIcon className="h-4 w-4" />
+                  <span>Cargar</span>
+                </button>
+                {canDeleteAll && (
+                  <button
+                    onClick={onDelete}
+                    className="rounded-tremor-small border border-red-300 px-3 py-2 text-tremor-default font-medium text-red-600 shadow-tremor-input hover:bg-red-50 dark:border-red-700 dark:text-red-300 dark:hover:bg-red-900/30 disabled:opacity-50"
+                    disabled={!isEditable}
+                    title={`Borrar todos los ${label}`}
+                  >
+                    <XCircleIcon className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ExpedienteContent = () => {
   const { role } = useRole();
@@ -204,8 +335,11 @@ const ExpedienteContent = () => {
   const dynamicAnticiposConfig = useDynamicActions(anticiposConfig, isEditable);
   const dynamicSubsidiosConfig = useDynamicActions(subsidiosConfig, isEditable);
 
-  const canEdit = licenciasConfig.permissions.edit.includes(role);
-  const canDelete = licenciasConfig.permissions.delete.includes(role);
+  const isReadOnly = role === "cliente";
+  const canEdit =
+    !isReadOnly && licenciasConfig.permissions.edit.includes(role);
+  const canDelete =
+    !isReadOnly && licenciasConfig.permissions.delete.includes(role);
 
   const fetchData = useCallback(async () => {
     if (!gestionId) return;
@@ -482,6 +616,43 @@ const handleCargarArchivo = (tipo) => {
   }
 };
 
+  const statCardData = useMemo(
+    () => [
+      {
+        key: "licencias",
+        title: "Licencias",
+        count: licenciasTotal,
+        isLoading: licenciasLoading,
+        icon: DocumentTextIcon,
+        color: "blue",
+      },
+      {
+        key: "anticipos",
+        title: "Anticipos",
+        count: anticiposTotal,
+        isLoading: anticiposLoading,
+        icon: BanknotesIcon,
+        color: "orange",
+      },
+      {
+        key: "subsidios",
+        title: "Subsidios",
+        count: subsidiosTotal,
+        isLoading: subsidiosLoading,
+        icon: ReceiptPercentIcon,
+        color: "emerald",
+      },
+    ],
+    [
+      licenciasTotal,
+      licenciasLoading,
+      anticiposTotal,
+      anticiposLoading,
+      subsidiosTotal,
+      subsidiosLoading,
+    ]
+  );
+
   const handleAnularYReasignar = () => {
     openModal("anularYReasignar", {
       gestionData: gestion, // Pasamos la gestión original al wizard
@@ -499,172 +670,128 @@ const handleCargarArchivo = (tipo) => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <Titulo
-            title={`CONCILIACIÓN: ${gestion.folioInterno}`}
-            subtitle={`Periodo: ${gestion.periodo}`}
-            
-          />
-          
-          <p className="mt-1 text-tremor-default text-tremor-content">
-            Empresa: {gestion.empresaRut}
-          </p>
-        </div>
-        <Badge
-          size="lg"
-          color={
-            gestion.estado === "cerrada"
-              ? "emerald"
-              : gestion.estado === "reabierta"
-              ? "orange"
-              : "gray"
-          }
-        >
-          {gestion.estado}
-        </Badge>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 border-t pt-4">
-        {/* Estos botones los haremos funcionales en la V1.1 */}
-        {isEditable && (
-          <button
-            onClick={handleCerrar}
-            className="whitespace-nowrap rounded-tremor-small bg-tremor-brand px-4 py-2 text-tremor-default font-medium text-tremor-brand-inverted shadow-tremor-input transition hover:bg-tremor-brand-emphasis"
-          >
-            Cerrar Gestión
-          </button>
-        )}
-        {isEditable && (
-          <button
-            onClick={handleReconciliarHuerfanos}
-            className="whitespace-nowrap rounded-tremor-small border border-tremor-border px-4 py-2 text-tremor-default font-medium text-tremor-content shadow-tremor-input"
-          >
-            Reconciliar Huérfanos
-          </button>
-        )}
-        {isEditable && (
-          <button
-            onClick={handleAnularYReasignar}
-            className="whitespace-nowrap rounded-tremor-small bg-yellow-500 px-4 py-2 text-tremor-default font-medium text-white shadow-tremor-input transition hover:bg-yellow-600"
-          >
-            Anular Gestión
-          </button>
-        )}
-        {gestion.estado === "cerrada" && (
-          <button
-            onClick={handleReabrir}
-            className="whitespace-nowrap rounded-tremor-small bg-red-500 px-4 py-2 text-tremor-default font-medium text-white shadow-tremor-input transition hover:bg-red-600"
-          >
-            Reabrir (Rechazar Producción)
-          </button>
-        )}
-        <button
-          onClick={() => router.push("/licencia-medica/conciliacion")}
-          className="whitespace-nowrap rounded-tremor-small border border-tremor-border px-4 py-2 text-tremor-default font-medium text-tremor-content shadow-tremor-input"
-        >
-          Volver a la Lista
-        </button>
-      </div>
+      <ActionHeader
+        gestion={gestion}
+        isEditable={isEditable}
+        onCerrar={handleCerrar}
+        onReconciliar={handleReconciliarHuerfanos}
+        onAnularYReasignar={handleAnularYReasignar}
+        onReabrir={handleReabrir}
+        onVolver={() => router.push("/licencia-medica/conciliacion")}
+        onCargarArchivo={handleCargarArchivo}
+        canDeleteAll={canDeleteAll}
+        onDeleteAll={handleDeleteAll}
+        isReadOnly={isReadOnly}
+      />
 
       <TabGroup>
         <TabList>
-          <Tab>Resumen</Tab>
+          <Tab>Resumen y Métricas</Tab>
           <Tab>Licencias ({licenciasTotal})</Tab>
           <Tab>Anticipos ({anticiposTotal})</Tab>
           <Tab>Subsidios ({subsidiosTotal})</Tab>
         </TabList>
         <TabPanels>
-            {/* El Resumen y Cargas ahora solo muestra las StatCards */}
-          {/* <TabPanel>
-            <Card className="mt-6">
-              <h3 className="text-tremor-title font-semibold">
+          <TabPanel>
+            <Card className="mt-6 space-y-6">
+              <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
                 Resumen de Registros
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-4">
-                <div className="border p-4 rounded-lg text-center bg-tremor-background-muted">
-                  <h4 className="text-tremor-default font-medium">Licencias</h4>
-                  <p className="text-tremor-metric font-semibold">
-                    {licenciasTotal}
-                  </p>
-                </div>
-                <div className="border p-4 rounded-lg text-center bg-tremor-background-muted">
-                  <h4 className="text-tremor-default font-medium">Anticipos</h4>
-                  <p className="text-tremor-metric font-semibold">
-                    {anticiposTotal}
-                  </p>
-                </div>
-                <div className="border p-4 rounded-lg text-center bg-tremor-background-muted">
-                  <h4 className="text-tremor-default font-medium">Subsidios</h4>
-                  <p className="text-tremor-metric font-semibold">
-                    {subsidiosTotal}
-                  </p>
-                </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {statCardData.map((stat) => (
+                  <StatCard key={stat.key} {...stat} />
+                ))}
+              </div>
+
+              <hr className="border-tremor-border dark:border-dark-tremor-border" />
+
+              <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">
+                Métricas del Periodo
+              </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="p-4 shadow-tremor-input">
+                  <div className="text-tremor-label text-tremor-content-subtle">
+                    Total Licencias
+                  </div>
+                  <div className="text-tremor-metric font-semibold mt-1">
+                    {metricsLoading
+                      ? "..."
+                      : metrics?.sums?.licenciasTotal || 0}{" "}
+                    Días
+                  </div>
+                </Card>
+                <Card className="p-4 shadow-tremor-input">
+                  <div className="text-tremor-label text-tremor-content-subtle">
+                    Total Anticipos
+                  </div>
+                  <div className="text-tremor-metric font-semibold mt-1">
+                    {metricsLoading
+                      ? "..."
+                      : new Intl.NumberFormat("es-CL", {
+                          style: "currency",
+                          currency: "CLP",
+                          maximumFractionDigits: 0,
+                        }).format(Number(metrics?.sums?.anticiposTotal || 0))}
+                  </div>
+                </Card>
+                <Card className="p-4 shadow-tremor-input">
+                  <div className="text-tremor-label text-tremor-content-subtle">
+                    Total Subsidios
+                  </div>
+                  <div className="text-tremor-metric font-semibold mt-1">
+                    {metricsLoading
+                      ? "..."
+                      : new Intl.NumberFormat("es-CL", {
+                          style: "currency",
+                          currency: "CLP",
+                          maximumFractionDigits: 0,
+                        }).format(Number(metrics?.sums?.subsidiosTotal || 0))}
+                  </div>
+                </Card>
+                <Card
+                  className={`p-4 shadow-tremor-ring lg:col-span-3 ${
+                    Number(metrics?.sums?.diferencia || 0) < 0
+                      ? "bg-red-50 dark:bg-red-950/50"
+                      : "bg-emerald-50 dark:bg-emerald-950/50"
+                  }`}
+                >
+                  <div className="text-tremor-label font-semibold">
+                    Diferencia Neta (Subsidios - Anticipos)
+                  </div>
+                  <div
+                    className={`text-tremor-metric font-bold mt-1 ${
+                      Number(metrics?.sums?.diferencia || 0) < 0
+                        ? "text-red-700 dark:text-red-400"
+                        : "text-emerald-700 dark:text-emerald-400"
+                    }`}
+                  >
+                    {metricsLoading
+                      ? "..."
+                      : new Intl.NumberFormat("es-CL", {
+                          style: "currency",
+                          currency: "CLP",
+                          maximumFractionDigits: 0,
+                        }).format(Number(metrics?.sums?.diferencia || 0))}
+                  </div>
+                </Card>
               </div>
             </Card>
-          </TabPanel> */}
-
-          {/* NUEVO */}
+          </TabPanel>
           <TabPanel>
-    <Card className="mt-6">
-       <h3 className="text-tremor-title font-semibold text-tremor-content-strong dark:text-dark-tremor-content-strong">Carga y Resumen de Datos</h3>
-       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-4">
-            <StatCard 
-                title="Licencias" 
-                count={licenciasTotal} // <-- Usa la variable 'total' del hook
-                isLoading={licenciasLoading} // <-- Usa el loading específico de la tabla
-                onUploadClick={() => handleCargarArchivo('licencias')} 
-                onDeleteClick={() => handleDeleteAll('licencias')}
-                canDelete={canDeleteAll}
-            />
-            <StatCard 
-                title="Anticipos" 
-                count={anticiposTotal} // <-- Usa la variable 'total' del hook
-                isLoading={anticiposLoading} // <-- Usa el loading específico
-                onUploadClick={() => handleCargarArchivo('anticipos')} 
-                onDeleteClick={() => handleDeleteAll('anticipos')}
-                canDelete={canDeleteAll}
-            />
-            <StatCard 
-                title="Subsidios" 
-                count={subsidiosTotal} // <-- Usa la variable 'total' del hook
-                isLoading={subsidiosLoading} // <-- Usa el loading específico
-                onUploadClick={() => handleCargarArchivo('subsidios')} 
-                onDeleteClick={() => handleDeleteAll('subsidios')}
-                canDelete={canDeleteAll}
-            />
-        </div>
-        {/* Indicadores del periodo: ocupar columnas 2 y 3, y la diferencia bajo ambas */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
-          {/* Deja vacía la primera columna en >= sm para alineación visual */}
-          <div className="hidden sm:block" />
-
-          <div className="border p-4 rounded-lg shadow-sm bg-white dark:bg-dark-tremor-background-muted sm:col-start-2">
-            <div className="text-tremor-label text-tremor-content-subtle">Total Anticipos</div>
-            <div className="text-tremor-metric font-semibold mt-1">{metricsLoading ? '...' : new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(Number(metrics?.sums?.anticiposTotal||0))}</div>
-          </div>
-          <div className="border p-4 rounded-lg shadow-sm bg-white dark:bg-dark-tremor-background-muted sm:col-start-3">
-            <div className="text-tremor-label text-tremor-content-subtle">Total Subsidios</div>
-            <div className="text-tremor-metric font-semibold mt-1">{metricsLoading ? '...' : new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(Number(metrics?.sums?.subsidiosTotal||0))}</div>
-          </div>
-          <div className={`border p-4 rounded-lg shadow-sm bg-white dark:bg-dark-tremor-background-muted sm:col-span-2 sm:col-start-2 ${Number(metrics?.sums?.diferencia||0) < 0 ? 'border-red-300' : 'border-emerald-300'}`}>
-            <div className="text-tremor-label text-tremor-content-subtle">Diferencia (Subsidios - Anticipos)</div>
-            <div className={`text-tremor-metric font-semibold mt-1 ${Number(metrics?.sums?.diferencia||0) < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-              {metricsLoading ? '...' : new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(Number(metrics?.sums?.diferencia||0))}
-            </div>
-          </div>
-        </div>
-    </Card>
-</TabPanel>
-          <TabPanel>
-            <Card className="mt-6">
-              <TabHeader
-                title="Licencias"
-                count={licenciasTotal}
-                isLoading={loading}
-                onUploadClick={() => handleCargarArchivo("licencias")}
-                onAddClick={() => handleAddItem("licencia")}
-              />
+            <Card className="mt-6 space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-tremor-title font-semibold">Licencias</h3>
+                {isEditable && !isReadOnly && (
+                  <button
+                    onClick={() => handleAddItem("licencia")}
+                    className="whitespace-nowrap rounded-tremor-small border border-tremor-border px-3 py-2 text-tremor-default font-medium text-tremor-content shadow-tremor-input flex items-center space-x-1 hover:bg-tremor-background-subtle"
+                  >
+                    <DocumentTextIcon className="h-4 w-4" />
+                    <span>Agregar Licencia Manualmente</span>
+                  </button>
+                )}
+              </div>
               <GenericTableWithDetail
                 data={licenciasData}
                 loading={licenciasLoading}
@@ -680,21 +807,33 @@ const handleCargarArchivo = (tipo) => {
                 canDelete={canDelete}
                 role={role}
                 actionHandlers={{
-                  editar: (item) => handleEditItem(item, "licencia"),
-                  eliminar: (item) => handleDeleteItem(item, "licencia"),
+                  ...(canEdit
+                    ? { editar: (item) => handleEditItem(item, "licencia") }
+                    : {}),
+                  ...(canDelete
+                    ? {
+                        eliminar: (item) =>
+                          handleDeleteItem(item.id || item, "licencia"),
+                      }
+                    : {}),
                 }}
               />
             </Card>
           </TabPanel>
           <TabPanel>
-            <Card className="mt-6">
-              <TabHeader
-                title="Anticipos"
-                count={anticiposTotal}
-                isLoading={loading}
-                onUploadClick={() => handleCargarArchivo("anticipos")}
-                onAddClick={() => handleAddItem("anticipo")}
-              />
+            <Card className="mt-6 space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-tremor-title font-semibold">Anticipos</h3>
+                {isEditable && !isReadOnly && (
+                  <button
+                    onClick={() => handleAddItem("anticipo")}
+                    className="whitespace-nowrap rounded-tremor-small border border-tremor-border px-3 py-2 text-tremor-default font-medium text-tremor-content shadow-tremor-input flex items-center space-x-1 hover:bg-tremor-background-subtle"
+                  >
+                    <BanknotesIcon className="h-4 w-4" />
+                    <span>Agregar Anticipo Manualmente</span>
+                  </button>
+                )}
+              </div>
               <GenericTableWithDetail
                 data={anticiposData}
                 loading={anticiposLoading}
@@ -709,22 +848,33 @@ const handleCargarArchivo = (tipo) => {
                 canDelete={canDelete}
                 role={role}
                 actionHandlers={{
-                  editar: (item) => handleEditItem(item, "anticipo"),
-                  eliminar: (item) => handleDeleteItem(item, "anticipo"),
+                  ...(canEdit
+                    ? { editar: (item) => handleEditItem(item, "anticipo") }
+                    : {}),
+                  ...(canDelete
+                    ? {
+                        eliminar: (item) =>
+                          handleDeleteItem(item.id || item, "anticipo"),
+                      }
+                    : {}),
                 }}
               />
             </Card>
           </TabPanel>
           <TabPanel>
-            <Card className="mt-6">
-              <TabHeader
-                title="Subsidios"
-                count={subsidiosTotal}
-                isLoading={loading}
-                onUploadClick={() => handleCargarArchivo("subsidios")}
-                onAddClick={() => handleAddItem("subsidio")}
-              />
-
+            <Card className="mt-6 space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-tremor-title font-semibold">Subsidios</h3>
+                {isEditable && !isReadOnly && (
+                  <button
+                    onClick={() => handleAddItem("subsidio")}
+                    className="whitespace-nowrap rounded-tremor-small border border-tremor-border px-3 py-2 text-tremor-default font-medium text-tremor-content shadow-tremor-input flex items-center space-x-1 hover:bg-tremor-background-subtle"
+                  >
+                    <ReceiptPercentIcon className="h-4 w-4" />
+                    <span>Agregar Subsidio Manualmente</span>
+                  </button>
+                )}
+              </div>
               <GenericTableWithDetail
                 data={subsidiosData}
                 loading={subsidiosLoading}
@@ -739,8 +889,15 @@ const handleCargarArchivo = (tipo) => {
                 canDelete={canDelete}
                 role={role}
                 actionHandlers={{
-                  editar: (item) => handleEditItem(item, "subsidio"),
-                  eliminar: (item) => handleDeleteItem(item, "subsidio"),
+                  ...(canEdit
+                    ? { editar: (item) => handleEditItem(item, "subsidio") }
+                    : {}),
+                  ...(canDelete
+                    ? {
+                        eliminar: (item) =>
+                          handleDeleteItem(item.id || item, "subsidio"),
+                      }
+                    : {}),
                 }}
               />
             </Card>
