@@ -36,6 +36,7 @@ export default function CargaMasivaRealtime({ title, endpoint, refreshData, fetc
   const [precheck, setPrecheck] = React.useState(null); // stores dryRun summary
   const [prechecking, setPrechecking] = React.useState(false);
   const [preCorr, setPreCorr] = React.useState(null);
+  const [doneSummary, setDoneSummary] = React.useState(null);
   const fmtCLP = React.useCallback((n) => {
     try {
       return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Number(n||0));
@@ -67,6 +68,25 @@ export default function CargaMasivaRealtime({ title, endpoint, refreshData, fetc
           >
             Cerrar
           </button>
+        </div>
+      ) : null}
+      {doneSummary ? (
+        <div className="rounded-tremor-default border border-emerald-200 bg-emerald-50 p-3 text-emerald-900">
+          <div className="text-sm font-semibold">Carga finalizada</div>
+          <div className="text-xs">
+            Total: {String(doneSummary?.total ?? doneSummary?.summary?.total ?? 0)} ·
+            Procesados: {String(doneSummary?.processed ?? doneSummary?.summary?.processed ?? doneSummary?.summary?.valid ?? 0)} ·
+            Rechazados: {String(doneSummary?.rejected ?? doneSummary?.summary?.rejected ?? 0)}
+          </div>
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => onClose?.()}
+              className="whitespace-nowrap rounded-tremor-small border border-emerald-300 px-3 py-1.5 text-tremor-default font-medium text-emerald-900"
+            >
+              Cerrar
+            </button>
+          </div>
         </div>
       ) : null}
       {/* Pre-check actions */}
@@ -198,11 +218,14 @@ export default function CargaMasivaRealtime({ title, endpoint, refreshData, fetc
           startTrigger={startTrigger}
           cancelTrigger={cancelTrigger}
           onClose={onClose}
-          onDone={() => {
+          onDone={(job) => {
+            setDoneSummary(job || { summary: { processed: 0, rejected: 0, total: 0 } });
             try { doRefresh?.(); } catch {}
-            try { onClose?.(); } catch {}
           }}
-          onRunningChange={setRunning}
+          onRunningChange={(isRunning) => {
+            if (isRunning) setDoneSummary(null);
+            setRunning(isRunning);
+          }}
         />
       </div>
     </div>

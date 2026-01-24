@@ -261,6 +261,16 @@ export default function BulkUploadGL({
           )}
           <BulkProgressBar job={job} uploadPercent={uploadPercent} />
 
+          {job?.phase === "done" && (
+            <div className="rounded-tremor-default border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+              <div className="font-semibold">Carga finalizada</div>
+              <div>
+                Procesados: {String(job?.processed ?? 0)} · Rechazados:{" "}
+                {String(job?.rejected ?? 0)}
+              </div>
+            </div>
+          )}
+
           {/* Resumen rápido durante/tras precheck */}
           {job && (job.phase === 'precheck:end' || job.phase === 'process' || job.phase === 'done') && (
             <div className="text-xs text-tremor-content-subtle">
