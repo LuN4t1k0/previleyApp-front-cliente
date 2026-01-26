@@ -41,6 +41,11 @@ const DashboardPage = () => {
   const [executiveData, setExecutiveData] = useState({
     services: [],
   });
+  const [documentAlerts, setDocumentAlerts] = useState({
+    missingDetalle: 0,
+    missingCertificados: 0,
+  });
+  const [loadingDocumentAlerts, setLoadingDocumentAlerts] = useState(true);
 
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
   const empresaRuts = useMemo(
@@ -175,8 +180,49 @@ const DashboardPage = () => {
       dueSoon,
       missingPrefPdf,
       missingFacturaPdf,
+      missingCertificados: Number(documentAlerts.missingCertificados || 0),
+      missingDetalle: Number(documentAlerts.missingDetalle || 0),
     };
-  }, [prefacturasAlertas]);
+  }, [prefacturasAlertas, documentAlerts]);
+
+  useEffect(() => {
+    let isActive = true;
+    const fetchDocumentAlerts = async () => {
+      if (!empresaRuts.length) {
+        if (isActive) {
+          setDocumentAlerts({ missingDetalle: 0, missingCertificados: 0 });
+          setLoadingDocumentAlerts(false);
+        }
+        return;
+      }
+      setLoadingDocumentAlerts(true);
+      try {
+        const response = await apiService.get("/produccion/alerts", {
+          params: {
+            empresaRut: empresaRuts,
+          },
+        });
+        if (isActive) {
+          setDocumentAlerts(response?.data?.data || { missingDetalle: 0, missingCertificados: 0 });
+        }
+      } catch (error) {
+        if (isActive) {
+          console.error("Error al cargar alertas de documentos:", error);
+          setDocumentAlerts({ missingDetalle: 0, missingCertificados: 0 });
+        }
+      } finally {
+        if (isActive) {
+          setLoadingDocumentAlerts(false);
+        }
+      }
+    };
+
+    fetchDocumentAlerts();
+
+    return () => {
+      isActive = false;
+    };
+  }, [empresaRuts]);
 
   useEffect(() => {
     let isActive = true;
@@ -375,7 +421,7 @@ const DashboardPage = () => {
             <h2 className="text-2xl font-bold text-slate-900">Alertas Accionables</h2>
             <p className="text-slate-500">Documentos y tareas que requieren tu atención inmediata.</p>
           </div>
-          {loadingAlertas ? (
+          {loadingAlertas || loadingDocumentAlerts ? (
             <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-slate-500 shadow-sm backdrop-blur">
               Analizando alertas...
             </div>
@@ -395,14 +441,14 @@ const DashboardPage = () => {
                 link="/prefacturas"
               />
               <AlertTile
-                label="Prefacturas sin PDF"
-                count={alertas.missingPrefPdf}
+                label="PDFs pendientes"
+                count={alertas.missingCertificados}
                 icon={<RiFileTextLine className="h-5 w-5" />}
                 link="/documentos"
               />
               <AlertTile
-                label="Facturas sin PDF"
-                count={alertas.missingFacturaPdf}
+                label="Excels pendientes"
+                count={alertas.missingDetalle}
                 icon={<RiReceiptLine className="h-5 w-5" />}
                 link="/documentos"
               />

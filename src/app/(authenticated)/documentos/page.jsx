@@ -12,6 +12,7 @@ import {
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { usePrefacturas } from "@/hooks/usePrefacturas";
 import { usePrefacturaFilters } from "@/hooks/usePrefacturaFilters";
+import apiService from "@/app/api/apiService";
 import StatusPill from "@/components/status/StatusPill";
 import { formatDate } from "@/utils/formatters";
 import { fetchPrefacturaDetailWithSignedUrls } from "@/services/prefacturaApi";
@@ -141,6 +142,10 @@ const DocumentosPage = () => {
   const [expanded, setExpanded] = useState(new Set());
   const [detailMap, setDetailMap] = useState({});
   const [loadingDetail, setLoadingDetail] = useState({});
+  const [producciones, setProducciones] = useState([]);
+  const [produccionMeta, setProduccionMeta] = useState({ total: 0, pages: 1 });
+  const [loadingProducciones, setLoadingProducciones] = useState(true);
+  const [produccionPage, setProduccionPage] = useState(1);
 
   const applyFilters = useCallback(
     async (page = 1) => {
@@ -206,6 +211,58 @@ const DocumentosPage = () => {
     }
   };
 
+  const fetchProducciones = useCallback(
+    async (page = 1) => {
+      const offset = (page - 1) * PAGE_SIZE;
+      const query = {
+        limit: PAGE_SIZE,
+        offset,
+        sortBy: "fechaProduccion",
+        sortOrder: "desc",
+      };
+
+      if (selectedEmpresa !== "all" && selectedEmpresa) {
+        query.empresaRut = selectedEmpresa;
+      }
+
+      setLoadingProducciones(true);
+      try {
+        const response = await apiService.get("/produccion", { params: query });
+        const payload = response?.data || {};
+        setProducciones(payload.data || []);
+        setProduccionMeta({
+          total: payload.total ?? 0,
+          pages: payload.pages ?? 1,
+        });
+      } catch (error) {
+        console.error("Error al cargar producciones:", error);
+        setProducciones([]);
+        setProduccionMeta({ total: 0, pages: 1 });
+      } finally {
+        setLoadingProducciones(false);
+      }
+    },
+    [selectedEmpresa]
+  );
+
+  useEffect(() => {
+    fetchProducciones(1).catch(() => {});
+    setProduccionPage(1);
+  }, [selectedEmpresa, fetchProducciones]);
+
+  const handleProduccionPageChange = (direction) => {
+    if (direction === "prev" && produccionPage > 1) {
+      const nextPage = produccionPage - 1;
+      fetchProducciones(nextPage).catch(() => {});
+      setProduccionPage(nextPage);
+    }
+    if (direction === "next" && produccionPage < (produccionMeta.pages || 1)) {
+      const nextPage = produccionPage + 1;
+      fetchProducciones(nextPage).catch(() => {});
+      setProduccionPage(nextPage);
+    }
+  };
+
   const toggleExpanded = async (prefacturaId) => {
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -243,6 +300,15 @@ const DocumentosPage = () => {
         : docs.filter((doc) => doc.type === selectedDocType),
     [selectedDocType]
   );
+
+  const produccionesWithDocs = useMemo(() => {
+    return (producciones || [])
+      .map((prod) => ({
+        prod,
+        attachments: filterByType(buildProduccionAttachments(prod)),
+      }))
+      .filter((item) => item.attachments.length > 0);
+  }, [producciones, filterByType]);
 
   return (
     <section className="pb-16">
@@ -615,6 +681,93 @@ const DocumentosPage = () => {
             </button>
           </div>
         </div>
+
+        <section className="mt-20">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-slate-900">
+              Adjuntos por gestión
+            </h2>
+            <p className="text-slate-500">
+              Certificados, detalles y comprobantes asociados a gestiones.
+            </p>
+          </div>
+
+          {loadingProducciones ? (
+            <div className="glass-panel rounded-[2rem] p-8 text-sm text-[color:var(--text-secondary)]">
+              Cargando gestiones...
+            </div>
+          ) : produccionesWithDocs.length ? (
+            <div className="flex flex-col gap-4">
+              {produccionesWithDocs.map(({ prod, attachments }) => (
+                <article
+                  key={prod.id}
+                  className="glass-panel rounded-[2rem] p-6"
+                >
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--theme-primary)]">
+                        Gestión #{prod.id}
+                      </p>
+                      <h3 className="mt-2 text-lg font-semibold text-[color:var(--text-primary)]">
+                        {prod.servicio || "Servicio"}
+                      </h3>
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[color:var(--text-secondary)]">
+                        {prod.entidad && <span>{prod.entidad}</span>}
+                        {prod.fechaProduccion && (
+                          <span>{formatDate(prod.fechaProduccion)}</span>
+                        )}
+                        <StatusPill estado={prod.estado} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-3 text-xs">
+                    {attachments.map((doc) => (
+                      <a
+                        key={`${prod.id}-${doc.label}`}
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white px-3 py-2 font-semibold text-[color:var(--text-secondary)] hover:text-[color:var(--theme-primary)]"
+                      >
+                        <RiFileDownloadLine className="h-4 w-4" aria-hidden="true" />
+                        {doc.label}
+                      </a>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="glass-panel rounded-[2rem] p-8 text-sm text-[color:var(--text-secondary)]">
+              No hay adjuntos de gestiones para los filtros actuales.
+            </div>
+          )}
+
+          <div className="mt-6 flex items-center justify-between">
+            <p className="text-xs text-[color:var(--text-secondary)]">
+              Página {produccionPage} de {produccionMeta.pages || 1}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleProduccionPageChange("prev")}
+                className="inline-flex items-center gap-1 rounded-full border border-white/60 bg-white px-3 py-2 text-xs font-semibold text-[color:var(--text-secondary)] disabled:opacity-40"
+                disabled={produccionPage === 1}
+              >
+                Anterior
+              </button>
+              <button
+                type="button"
+                onClick={() => handleProduccionPageChange("next")}
+                className="inline-flex items-center gap-1 rounded-full border border-white/60 bg-white px-3 py-2 text-xs font-semibold text-[color:var(--text-secondary)] disabled:opacity-40"
+                disabled={produccionPage >= (produccionMeta.pages || 1)}
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+        </section>
       </div>
     </section>
   );
