@@ -22,6 +22,10 @@ import { usePrefacturas, usePrefacturasSummary } from "@/hooks/usePrefacturas";
 import apiService from "@/app/api/apiService";
 import StatusPill from "@/components/status/StatusPill";
 import { formatCurrency } from "@/utils/formatters";
+import {
+  resolveServiceDefinition,
+  resolveServiceKeyFromName,
+} from "@/config/clientServices.config";
 
 const DEFAULT_YEAR = 2025;
 
@@ -35,9 +39,7 @@ const DashboardPage = () => {
   const [executiveLoading, setExecutiveLoading] = useState(false);
   const [executiveError, setExecutiveError] = useState("");
   const [executiveData, setExecutiveData] = useState({
-    mora: null,
-    pagex: null,
-    licencias: null,
+    services: [],
   });
 
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
@@ -52,6 +54,7 @@ const DashboardPage = () => {
   const {
     data: empresasConServicios,
     loading: loadingServicios,
+    servicesByType,
   } = useEmpresasServicios(empresas);
 
   const { summary, loading: loadingSummary } = usePrefacturasSummary({
@@ -180,94 +183,25 @@ const DashboardPage = () => {
 
     const fetchExecutiveSummary = async () => {
       if (!empresaRuts.length) {
-        setExecutiveData({ mora: null, pagex: null, licencias: null });
+        setExecutiveData({ services: [] });
         setExecutiveLoading(false);
         return;
       }
-
-      const fechaInicio = `${executiveYear}-01-01`;
-      const fechaFin = `${executiveYear}-12-31`;
 
       setExecutiveLoading(true);
       setExecutiveError("");
 
       try {
-        const [moraResponse, pagexResponses, licenciasResponses] = await Promise.all([
-          fetch(
-            `/api/mora/operativo/indicadores?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`,
-            { cache: "no-store" }
-          ).then(async (response) => {
-            const payload = await response.json();
-            if (!response.ok) {
-              throw new Error(payload?.message || "No fue posible cargar la mora presunta.");
-            }
-            return payload?.data ?? payload;
-          }),
-          Promise.all(
-            empresaRuts.map((rut) =>
-              apiService.get(`/pagex-dashboard/${rut}/resumen-financiero`, {
-                params: { fechaInicio, fechaFin },
-              })
-            )
-          ),
-          Promise.all(
-            empresaRuts.map((rut) =>
-              apiService.get(`/licencia-dashboard/${rut}/evolucion-mensual`)
-            )
-          ),
-        ]);
-
-        const pagexTotals = pagexResponses.reduce(
-          (acc, response) => {
-            const data = response?.data?.data ?? response?.data ?? {};
-            acc.totalSolicitado += Number(data.totalSolicitado || 0);
-            acc.totalRecuperado += Number(data.totalRecuperado || 0);
-            acc.totalPendiente += Number(data.totalPendiente || 0);
-            return acc;
+        const response = await apiService.get("/prefacturas/dashboard/servicios", {
+          params: {
+            year: executiveYear,
+            empresaRut: empresaRuts.join(","),
           },
-          { totalSolicitado: 0, totalRecuperado: 0, totalPendiente: 0 }
-        );
-
-        const licenciasTotals = licenciasResponses.reduce(
-          (acc, response) => {
-            const rows = Array.isArray(response?.data)
-              ? response.data
-              : response?.data?.data || [];
-            const rowsArray = Array.isArray(rows) ? rows : [];
-            let empresaTieneLicencias = false;
-
-            rowsArray.forEach((row) => {
-              const dateValue = row?.mes || row?.periodo;
-              if (!dateValue) return;
-              const date = new Date(dateValue);
-              if (Number.isNaN(date.getTime()) || date.getFullYear() !== executiveYear) {
-                return;
-              }
-              const cantidad = Number(
-                row?.cantidadLicencias ?? row?.cantidad ?? 0
-              );
-              const dias = Number(row?.totalDias || 0);
-              if (cantidad > 0) {
-                empresaTieneLicencias = true;
-              }
-              acc.totalLicencias += cantidad;
-              acc.totalDias += dias;
-            });
-
-            if (empresaTieneLicencias) {
-              acc.empresasConLicencias += 1;
-            }
-
-            return acc;
-          },
-          { totalLicencias: 0, totalDias: 0, empresasConLicencias: 0 }
-        );
+        });
 
         if (isActive) {
           setExecutiveData({
-            mora: moraResponse,
-            pagex: pagexTotals,
-            licencias: licenciasTotals,
+            services: response?.data?.data || [],
           });
         }
       } catch (error) {
@@ -290,6 +224,37 @@ const DashboardPage = () => {
       isActive = false;
     };
   }, [empresaRuts, executiveYear]);
+
+  const executiveSummaryByKey = useMemo(() => {
+    const map = new Map();
+    (executiveData.services || []).forEach((item) => {
+      const key =
+        item?.serviceKey ||
+        resolveServiceKeyFromName(item?.servicioNombre || "") ||
+        resolveServiceKeyFromName(item?.servicioAbreviatura || "");
+      if (key) map.set(key, item);
+    });
+    return map;
+  }, [executiveData.services]);
+
+  const executiveCards = useMemo(() => {
+    if (!servicesByType.length) return [];
+    return servicesByType.map((service) => {
+      const definition =
+        service.definition || resolveServiceDefinition(service.serviceKey);
+      const summary = executiveSummaryByKey.get(service.serviceKey);
+      const totalValue = Number(summary?.value || 0);
+      const isCurrency = summary?.unit !== "count";
+      return {
+        key: service.serviceKey,
+        title: summary?.label || definition?.label || service.serviceKey,
+        mainValue: totalValue,
+        label: summary?.metricLabel || "Total procesado",
+        link: definition?.slug ? `/servicios/${definition.slug}` : "/servicios",
+        isCurrency,
+      };
+    });
+  }, [servicesByType, executiveSummaryByKey]);
 
   const prefacturasList = Array.isArray(prefacturasRecientes)
     ? prefacturasRecientes
@@ -386,26 +351,17 @@ const DashboardPage = () => {
               {executiveError}
             </div>
           ) : (
-            <div className="grid gap-8 lg:grid-cols-3">
-              <GlassCard
-                title="Mora Presunta"
-                mainValue={executiveData.mora?.totalRecuperado}
-                label="Recuperado total"
-                link="/servicios/mora-presunta?tab=dashboard-global"
-              />
-              <GlassCard
-                title="Pagos en Exceso"
-                mainValue={executiveData.pagex?.totalRecuperado}
-                label="Total recuperado"
-                link="/servicios/pagos-en-exceso?tab=dashboard-global"
-              />
-              <GlassCard
-                title="Licencias Médicas"
-                mainValue={executiveData.licencias?.totalLicencias}
-                label="Licencias año"
-                isCurrency={false}
-                link="/servicios/licencias-medicas?tab=dashboard-global"
-              />
+            <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-3">
+              {executiveCards.map((card) => (
+                <GlassCard
+                  key={card.key}
+                  title={card.title}
+                  mainValue={card.mainValue}
+                  label={card.label}
+                  link={card.link}
+                  isCurrency={card.isCurrency}
+                />
+              ))}
             </div>
           )}
         </section>

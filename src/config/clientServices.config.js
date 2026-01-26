@@ -31,8 +31,61 @@ export const CLIENT_SERVICE_DEFINITIONS = {
       "conciliacion licencias medicas",
       "anticipos",
       "subsidios",
-      "reembolso sil",
     ],
+  },
+  adml: {
+    key: "adml",
+    slug: "licencias-medicas",
+    label: "Administración de Licencias Médicas",
+    description:
+      "Gestión operativa y seguimiento de licencias médicas.",
+    icon: "🩺",
+    keywords: ["adml", "administracion de licencias medicas"],
+  },
+  rsil: {
+    key: "rsil",
+    slug: "licencias-medicas",
+    label: "Reembolso SIL",
+    description:
+      "Seguimiento de reembolsos SIL y conciliación de montos.",
+    icon: "🧾",
+    keywords: ["rsil", "reembolso sil"],
+  },
+  "mp-p": {
+    key: "mp-p",
+    slug: "mora-presunta",
+    label: "Mora Presunta - Pago",
+    description:
+      "Casos de mora presunta asociados a pagos.",
+    icon: "💳",
+    keywords: ["mp-p", "mora presunta - pago", "mora presunta pago"],
+  },
+  "mp-r": {
+    key: "mp-r",
+    slug: "mora-presunta",
+    label: "Mora Presunta - Regularización",
+    description:
+      "Casos de mora presunta asociados a regularización.",
+    icon: "✅",
+    keywords: ["mp-r", "mora presunta - regularizacion", "mora presunta regularizacion"],
+  },
+  dc: {
+    key: "dc",
+    slug: "depositos-convenidos",
+    label: "Depósitos Convenidos",
+    description:
+      "Seguimiento y conciliación de depósitos convenidos.",
+    icon: "🏦",
+    keywords: ["dc", "depositos convenidos", "depósitos convenidos"],
+  },
+  cf: {
+    key: "cf",
+    slug: "cargas-familiares",
+    label: "Cargas Familiares",
+    description:
+      "Administración y seguimiento de cargas familiares.",
+    icon: "👨‍👩‍👧‍👦",
+    keywords: ["cf", "cargas familiares", "carga familiar"],
   },
   pagosPrevisionales: {
     key: "pagos-previsionales",
@@ -82,8 +135,13 @@ export const CLIENT_SERVICE_DEFINITIONS = {
 };
 
 const keywordMatcher = (name = "") => {
-  const lower = name.toLowerCase();
-  return Object.values(CLIENT_SERVICE_DEFINITIONS).find((service) =>
+  const lower = name.toLowerCase().trim();
+  const services = Object.values(CLIENT_SERVICE_DEFINITIONS);
+  const exactMatch = services.find((service) =>
+    service.keywords.some((keyword) => lower === keyword)
+  );
+  if (exactMatch) return exactMatch;
+  return services.find((service) =>
     service.keywords.some((keyword) => lower.includes(keyword))
   );
 };
