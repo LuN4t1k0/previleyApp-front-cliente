@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RiArrowDownSLine,
   RiArrowUpSLine,
+  RiFileExcel2Line,
   RiFileDownloadLine,
   RiFilter3Line,
   RiRefreshLine,
@@ -99,6 +100,11 @@ const buildProduccionAttachments = (produccion) => {
     }
     return { ...entry, type: "all" };
   });
+};
+
+const resolveDocIcon = (type) => {
+  if (type === "detalle") return RiFileExcel2Line;
+  return RiFileDownloadLine;
 };
 
 const DocumentosPage = () => {
@@ -546,6 +552,9 @@ const DocumentosPage = () => {
                   <div className="mt-4 flex flex-wrap gap-3 text-xs">
                     {prefDocs.length > 0 ? (
                       prefDocs.map((doc) => (
+                        (() => {
+                          const Icon = resolveDocIcon(doc.type);
+                          return (
                         <a
                           key={`${pref.id}-${doc.label}`}
                           href={doc.url}
@@ -557,9 +566,11 @@ const DocumentosPage = () => {
                               : "border-white/60 bg-white text-[color:var(--text-secondary)] hover:text-[color:var(--theme-primary)]"
                           }`}
                         >
-                          <RiFileDownloadLine className="h-4 w-4" aria-hidden="true" />
+                          <Icon className="h-4 w-4" aria-hidden="true" />
                           {doc.label}
                         </a>
+                          );
+                        })()
                       ))
                     ) : (
                       <span className="text-xs text-[color:var(--text-secondary)]">
@@ -613,7 +624,9 @@ const DocumentosPage = () => {
                                         </span>
                                         {visibleAttachments.length > 0 ? (
                                           <div className="mt-2 flex flex-col gap-2">
-                                            {visibleAttachments.map((item) => (
+                                            {visibleAttachments.map((item) => {
+                                              const Icon = resolveDocIcon(item.type);
+                                              return (
                                               <a
                                                 key={`${label}-${item.label}`}
                                                 href={item.url}
@@ -621,10 +634,11 @@ const DocumentosPage = () => {
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-2 text-xs font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
                                               >
-                                                <RiFileDownloadLine className="h-3.5 w-3.5" aria-hidden="true" />
+                                                <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                                                 {item.label}
                                               </a>
-                                            ))}
+                                              );
+                                            })}
                                           </div>
                                         ) : (
                                           <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
@@ -722,7 +736,9 @@ const DocumentosPage = () => {
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-3 text-xs">
-                    {attachments.map((doc) => (
+                    {attachments.map((doc) => {
+                      const Icon = resolveDocIcon(doc.type);
+                      return (
                       <a
                         key={`${prod.id}-${doc.label}`}
                         href={doc.url}
@@ -730,10 +746,11 @@ const DocumentosPage = () => {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 rounded-full border border-white/60 bg-white px-3 py-2 font-semibold text-[color:var(--text-secondary)] hover:text-[color:var(--theme-primary)]"
                       >
-                        <RiFileDownloadLine className="h-4 w-4" aria-hidden="true" />
+                        <Icon className="h-4 w-4" aria-hidden="true" />
                         {doc.label}
                       </a>
-                    ))}
+                      );
+                    })}
                   </div>
                 </article>
               ))}

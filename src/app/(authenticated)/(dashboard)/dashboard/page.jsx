@@ -27,7 +27,7 @@ import {
   resolveServiceKeyFromName,
 } from "@/config/clientServices.config";
 
-const DEFAULT_YEAR = 2025;
+const DEFAULT_YEAR = 2026;
 
 const DashboardPage = () => {
   const { data: session } = useSession();
