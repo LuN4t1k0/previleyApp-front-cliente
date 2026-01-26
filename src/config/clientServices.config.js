@@ -58,7 +58,7 @@ export const CLIENT_SERVICE_DEFINITIONS = {
     description:
       "Casos de mora presunta asociados a pagos.",
     icon: "💳",
-    keywords: ["mp-p", "mora presunta - pago", "mora presunta pago"],
+    keywords: ["mp-p", "mora presunta - pago", "mora presunta pago", "mora presunta - pagó"],
   },
   "mp-r": {
     key: "mp-r",
@@ -67,7 +67,13 @@ export const CLIENT_SERVICE_DEFINITIONS = {
     description:
       "Casos de mora presunta asociados a regularización.",
     icon: "✅",
-    keywords: ["mp-r", "mora presunta - regularizacion", "mora presunta regularizacion"],
+    keywords: [
+      "mp-r",
+      "mora presunta - regularizacion",
+      "mora presunta regularizacion",
+      "mora presunta - regularización",
+      "mora presunta regularización",
+    ],
   },
   dc: {
     key: "dc",
@@ -141,9 +147,18 @@ const keywordMatcher = (name = "") => {
     service.keywords.some((keyword) => lower === keyword)
   );
   if (exactMatch) return exactMatch;
-  return services.find((service) =>
-    service.keywords.some((keyword) => lower.includes(keyword))
-  );
+  const matches = services
+    .map((service) => {
+      const matched = service.keywords.find((keyword) =>
+        lower.includes(keyword)
+      );
+      if (!matched) return null;
+      return { service, keyword: matched };
+    })
+    .filter(Boolean);
+  if (!matches.length) return null;
+  matches.sort((a, b) => b.keyword.length - a.keyword.length);
+  return matches[0].service;
 };
 
 export const resolveServiceDefinition = (keyOrName) => {

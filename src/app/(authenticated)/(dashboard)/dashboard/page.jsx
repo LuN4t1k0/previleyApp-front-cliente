@@ -242,7 +242,11 @@ const DashboardPage = () => {
     return servicesByType.map((service) => {
       const definition =
         service.definition || resolveServiceDefinition(service.serviceKey);
-      const summary = executiveSummaryByKey.get(service.serviceKey);
+      const summary =
+        executiveSummaryByKey.get(service.serviceKey) ||
+        (service.serviceKey === "mora"
+          ? executiveSummaryByKey.get("mp-r")
+          : null);
       const totalValue = Number(summary?.value || 0);
       const isCurrency = summary?.unit !== "count";
       return {
