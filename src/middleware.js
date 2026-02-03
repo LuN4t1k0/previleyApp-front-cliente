@@ -8,6 +8,6 @@ export const config = {
     "/service/:path*",
     "/profile",
     "/settings",
-    "/((?!signin|forgot-password|change-password|activate).*)",
+    "/((?!signin|forgot-password|change-password|activate|acuerdos/firma).*)",
   ],
 };
