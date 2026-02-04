@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 const buildApiUrl = (path) => {
   const base = process.env.NEXT_PUBLIC_API_URL || "";
@@ -21,7 +23,7 @@ const ConsentBadge = ({ text }) => (
   </span>
 );
 
-export default function FirmaAcuerdoPage() {
+const FirmaAcuerdoContent = () => {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
 
@@ -281,5 +283,23 @@ export default function FirmaAcuerdoPage() {
         )}
       </div>
     </div>
+  );
+};
+
+export default function FirmaAcuerdoPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50">
+          <div className="mx-auto max-w-5xl px-6 py-12 space-y-6">
+            <div className="h-6 w-48 rounded bg-slate-100 animate-pulse" />
+            <div className="h-4 w-72 rounded bg-slate-100 animate-pulse" />
+            <div className="h-80 rounded-2xl border border-slate-200 bg-white" />
+          </div>
+        </div>
+      }
+    >
+      <FirmaAcuerdoContent />
+    </Suspense>
   );
 }
