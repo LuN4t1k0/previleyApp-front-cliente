@@ -69,6 +69,16 @@ const dashboardModules = {
     theme: "pagex",
   },
 
+  reportes: {
+    name: "Reportes Dinámicos",
+    description: "Construye reportes ad-hoc y exporta CSV/XLSX.",
+    icon: "🧾",
+    path: "/dashboard/reportes",
+    roles: ["admin", "trabajador", "cliente", "supervisor", "facturacion"],
+    category: "servicio",
+    theme: "dashboard",
+  },
+
   // PROXIMAMENTE :
   pagosPrevisionales: {
     name: "Pagos Previsionales",
