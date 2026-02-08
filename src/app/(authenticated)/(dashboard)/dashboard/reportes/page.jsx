@@ -65,10 +65,20 @@ const ReportesPage = () => {
     loadSchema();
   }, [selectedDatasetId]);
 
+  const normalizeFilters = (items) => {
+    return (items || []).filter((f) => {
+      if (!f?.field || !f?.op) return false;
+      if (f.op === "in") return Array.isArray(f.value) && f.value.length > 0;
+      if (f.op === "between") return f.value?.from && f.value?.to;
+      if (typeof f.value === "number") return true;
+      return typeof f.value === "string" ? f.value.trim() !== "" : Boolean(f.value);
+    });
+  };
+
   const buildPayload = (override = {}) => ({
     datasetId: selectedDatasetId,
     columns: selectedColumns,
-    filters,
+    filters: normalizeFilters(filters),
     sort,
     pagination: {
       limit,
@@ -104,7 +114,7 @@ const ReportesPage = () => {
       const { data } = await apiService.post("/reporting/exports", {
         datasetId: selectedDatasetId,
         columns: selectedColumns,
-        filters,
+        filters: normalizeFilters(filters),
         sort,
         format: exportFormat,
       });
