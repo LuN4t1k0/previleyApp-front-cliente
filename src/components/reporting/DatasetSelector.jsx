@@ -11,7 +11,14 @@ const groupFromId = (id) => {
   return "Otros";
 };
 
-const DatasetSelector = ({ datasets, selectedId, onSelect }) => {
+const DatasetSelector = ({
+  datasets,
+  selectedId,
+  onSelect,
+  showSearch = false,
+  title = "Dataset",
+  subtitle = "Selecciona el origen de los datos",
+}) => {
   const [search, setSearch] = useState("");
 
   const grouped = useMemo(() => {
@@ -27,36 +34,51 @@ const DatasetSelector = ({ datasets, selectedId, onSelect }) => {
   }, [datasets, search]);
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-800">Dataset</h2>
-        <input
-          type="text"
-          placeholder="Buscar dataset..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-56 rounded-md border border-gray-300 px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+    <section className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm transition hover:shadow-md">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+            <span className="material-icons-round">database</span>
+          </div>
+          <div>
+            <h2 className="font-bold text-slate-900">{title}</h2>
+            <p className="text-xs text-slate-500">{subtitle}</p>
+          </div>
+        </div>
+        {showSearch ? (
+          <input
+            type="text"
+            placeholder="Buscar dataset..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-56 rounded-lg border border-slate-200 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        ) : null}
       </div>
-      <select
-        value={selectedId || ""}
-        onChange={(e) => onSelect(e.target.value)}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        <option value="" disabled>
-          Selecciona un dataset
-        </option>
-        {Object.entries(grouped).map(([group, items]) => (
-          <optgroup key={group} label={group}>
-            {items.map((ds) => (
-              <option key={ds.id} value={ds.id}>
-                {ds.name}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-    </div>
+      <div className="relative">
+        <select
+          value={selectedId || ""}
+          onChange={(e) => onSelect(e.target.value)}
+          className="w-full bg-slate-50 border-slate-200 rounded-xl py-3 px-4 appearance-none focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="" disabled>
+            Selecciona un dataset
+          </option>
+          {Object.entries(grouped).map(([group, items]) => (
+            <optgroup key={group} label={group}>
+              {items.map((ds) => (
+                <option key={ds.id} value={ds.id}>
+                  {ds.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+          <span className="material-icons-round">unfold_more</span>
+        </div>
+      </div>
+    </section>
   );
 };
 
