@@ -5,11 +5,21 @@ const ExportPanel = ({
   setFormat,
   onExport,
   status,
+  elapsed,
+  updatedAt,
   rowCount,
   errorMessage,
   downloadUrl,
   disabled,
 }) => {
+  const statusConfig = {
+    queued: { label: "En cola", tone: "bg-amber-100 text-amber-700" },
+    processing: { label: "Procesando", tone: "bg-blue-100 text-blue-700" },
+    done: { label: "Listo", tone: "bg-green-100 text-green-700" },
+    failed: { label: "Falló", tone: "bg-red-100 text-red-700" },
+  };
+  const statusMeta = status ? statusConfig[status] : null;
+
   return (
     <div className="bg-slate-50 px-6 py-6 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
       <div className="flex items-center space-x-6">
@@ -61,13 +71,25 @@ const ExportPanel = ({
           disabled={disabled}
           className="bg-white border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-bold py-2.5 px-8 rounded-xl transition disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Generar y Exportar Reporte
+          {status === "queued" || status === "processing"
+            ? "Generando..."
+            : "Generar y Exportar Reporte"}
         </button>
-        {status && <span className="text-xs text-slate-500">Estado: {status}</span>}
+        {statusMeta ? (
+          <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusMeta.tone}`}>
+            {statusMeta.label}
+          </span>
+        ) : null}
+        {elapsed ? <span className="text-[10px] text-slate-500">{elapsed}</span> : null}
       </div>
       {rowCount !== null && rowCount !== undefined && (
         <p className="text-xs text-slate-600">Filas exportadas: {rowCount}</p>
       )}
+      {updatedAt && status && status !== "done" ? (
+        <p className="text-[10px] text-slate-400">
+          Última actualización: {new Date(updatedAt).toLocaleTimeString()}
+        </p>
+      ) : null}
       {errorMessage && <p className="text-xs text-red-500">Error: {errorMessage}</p>}
       {downloadUrl && (
         <a

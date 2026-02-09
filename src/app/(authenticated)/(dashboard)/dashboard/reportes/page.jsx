@@ -25,6 +25,7 @@ const ReportesPage = () => {
   const [loading, setLoading] = useState(false);
   const [exportFormat, setExportFormat] = useState("csv");
   const [exportJob, setExportJob] = useState(null);
+  const [exportElapsed, setExportElapsed] = useState("");
 
   const selectedDataset = datasetSchema;
 
@@ -118,7 +119,11 @@ const ReportesPage = () => {
         sort,
         format: exportFormat,
       });
-      setExportJob({ id: data.id, status: data.status });
+      setExportJob({
+        id: data.id,
+        status: data.status,
+        createdAt: new Date().toISOString(),
+      });
       toast.success("Export encolado.");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Error al crear export.");
@@ -137,6 +142,8 @@ const ReportesPage = () => {
           rowCount: data.rowCount,
           errorMessage: data.errorMessage,
           downloadUrl: data.downloadUrl,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
         });
       } catch (_) {}
     };
@@ -144,6 +151,23 @@ const ReportesPage = () => {
     timer = setInterval(poll, 3000);
     return () => clearInterval(timer);
   }, [exportJob?.id]);
+
+  useEffect(() => {
+    if (!exportJob?.status || ["done", "failed"].includes(exportJob.status)) {
+      setExportElapsed("");
+      return;
+    }
+    const start = exportJob.createdAt ? new Date(exportJob.createdAt).getTime() : Date.now();
+    const tick = () => {
+      const diff = Date.now() - start;
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setExportElapsed(`${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`);
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [exportJob?.status, exportJob?.createdAt]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -247,6 +271,8 @@ const ReportesPage = () => {
           setFormat={setExportFormat}
           onExport={handleExport}
           status={exportJob?.status}
+          elapsed={exportElapsed}
+          updatedAt={exportJob?.updatedAt}
           rowCount={exportJob?.rowCount}
           errorMessage={exportJob?.errorMessage}
           downloadUrl={exportJob?.status === "done" ? exportJob.downloadUrl : null}
