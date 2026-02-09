@@ -82,54 +82,61 @@ const FiltersBuilder = ({ dataset, filters, onChange }) => {
   };
 
   return (
-    <section className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
-            <span className="material-icons-round text-sm">filter_list</span>
+    <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+            <span className="material-icons-round text-purple-600">filter_alt</span>
           </div>
-          <h2 className="font-bold text-slate-900">Filtros Inteligentes</h2>
+          <div>
+            <h3 className="font-bold">Filtros Inteligentes</h3>
+            <p className="text-xs text-slate-500">Refina los datos usando reglas lógicas</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex gap-2">
+          <button
+            onClick={clearFilters}
+            className="text-sm font-medium text-slate-400 hover:text-slate-600"
+          >
+            Limpiar todo
+          </button>
           <button
             onClick={addFilter}
-            className="p-1.5 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg transition"
+            className="inline-flex items-center gap-1 bg-slate-100 px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-slate-200 transition-colors"
           >
-            <span className="material-icons-round text-[18px]">add</span>
-          </button>
-          <button onClick={clearFilters} className="rounded px-2 py-1 text-slate-500 hover:bg-slate-100">
-            Limpiar
+            <span className="material-icons-round text-sm">add</span>
+            Nueva Regla
           </button>
         </div>
       </div>
-      {filters.length === 0 ? (
-        <p className="text-center text-[11px] text-slate-400 italic">
-          No hay filtros activos
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {filters.map((filter, index) => {
-            const column = columns.find((c) => c.key === filter.field);
-            const ops = column?.allowedOps || ["eq"];
-            return (
-              <div
-                key={`${filter.field}-${index}`}
-                className="group bg-slate-50 p-3 rounded-xl border border-dashed border-slate-200 hover:border-blue-200 transition"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Regla {index + 1}
-                  </span>
-                  <button
-                    onClick={() => removeFilter(index)}
-                    className="text-slate-400 hover:text-red-500 transition"
-                  >
-                    <span className="material-icons-round text-[16px]">close</span>
-                  </button>
-                </div>
-                <div className="grid grid-cols-12 gap-2">
+      <div className="space-y-4">
+        {filters.map((filter, index) => {
+          const column = columns.find((c) => c.key === filter.field);
+          const ops = column?.allowedOps || ["eq"];
+          return (
+            <div
+              key={`${filter.field}-${index}`}
+              className="group relative bg-slate-50 border border-slate-200 rounded-xl p-4 transition-all hover:border-blue-200"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Regla {index + 1}
+                </span>
+                <div className="flex-grow border-t border-slate-200"></div>
+                <button
+                  onClick={() => removeFilter(index)}
+                  className="material-icons-round text-slate-400 hover:text-red-500 transition-colors"
+                >
+                  delete_outline
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 px-1">
+                    Columna
+                  </label>
                   <select
-                    className="col-span-5 rounded-lg border border-slate-200 px-2 py-1 text-xs bg-white"
+                    className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-primary focus:border-primary"
                     value={filter.field}
                     onChange={(e) => {
                       const nextColumn = columns.find((c) => c.key === e.target.value);
@@ -148,8 +155,13 @@ const FiltersBuilder = ({ dataset, filters, onChange }) => {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 px-1">
+                    Operador
+                  </label>
                   <select
-                    className="col-span-3 rounded-lg border border-slate-200 px-2 py-1 text-xs bg-blue-50 text-blue-700 font-semibold"
+                    className="w-full bg-white border-slate-200 rounded-lg text-sm focus:ring-primary focus:border-primary"
                     value={filter.op}
                     onChange={(e) => {
                       const nextOp = e.target.value;
@@ -166,13 +178,28 @@ const FiltersBuilder = ({ dataset, filters, onChange }) => {
                       </option>
                     ))}
                   </select>
-                  <div className="col-span-4">{renderValueInput({ ...filter, index }, column)}</div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 px-1">
+                    Valor
+                  </label>
+                  {renderValueInput({ ...filter, index }, column)}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          onClick={addFilter}
+          className="w-full group relative bg-white border-dashed border-2 border-slate-200 rounded-xl p-4 flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
+        >
+          <div className="flex flex-col items-center gap-2">
+            <span className="material-icons-round text-slate-300">add_circle_outline</span>
+            <span className="text-xs font-semibold text-slate-400">Añadir condición Y (AND)</span>
+          </div>
+        </button>
+      </div>
     </section>
   );
 };

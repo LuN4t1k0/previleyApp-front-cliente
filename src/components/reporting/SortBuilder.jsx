@@ -19,30 +19,30 @@ const SortBuilder = ({ dataset, sort, onChange, maxSorts = 3 }) => {
   };
 
   return (
-    <section className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
-            <span className="material-icons-round text-sm">sort_by_alpha</span>
+    <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+            <span className="material-icons-round text-orange-600">sort_by_alpha</span>
           </div>
-          <h2 className="font-bold text-slate-900">Orden de Datos</h2>
+          <h3 className="font-bold">Orden de Datos</h3>
         </div>
         <button
           onClick={addSort}
-          className="p-1.5 bg-slate-100 hover:bg-blue-600 hover:text-white rounded-lg transition"
+          className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
         >
-          <span className="material-icons-round text-[18px]">add</span>
+          <span className="material-icons-round text-sm">add</span>
         </button>
       </div>
       {sort.length === 0 ? (
         <p className="text-sm text-slate-500">No hay orden definido.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {sort.map((item, index) => (
-            <div key={`${item.field}-${index}`} className="grid grid-cols-12 gap-2">
-              <div className="col-span-7 relative">
+            <div key={`${item.field}-${index}`} className="flex items-center gap-2 group">
+              <div className="flex-grow grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
                 <select
-                  className="w-full text-xs bg-slate-50 border-slate-200 rounded-lg py-2 pl-3 pr-8 appearance-none"
+                  className="bg-transparent border-none text-xs font-medium focus:ring-0 p-1"
                   value={item.field}
                   onChange={(e) => updateSort(index, { field: e.target.value })}
                 >
@@ -52,35 +52,29 @@ const SortBuilder = ({ dataset, sort, onChange, maxSorts = 3 }) => {
                     </option>
                   ))}
                 </select>
-                <span className="material-icons-round absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                  expand_more
-                </span>
-              </div>
-              <div className="col-span-4 relative">
                 <select
-                  className="w-full text-xs bg-slate-50 border-slate-200 rounded-lg py-2 pl-3 pr-8 appearance-none"
+                  className="bg-transparent border-none text-xs font-medium focus:ring-0 p-1"
                   value={item.direction}
                   onChange={(e) => updateSort(index, { direction: e.target.value })}
                 >
-                  <option value="asc">Ascendente</option>
                   <option value="desc">Descendente</option>
+                  <option value="asc">Ascendente</option>
                 </select>
-                <span className="material-icons-round absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                  expand_more
-                </span>
               </div>
-              <div className="col-span-1 flex items-center justify-center">
-                <button
-                  onClick={() => removeSort(index)}
-                  className="text-xs text-slate-400 hover:text-red-500 transition"
-                >
-                  <span className="material-icons-round text-[16px]">close</span>
-                </button>
-              </div>
+              <button
+                onClick={() => removeSort(index)}
+                className="material-icons-round text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all text-base"
+              >
+                close
+              </button>
             </div>
           ))}
         </div>
       )}
+      <p className="text-[10px] text-slate-400 mt-4 leading-relaxed">
+        <span className="font-bold text-slate-500">TIP:</span> El orden afecta cómo se visualiza
+        la tabla en la vista previa y el archivo final.
+      </p>
     </section>
   );
 };

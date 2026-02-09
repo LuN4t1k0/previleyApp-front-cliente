@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import apiService from "@/app/api/apiService";
 import DatasetSelector from "@/components/reporting/DatasetSelector";
 import ColumnPicker from "@/components/reporting/ColumnPicker";
@@ -8,9 +8,20 @@ import FiltersBuilder from "@/components/reporting/FiltersBuilder";
 import SortBuilder from "@/components/reporting/SortBuilder";
 import PreviewTable from "@/components/reporting/PreviewTable";
 import ExportPanel from "@/components/reporting/ExportPanel";
+import ExportHistoryPanel from "@/components/reporting/ExportHistoryPanel";
 import toast from "react-hot-toast";
 
 const DEFAULT_LIMIT = 5;
+const OP_LABELS = {
+  eq: "igual a",
+  in: "en",
+  ilike: "contiene",
+  startsWith: "empieza con",
+  endsWith: "termina con",
+  between: "entre",
+  gte: ">= ",
+  lte: "<= ",
+};
 
 const ReportesPage = () => {
   const [datasets, setDatasets] = useState([]);
@@ -27,6 +38,12 @@ const ReportesPage = () => {
   const [exportFormat, setExportFormat] = useState("csv");
   const [exportJob, setExportJob] = useState(null);
   const [exportElapsed, setExportElapsed] = useState("");
+  const [activeStep, setActiveStep] = useState(1);
+  const [exportHistory, setExportHistory] = useState({ data: [], total: 0 });
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const lastExportStatus = useRef(null);
 
   const selectedDataset = datasetSchema;
 
@@ -45,6 +62,22 @@ const ReportesPage = () => {
     load();
   }, []);
 
+  const loadExportHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const { data } = await apiService.get("/reporting/exports?limit=10&offset=0");
+      setExportHistory(data);
+    } catch (_) {
+      toast.error("No se pudo cargar el historial de exportaciones.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadExportHistory();
+  }, []);
+
   useEffect(() => {
     if (!selectedDatasetId) return;
     const loadSchema = async () => {
@@ -61,6 +94,7 @@ const ReportesPage = () => {
         setPageIndex(0);
         setPreview({ data: [], total: 0 });
         setPreviewRan(false);
+        setActiveStep(1);
       } catch (error) {
         toast.error("No se pudo cargar el esquema del dataset.");
       }
@@ -100,6 +134,7 @@ const ReportesPage = () => {
       const { data } = await apiService.post("/reporting/query", buildPayload(override));
       setPreview(data);
       setPreviewRan(true);
+      setActiveStep(3);
     } catch (error) {
       toast.error("Error al generar preview.");
     } finally {
@@ -131,6 +166,8 @@ const ReportesPage = () => {
         status: data.status,
         createdAt: new Date().toISOString(),
       });
+      loadExportHistory();
+      setActiveStep(4);
       toast.success("Export encolado.");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Error al crear export.");
@@ -147,10 +184,13 @@ const ReportesPage = () => {
           id: data.id,
           status: data.status,
           rowCount: data.rowCount,
+          estimatedRows: data.estimatedRows,
           errorMessage: data.errorMessage,
           downloadUrl: data.downloadUrl,
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,
+          startedAt: data.startedAt,
+          completedAt: data.completedAt,
         });
       } catch (_) {}
     };
@@ -176,7 +216,74 @@ const ReportesPage = () => {
     return () => clearInterval(timer);
   }, [exportJob?.status, exportJob?.createdAt]);
 
-  const currentStep = exportJob?.status ? 3 : previewRan ? 2 : 1;
+  useEffect(() => {
+    if (!exportJob?.status || lastExportStatus.current === exportJob.status) return;
+    lastExportStatus.current = exportJob.status;
+    if (exportJob.status === "done") {
+      toast.success("Export listo para descargar.");
+      loadExportHistory();
+    }
+    if (exportJob.status === "failed") {
+      toast.error("Export falló. Revisa el detalle.");
+      loadExportHistory();
+    }
+  }, [exportJob?.status]);
+
+  useEffect(() => {
+    const hasPending = exportHistory.data?.some((job) =>
+      ["queued", "processing"].includes(job.status)
+    );
+    if (!hasPending) return;
+    const timer = setInterval(loadExportHistory, 5000);
+    return () => clearInterval(timer);
+  }, [exportHistory.data]);
+
+  useEffect(() => {
+    if (exportJob?.status) {
+      setActiveStep(4);
+    }
+  }, [exportJob?.status]);
+
+  const getColumnLabel = (key) =>
+    selectedDataset?.columns?.find((col) => col.key === key)?.label || key;
+
+  const formatFilterValue = (filter) => {
+    if (filter?.op === "between") {
+      return `${filter?.value?.from || ""} a ${filter?.value?.to || ""}`.trim();
+    }
+    if (filter?.op === "in" && Array.isArray(filter.value)) {
+      return filter.value.join(", ");
+    }
+    return String(filter?.value ?? "");
+  };
+
+  const summaryFilters = normalizeFilters(filters);
+  const columnSummary = () => {
+    if (!selectedColumns.length) return "Sin columnas";
+    const labels = selectedColumns.map(getColumnLabel);
+    const head = labels.slice(0, 3).join(", ");
+    return labels.length > 3 ? `${head} +${labels.length - 3} más` : head;
+  };
+  const estimatedTotal = preview.total || exportJob?.estimatedRows || 0;
+  const filteredPreviewData = searchTerm
+    ? preview.data.filter((row) =>
+        Object.values(row || {}).some((value) =>
+          String(value ?? "").toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      )
+    : preview.data;
+  const activeSubtitle =
+    activeStep === 4
+      ? "Finaliza tu configuración y exporta tu reporte personalizado."
+      : "Sigue los pasos para generar un informe personalizado.";
+
+  useEffect(() => {
+    if (!autoRefresh || activeStep !== 3 || !selectedDatasetId) return;
+    const timer = setInterval(() => {
+      runPreview({ pagination: { limit, offset: pageIndex * limit } });
+    }, 8000);
+    return () => clearInterval(timer);
+  }, [autoRefresh, activeStep, selectedDatasetId, limit, pageIndex]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -194,19 +301,17 @@ const ReportesPage = () => {
             </ol>
           </nav>
           <h1 className="text-3xl font-extrabold tracking-tight">Constructor de Reportes</h1>
-          <p className="text-slate-500 mt-1">
-            Sigue los pasos para generar un informe personalizado.
-          </p>
+          <p className="text-slate-500 mt-1">{activeSubtitle}</p>
         </div>
         <div className="flex items-center bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
           <div
             className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
-              currentStep === 1 ? "bg-blue-50 text-blue-600" : "text-slate-400"
+              activeStep === 1 ? "bg-blue-50 text-blue-600" : "text-slate-400"
             }`}
           >
             <span
               className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                currentStep === 1 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+                activeStep === 1 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
               }`}
             >
               1
@@ -215,103 +320,360 @@ const ReportesPage = () => {
           </div>
           <div
             className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
-              currentStep === 2 ? "bg-blue-50 text-blue-600" : "text-slate-400"
+              activeStep === 2 ? "bg-blue-50 text-blue-600" : "text-slate-400"
             }`}
           >
             <span
               className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                currentStep === 2 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+                activeStep === 2 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
               }`}
             >
               2
+            </span>
+            <span className="text-sm font-medium">Refinar</span>
+          </div>
+          <div
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+              activeStep === 3 ? "bg-blue-50 text-blue-600" : "text-slate-400"
+            }`}
+          >
+            <span
+              className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                activeStep === 3 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+              }`}
+            >
+              3
             </span>
             <span className="text-sm font-medium">Vista Previa</span>
           </div>
           <div
             className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
-              currentStep === 3 ? "bg-blue-50 text-blue-600" : "text-slate-400"
+              activeStep === 4 ? "bg-blue-50 text-blue-600" : "text-slate-400"
             }`}
           >
             <span
               className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${
-                currentStep === 3 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+                activeStep === 4 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
               }`}
             >
-              3
+              4
             </span>
             <span className="text-sm font-medium">Exportar</span>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 space-y-6">
-          <DatasetSelector
-            datasets={datasets}
-            selectedId={selectedDatasetId}
-            onSelect={setSelectedDatasetId}
-            showSearch={false}
-          />
-          <ColumnPicker
-            dataset={selectedDataset}
-            selectedColumns={selectedColumns}
-            onChange={setSelectedColumns}
-          />
-        </div>
-        <div className="lg:col-span-4 space-y-6">
-          <FiltersBuilder dataset={selectedDataset} filters={filters} onChange={setFilters} />
-          <SortBuilder dataset={selectedDataset} sort={sort} onChange={setSort} maxSorts={1} />
-          <div className="pt-2">
-            <div className="flex items-center gap-2 mb-3">
-              <select
-                value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="text-xs bg-slate-50 border-slate-200 rounded-lg py-2 px-3"
-              >
-                {[5, 10, 25, 50, 100].map((size) => (
-                  <option key={size} value={size}>
-                    {size} filas
-                  </option>
-                ))}
-              </select>
+      {activeStep === 1 && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-8 space-y-6">
+            <DatasetSelector
+              datasets={datasets}
+              selectedId={selectedDatasetId}
+              onSelect={setSelectedDatasetId}
+              showSearch={false}
+            />
+            <ColumnPicker
+              dataset={selectedDataset}
+              selectedColumns={selectedColumns}
+              onChange={setSelectedColumns}
+            />
+          </div>
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-900 mb-2">Recomendación</h3>
+              <p className="text-xs text-slate-500">
+                Para resultados más rápidos, define Empresa Rut y/o Periodo en el paso de
+                Refinar.
+              </p>
             </div>
-            <button
-              onClick={() => runPreview({ pagination: { limit, offset: 0 } })}
-              className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-200 hover:shadow-blue-300 hover:-translate-y-0.5 transition active:scale-95 flex items-center justify-center space-x-2"
-              disabled={!selectedDatasetId || selectedColumns.length === 0}
-            >
-              <span className="material-icons-round">play_circle_filled</span>
-              <span>Ejecutar Previsualización</span>
-            </button>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setActiveStep(2)}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold shadow-sm disabled:bg-slate-200 disabled:text-slate-500"
+                disabled={!selectedDatasetId || selectedColumns.length === 0}
+              >
+                Siguiente
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <PreviewTable
-        dataset={selectedDataset}
-        columns={selectedColumns}
-        data={preview.data}
-        total={preview.total || 0}
-        pageIndex={pageIndex}
-        limit={limit}
-        onPageChange={setPageIndex}
-        loading={loading}
-      />
+      {activeStep === 2 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-6">
+            <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm overflow-hidden relative">
+              <div className="absolute top-0 right-0 p-4">
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mb-1">
+                    Registros Estimados
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-black text-blue-600">
+                      {estimatedTotal.toLocaleString("es-CL")}
+                    </span>
+                    <span className="material-icons-round text-emerald-500 text-sm">check_circle</span>
+                  </div>
+                </div>
+              </div>
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <span className="material-icons-round text-blue-600">analytics</span>
+                Resumen Actual
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase font-semibold">Dataset</p>
+                  <p className="text-sm font-medium mt-0.5">{selectedDataset?.name || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase font-semibold">Columnas</p>
+                  <p className="text-sm font-medium mt-0.5">{columnSummary()}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <p className="text-xs text-slate-500 uppercase font-semibold">Filtros Activos</p>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {summaryFilters.length ? (
+                      summaryFilters.map((filter, index) => (
+                        <span
+                          key={`${filter.field}-${index}`}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-xs font-medium border border-slate-200"
+                        >
+                          {`${getColumnLabel(filter.field)}: ${formatFilterValue(filter)}`}
+                          <button
+                            onClick={() =>
+                              setFilters(filters.filter((_, idx) => idx !== index))
+                            }
+                            className="material-icons-round text-[14px] hover:text-red-500"
+                          >
+                            close
+                          </button>
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-400">Sin filtros</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+            <FiltersBuilder dataset={selectedDataset} filters={filters} onChange={setFilters} />
+          </div>
+          <div className="space-y-6">
+            <SortBuilder dataset={selectedDataset} sort={sort} onChange={setSort} maxSorts={1} />
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => setActiveStep(3)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+              >
+                Siguiente Paso
+                <span className="material-icons-round">arrow_forward</span>
+              </button>
+              <button
+                onClick={() => setActiveStep(1)}
+                className="w-full bg-white border border-slate-200 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-icons-round">arrow_back</span>
+                Volver
+              </button>
+            </div>
+            <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+              <div className="flex gap-3">
+                <span className="material-icons-round text-blue-500 text-sm">info</span>
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  Para resultados más rápidos, define una empresa o un periodo de fecha específico.
+                  Esto reducirá el tiempo de procesamiento de tu reporte.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-xl overflow-hidden mt-6">
-        <ExportPanel
-          format={exportFormat}
-          setFormat={setExportFormat}
-          onExport={handleExport}
-          status={exportJob?.status}
-          elapsed={exportElapsed}
-          updatedAt={exportJob?.updatedAt}
-          rowCount={exportJob?.rowCount}
-          errorMessage={exportJob?.errorMessage}
-          downloadUrl={exportJob?.status === "done" ? exportJob.downloadUrl : null}
-          disabled={!selectedDatasetId || selectedColumns.length === 0}
-        />
-      </div>
+      {activeStep === 3 && (
+        <>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <span className="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+                  search
+                </span>
+                <input
+                  className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm w-64 focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                  placeholder="Buscar en resultados..."
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2">
+                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                  Auto-refrescar
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    className="sr-only peer"
+                    type="checkbox"
+                    checked={autoRefresh}
+                    onChange={(e) => setAutoRefresh(e.target.checked)}
+                  />
+                  <div className="w-9 h-5 bg-slate-200 rounded-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-slate-300 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveStep(1)}
+                className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+              >
+                <span className="material-icons-round text-lg">view_column</span>
+                Columnas
+              </button>
+              <button
+                onClick={() => runPreview({ pagination: { limit, offset: 0 } })}
+                className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-blue-600 transition-colors"
+              >
+                <span className="material-icons-round text-lg">refresh</span>
+              </button>
+              <div className="h-8 w-px bg-slate-200 mx-1"></div>
+              <button
+                onClick={() => setActiveStep(2)}
+                className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50"
+              >
+                Volver
+              </button>
+              <button
+                onClick={() => setActiveStep(4)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all disabled:bg-slate-200 disabled:text-slate-500"
+                disabled={!previewRan}
+              >
+                Siguiente
+              </button>
+            </div>
+          </div>
+          <PreviewTable
+            dataset={selectedDataset}
+            columns={selectedColumns}
+            data={filteredPreviewData}
+            total={preview.total || 0}
+            pageIndex={pageIndex}
+            limit={limit}
+            onPageChange={setPageIndex}
+            loading={loading}
+          />
+        </>
+      )}
+
+      {activeStep === 4 && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <ExportPanel
+                format={exportFormat}
+                setFormat={setExportFormat}
+                onExport={handleExport}
+                onEdit={() => setActiveStep(2)}
+                status={exportJob?.status}
+                rowCount={exportJob?.rowCount}
+                errorMessage={exportJob?.errorMessage}
+                downloadUrl={exportJob?.status === "done" ? exportJob.downloadUrl : null}
+                disabled={!selectedDatasetId || selectedColumns.length === 0}
+              />
+              <ExportHistoryPanel
+                exportsData={exportHistory.data}
+                loading={historyLoading}
+                onRefresh={loadExportHistory}
+              />
+            </div>
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-24">
+                <div className="bg-slate-900 text-white p-6 relative overflow-hidden">
+                  <div className="relative z-10">
+                    <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-1">
+                      Resumen del Reporte
+                    </p>
+                    <h3 className="text-xl font-bold">Listo para procesar</h3>
+                  </div>
+                  <span className="material-icons-round absolute -bottom-4 -right-4 text-white/5 text-8xl transform rotate-12">
+                    receipt_long
+                  </span>
+                </div>
+                <div className="p-6 space-y-6">
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Dataset de origen
+                    </span>
+                    <p className="font-semibold text-slate-800 flex items-center gap-2 mt-1">
+                      <span className="material-icons-round text-blue-600 text-sm">database</span>
+                      {selectedDataset?.name || "-"}
+                    </p>
+                  </div>
+                  <div className="border-t border-dashed border-slate-200 pt-4">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Columnas seleccionadas
+                    </span>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {selectedColumns.slice(0, 4).map((col) => (
+                        <span
+                          key={col}
+                          className="px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs"
+                        >
+                          {getColumnLabel(col)}
+                        </span>
+                      ))}
+                      {selectedColumns.length > 4 && (
+                        <span className="px-2 py-1 bg-slate-50 border border-slate-200 rounded text-xs">
+                          +{selectedColumns.length - 4} más
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="border-t border-dashed border-slate-200 pt-4">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Filtros Activos
+                    </span>
+                    <p className="text-sm text-slate-600 mt-1 italic">
+                      {summaryFilters.length
+                        ? summaryFilters
+                            .map(
+                              (f) =>
+                                `${getColumnLabel(f.field)} ${OP_LABELS[f.op] || f.op} ${formatFilterValue(f)}`
+                            )
+                            .join(" · ")
+                        : "Sin filtros"}
+                    </p>
+                  </div>
+                  <div className="border-t border-dashed border-slate-200 pt-4">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-slate-500">Registros estimados:</span>
+                      <span className="font-bold">~ {estimatedTotal} filas</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm mt-1">
+                      <span className="text-slate-500">Tamaño estimado:</span>
+                      <span className="font-bold">
+                        {estimatedTotal
+                          ? `${Math.max(1, Math.round((estimatedTotal * selectedColumns.length * 6) / 1024))} KB`
+                          : "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6 p-6 bg-blue-50 rounded-2xl border border-blue-100">
+                <div className="flex gap-3">
+                  <span className="material-icons-round text-blue-500">info</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-blue-900">¿Necesitas ayuda?</h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      Los reportes grandes pueden tardar unos minutos en procesarse. Te
+                      notificaremos cuando esté listo.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
