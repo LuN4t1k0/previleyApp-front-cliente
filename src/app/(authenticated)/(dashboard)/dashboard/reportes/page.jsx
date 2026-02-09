@@ -277,6 +277,15 @@ const ReportesPage = () => {
       ? "Finaliza tu configuración y exporta tu reporte personalizado."
       : "Sigue los pasos para generar un informe personalizado.";
 
+  const resetSelections = () => {
+    setSelectedColumns([]);
+    setFilters([]);
+    setSort([]);
+    setPreview({ data: [], total: 0 });
+    setPreviewRan(false);
+    setPageIndex(0);
+  };
+
   useEffect(() => {
     if (!autoRefresh || activeStep !== 3 || !selectedDatasetId) return;
     const timer = setInterval(() => {
@@ -390,11 +399,11 @@ const ReportesPage = () => {
               </button>
               <button
                 type="button"
+                onClick={resetSelections}
                 className="w-full bg-white border border-slate-200 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
-                disabled
               >
-                <span className="material-icons-round">arrow_back</span>
-                Volver
+                <span className="material-icons-round">delete_sweep</span>
+                Limpiar selección
               </button>
             </div>
             <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
@@ -403,6 +412,25 @@ const ReportesPage = () => {
                 <p className="text-xs text-blue-700 leading-relaxed">
                   Para resultados más rápidos, define una empresa o un periodo de fecha específico.
                   Esto reducirá el tiempo de procesamiento de tu reporte.
+                </p>
+              </div>
+            </div>
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                Glosario rápido
+              </h4>
+              <div className="space-y-2 text-xs text-slate-600">
+                <p>
+                  <span className="font-semibold text-slate-700">Dataset:</span> origen de datos
+                  curado por el sistema.
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-700">Gestión:</span> agrupación de
+                  casos o periodos del servicio.
+                </p>
+                <p>
+                  <span className="font-semibold text-slate-700">Detalle:</span> registro individual
+                  por trabajador o evento.
                 </p>
               </div>
             </div>
