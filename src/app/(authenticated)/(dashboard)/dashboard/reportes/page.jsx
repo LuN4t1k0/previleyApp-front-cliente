@@ -379,21 +379,32 @@ const ReportesPage = () => {
             />
           </div>
           <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-900 mb-2">Recomendación</h3>
-              <p className="text-xs text-slate-500">
-                Para resultados más rápidos, define Empresa Rut y/o Periodo en el paso de
-                Refinar.
-              </p>
-            </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex flex-col gap-3">
               <button
                 onClick={() => setActiveStep(2)}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold shadow-sm disabled:bg-slate-200 disabled:text-slate-500"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 disabled:bg-slate-200 disabled:text-slate-500"
                 disabled={!selectedDatasetId || selectedColumns.length === 0}
               >
-                Siguiente
+                Siguiente Paso
+                <span className="material-icons-round">arrow_forward</span>
               </button>
+              <button
+                type="button"
+                className="w-full bg-white border border-slate-200 text-slate-600 font-bold py-3.5 rounded-xl hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                disabled
+              >
+                <span className="material-icons-round">arrow_back</span>
+                Volver
+              </button>
+            </div>
+            <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+              <div className="flex gap-3">
+                <span className="material-icons-round text-blue-500 text-sm">info</span>
+                <p className="text-xs text-blue-700 leading-relaxed">
+                  Para resultados más rápidos, define una empresa o un periodo de fecha específico.
+                  Esto reducirá el tiempo de procesamiento de tu reporte.
+                </p>
+              </div>
             </div>
           </div>
         </div>
