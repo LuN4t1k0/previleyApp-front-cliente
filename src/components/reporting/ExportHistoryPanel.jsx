@@ -16,7 +16,7 @@ const formatDateTime = (value) => {
   }
 };
 
-const ExportHistoryPanel = ({ exportsData, loading, onRefresh }) => {
+const ExportHistoryPanel = ({ exportsData, loading, onRefresh, onClear }) => {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -24,14 +24,24 @@ const ExportHistoryPanel = ({ exportsData, loading, onRefresh }) => {
           <span className="material-icons-round text-slate-400">history</span>
           <h2 className="text-lg font-bold">Mis Exportaciones Recientes</h2>
         </div>
-        <button
-          onClick={onRefresh}
-          className="text-blue-600 text-sm font-semibold hover:underline flex items-center gap-1"
-          disabled={loading}
-        >
-          <span className="material-icons-round text-sm">refresh</span>
-          Actualizar
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onClear}
+            className="text-slate-500 text-sm font-semibold hover:text-red-600 flex items-center gap-1"
+            disabled={loading}
+          >
+            <span className="material-icons-round text-sm">delete_outline</span>
+            Eliminar
+          </button>
+          <button
+            onClick={onRefresh}
+            className="text-blue-600 text-sm font-semibold hover:underline flex items-center gap-1"
+            disabled={loading}
+          >
+            <span className="material-icons-round text-sm">refresh</span>
+            Actualizar
+          </button>
+        </div>
       </div>
       {loading ? (
         <p className="px-8 py-6 text-xs text-slate-400">Cargando exportaciones...</p>

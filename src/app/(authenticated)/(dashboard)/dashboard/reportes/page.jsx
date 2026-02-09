@@ -65,10 +65,25 @@ const ReportesPage = () => {
   const loadExportHistory = async () => {
     setHistoryLoading(true);
     try {
-      const { data } = await apiService.get("/reporting/exports?limit=10&offset=0");
+      const { data } = await apiService.get("/reporting/exports?limit=3&offset=0");
       setExportHistory(data);
     } catch (_) {
       toast.error("No se pudo cargar el historial de exportaciones.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const clearExportHistory = async () => {
+    const confirmed = window.confirm("¿Eliminar todas tus exportaciones recientes?");
+    if (!confirmed) return;
+    setHistoryLoading(true);
+    try {
+      const { data } = await apiService.delete("/reporting/exports");
+      toast.success(`Exportaciones eliminadas: ${data.deleted}`);
+      loadExportHistory();
+    } catch (_) {
+      toast.error("No se pudieron eliminar las exportaciones.");
     } finally {
       setHistoryLoading(false);
     }
@@ -278,9 +293,13 @@ const ReportesPage = () => {
       : "Sigue los pasos para generar un informe personalizado.";
 
   const resetSelections = () => {
-    setSelectedColumns([]);
+    const defaults =
+      selectedDataset?.defaultColumns?.length > 0
+        ? selectedDataset.defaultColumns
+        : selectedDataset?.columns?.slice(0, 5).map((c) => c.key) || [];
+    setSelectedColumns(defaults);
     setFilters([]);
-    setSort([]);
+    setSort(selectedDataset?.defaultSort || []);
     setPreview({ data: [], total: 0 });
     setPreviewRan(false);
     setPageIndex(0);
@@ -621,6 +640,7 @@ const ReportesPage = () => {
                 exportsData={exportHistory.data}
                 loading={historyLoading}
                 onRefresh={loadExportHistory}
+                onClear={clearExportHistory}
               />
             </div>
             <div className="lg:col-span-1">
