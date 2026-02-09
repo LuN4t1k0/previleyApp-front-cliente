@@ -10,6 +10,7 @@ import PreviewTable from "@/components/reporting/PreviewTable";
 import ExportPanel from "@/components/reporting/ExportPanel";
 import ExportHistoryPanel from "@/components/reporting/ExportHistoryPanel";
 import toast from "react-hot-toast";
+import { showConfirm } from "@/utils/alerts";
 
 const DEFAULT_LIMIT = 5;
 const OP_LABELS = {
@@ -75,15 +76,47 @@ const ReportesPage = () => {
   };
 
   const clearExportHistory = async () => {
-    const confirmed = window.confirm("¿Eliminar todas tus exportaciones recientes?");
+    const confirmed = await showConfirm({
+      title: "Eliminar exportaciones recientes",
+      text: "Se eliminarán tus exportaciones recientes y sus archivos asociados.",
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      icon: "warning",
+    });
     if (!confirmed) return;
     setHistoryLoading(true);
     try {
       const { data } = await apiService.delete("/reporting/exports");
       toast.success(`Exportaciones eliminadas: ${data.deleted}`);
+      setExportJob(null);
       loadExportHistory();
     } catch (_) {
       toast.error("No se pudieron eliminar las exportaciones.");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const deleteExportItem = async (item) => {
+    if (!item?.id) return;
+    const confirmed = await showConfirm({
+      title: "Eliminar exportación",
+      text: `Se eliminará el reporte "${item.datasetName}".`,
+      confirmText: "Eliminar",
+      cancelText: "Cancelar",
+      icon: "warning",
+    });
+    if (!confirmed) return;
+    setHistoryLoading(true);
+    try {
+      await apiService.delete(`/reporting/exports/${item.id}`);
+      toast.success("Exportación eliminada.");
+      if (exportJob?.id === item.id) {
+        setExportJob(null);
+      }
+      loadExportHistory();
+    } catch (_) {
+      toast.error("No se pudo eliminar la exportación.");
     } finally {
       setHistoryLoading(false);
     }
@@ -207,7 +240,12 @@ const ReportesPage = () => {
           startedAt: data.startedAt,
           completedAt: data.completedAt,
         });
-      } catch (_) {}
+      } catch (error) {
+        if (error?.response?.status === 404) {
+          setExportJob(null);
+          return;
+        }
+      }
     };
     poll();
     timer = setInterval(poll, 3000);
@@ -641,6 +679,7 @@ const ReportesPage = () => {
                 loading={historyLoading}
                 onRefresh={loadExportHistory}
                 onClear={clearExportHistory}
+                onDelete={deleteExportItem}
               />
             </div>
             <div className="lg:col-span-1">

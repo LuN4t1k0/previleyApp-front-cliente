@@ -16,7 +16,7 @@ const formatDateTime = (value) => {
   }
 };
 
-const ExportHistoryPanel = ({ exportsData, loading, onRefresh, onClear }) => {
+const ExportHistoryPanel = ({ exportsData, loading, onRefresh, onClear, onDelete }) => {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -92,17 +92,26 @@ const ExportHistoryPanel = ({ exportsData, loading, onRefresh, onClear }) => {
                     )}
                   </div>
                 </div>
-                {item.downloadUrl && (
-                  <a
-                    href={item.downloadUrl}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-semibold transition-colors"
-                    target="_blank"
-                    rel="noreferrer"
+                <div className="flex items-center gap-3">
+                  {item.downloadUrl && (
+                    <a
+                      href={item.downloadUrl}
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-semibold transition-colors"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span className="material-icons-round text-lg">download</span>
+                      Descargar
+                    </a>
+                  )}
+                  <button
+                    onClick={() => onDelete?.(item)}
+                    className="flex items-center justify-center gap-2 px-3 py-2 text-slate-400 hover:text-red-600 rounded-lg text-sm font-semibold transition-colors"
                   >
-                    <span className="material-icons-round text-lg">download</span>
-                    Descargar
-                  </a>
-                )}
+                    <span className="material-icons-round text-lg">delete_outline</span>
+                    Eliminar
+                  </button>
+                </div>
               </div>
             );
           })}
