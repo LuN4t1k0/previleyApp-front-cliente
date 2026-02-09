@@ -46,23 +46,7 @@ const ExportPanel = ({
             >
               XLSX
             </button>
-            <button
-              disabled
-              className="px-3 py-1 text-[10px] font-bold rounded-md text-slate-300 cursor-not-allowed"
-            >
-              PDF
-            </button>
           </div>
-        </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-xs font-semibold text-slate-500">Delimitador:</span>
-          <select
-            disabled
-            className="text-[10px] py-1 bg-white border-slate-200 rounded-lg text-slate-400 cursor-not-allowed"
-          >
-            <option>Coma (,)</option>
-            <option>Punto y coma (;)</option>
-          </select>
         </div>
       </div>
       <div className="flex items-center gap-3">

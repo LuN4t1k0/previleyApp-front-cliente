@@ -10,7 +10,7 @@ import PreviewTable from "@/components/reporting/PreviewTable";
 import ExportPanel from "@/components/reporting/ExportPanel";
 import toast from "react-hot-toast";
 
-const DEFAULT_LIMIT = 25;
+const DEFAULT_LIMIT = 5;
 
 const ReportesPage = () => {
   const [datasets, setDatasets] = useState([]);
@@ -20,6 +20,7 @@ const ReportesPage = () => {
   const [filters, setFilters] = useState([]);
   const [sort, setSort] = useState([]);
   const [preview, setPreview] = useState({ data: [], total: 0 });
+  const [previewRan, setPreviewRan] = useState(false);
   const [pageIndex, setPageIndex] = useState(0);
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
   const [loading, setLoading] = useState(false);
@@ -59,6 +60,7 @@ const ReportesPage = () => {
         setFilters([]);
         setPageIndex(0);
         setPreview({ data: [], total: 0 });
+        setPreviewRan(false);
       } catch (error) {
         toast.error("No se pudo cargar el esquema del dataset.");
       }
@@ -97,12 +99,17 @@ const ReportesPage = () => {
       }
       const { data } = await apiService.post("/reporting/query", buildPayload(override));
       setPreview(data);
+      setPreviewRan(true);
     } catch (error) {
       toast.error("Error al generar preview.");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    setPreviewRan(false);
+  }, [selectedColumns, filters, sort]);
 
   useEffect(() => {
     if (!selectedDatasetId || preview.data.length === 0) return;
@@ -169,6 +176,8 @@ const ReportesPage = () => {
     return () => clearInterval(timer);
   }, [exportJob?.status, exportJob?.createdAt]);
 
+  const currentStep = exportJob?.status ? 3 : previewRan ? 2 : 1;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -190,20 +199,44 @@ const ReportesPage = () => {
           </p>
         </div>
         <div className="flex items-center bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
-          <div className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg flex items-center space-x-2">
-            <span className="w-6 h-6 flex items-center justify-center bg-blue-600 text-white rounded-full text-[10px] font-bold">
+          <div
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+              currentStep === 1 ? "bg-blue-50 text-blue-600" : "text-slate-400"
+            }`}
+          >
+            <span
+              className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                currentStep === 1 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+              }`}
+            >
               1
             </span>
             <span className="text-sm font-semibold">Configuración</span>
           </div>
-          <div className="px-4 py-2 text-slate-400 flex items-center space-x-2">
-            <span className="w-6 h-6 flex items-center justify-center bg-slate-100 rounded-full text-[10px] font-bold">
+          <div
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+              currentStep === 2 ? "bg-blue-50 text-blue-600" : "text-slate-400"
+            }`}
+          >
+            <span
+              className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                currentStep === 2 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+              }`}
+            >
               2
             </span>
             <span className="text-sm font-medium">Vista Previa</span>
           </div>
-          <div className="px-4 py-2 text-slate-400 flex items-center space-x-2">
-            <span className="w-6 h-6 flex items-center justify-center bg-slate-100 rounded-full text-[10px] font-bold">
+          <div
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+              currentStep === 3 ? "bg-blue-50 text-blue-600" : "text-slate-400"
+            }`}
+          >
+            <span
+              className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                currentStep === 3 ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+              }`}
+            >
               3
             </span>
             <span className="text-sm font-medium">Exportar</span>
@@ -235,7 +268,7 @@ const ReportesPage = () => {
                 onChange={(e) => setLimit(Number(e.target.value))}
                 className="text-xs bg-slate-50 border-slate-200 rounded-lg py-2 px-3"
               >
-                {[25, 50, 100, 200].map((size) => (
+                {[5, 10, 25, 50, 100].map((size) => (
                   <option key={size} value={size}>
                     {size} filas
                   </option>
