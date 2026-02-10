@@ -351,6 +351,19 @@ const ReportesPage = () => {
     return () => clearInterval(timer);
   }, [autoRefresh, activeStep, selectedDatasetId, limit, pageIndex]);
 
+  useEffect(() => {
+    if (
+      activeStep !== 3 ||
+      previewRan ||
+      loading ||
+      !selectedDatasetId ||
+      selectedColumns.length === 0
+    ) {
+      return;
+    }
+    runPreview({ pagination: { limit, offset: 0 } });
+  }, [activeStep, previewRan, loading, selectedDatasetId, selectedColumns, limit]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
