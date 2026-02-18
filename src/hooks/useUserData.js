@@ -29,6 +29,9 @@ const useUserData = () => {
     return {
       id: session.user.id,
       rol: session.user.rol,
+      canSeeProtected: Boolean(session.user.canSeeProtected),
+      parentUserId: session.user.parentUserId ?? null,
+      isClientAdmin: session.user.rol === "cliente_admin",
     };
   }, [session]);
 

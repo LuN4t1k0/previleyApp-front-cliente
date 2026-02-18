@@ -21,7 +21,14 @@ const ClientHeader = () => {
   const signOutUrl =
     typeof window !== "undefined" ? `${window.location.origin}/signin` : "/signin";
 
-  const menuItems = useMemo(() => clientMenu, []);
+  const rawRole = session?.user?.rol || "guest";
+  const effectiveRole = rawRole === "cliente_admin" ? "cliente" : rawRole;
+  const menuItems = useMemo(() => {
+    return clientMenu.filter((item) => {
+      if (!item.roles || item.roles.length === 0) return true;
+      return item.roles.includes(rawRole) || item.roles.includes(effectiveRole);
+    });
+  }, [rawRole, effectiveRole]);
 
   const nombre = session?.user?.nombre || "";
   const apellido = session?.user?.apellido || "";

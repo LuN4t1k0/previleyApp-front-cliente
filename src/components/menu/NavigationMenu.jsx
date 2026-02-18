@@ -38,7 +38,9 @@ const NavigationMenu = () => {
     }
   }, [session]);
 
-  const canAccess = (roles = []) => (userRole ? roles.includes(userRole) : false);
+  const effectiveRole = userRole === "cliente_admin" ? "cliente" : userRole;
+  const canAccess = (roles = []) =>
+    userRole ? roles.includes(userRole) || roles.includes(effectiveRole) : false;
 
   const plainMenuItems = useMemo(
     () => menuItems.filter((item) => !item.category && canAccess(item.roles)),

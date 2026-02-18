@@ -29,4 +29,10 @@ export const clientMenu = [
     description: "Tus datos de contacto y ajustes de cuenta.",
     href: "/perfil",
   },
+  {
+    label: "Administración de Usuarios",
+    description: "Gestiona subusuarios y permisos del tenant.",
+    href: "/client-admin/usuarios",
+    roles: ["cliente_admin"],
+  },
 ];

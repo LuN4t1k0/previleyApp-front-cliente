@@ -8,10 +8,12 @@ const RoleContext = createContext();
 export const RoleProvider = ({ children }) => {
   const { data: session, status } = useSession();
 
-  const userRole = session?.user?.rol || 'guest'; // Asignamos 'guest' si no hay rol
+  const rawRole = session?.user?.rol || 'guest';
+  const isClientAdmin = rawRole === 'cliente_admin';
+  const role = isClientAdmin ? 'cliente' : rawRole; // compatibilidad con guards existentes
 
   return (
-    <RoleContext.Provider value={{ role: userRole, status }}>
+    <RoleContext.Provider value={{ role, rawRole, isClientAdmin, status }}>
       {children}
     </RoleContext.Provider>
   );

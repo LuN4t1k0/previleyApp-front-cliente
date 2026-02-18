@@ -74,6 +74,8 @@ const authOptions = {
           nombre: data.nombre,
           apellido: data.apellido,
           rol: data.rol,
+          canSeeProtected: data.canSeeProtected,
+          parentUserId: data.parentUserId ?? null,
         };
       },
     }),
@@ -110,6 +112,8 @@ const authOptions = {
           nombre: user.nombre,
           apellido: user.apellido,
           rol: user.rol,
+          canSeeProtected: user.canSeeProtected,
+          parentUserId: user.parentUserId ?? null,
         };
       }
 
@@ -131,6 +135,8 @@ const authOptions = {
         nombre: token.nombre,
         apellido: token.apellido,
         rol: token.rol,
+        canSeeProtected: token.canSeeProtected,
+        parentUserId: token.parentUserId ?? null,
       };
       session.accessToken = token.accessToken;
       session.accessTokenExpires = token.accessTokenExpires;

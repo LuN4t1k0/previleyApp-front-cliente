@@ -195,6 +195,13 @@ const menuItems = [
     category: "Administración",
     items: [
       {
+        name: "Administración de Usuarios",
+        description: "Gestiona subusuarios y permisos del tenant.",
+        href: "/client-admin/usuarios",
+        icon: RiUserSettingsLine,
+        roles: ["cliente_admin"],
+      },
+      {
         name: "Gestión de Usuarios",
         description: "Administra usuarios y roles.",
         href: "/admin/gestion-usuarios",
