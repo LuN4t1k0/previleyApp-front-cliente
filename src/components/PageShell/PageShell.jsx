@@ -3,13 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useRole } from '@/context/RoleContext';
 import Swal from 'sweetalert2';
 import { cx } from '@/lib/utils';
 
 
 export default function PageShell({ tabsConfig, moduleTitle = 'Módulo' }) {
-  const { data: session, status } = useSession();
+  const { role, status } = useRole();
   const [visibleTabs, setVisibleTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [hasAccess, setHasAccess] = useState(true);
@@ -21,7 +21,7 @@ export default function PageShell({ tabsConfig, moduleTitle = 'Módulo' }) {
   useEffect(() => {
     if (status !== 'authenticated') return;
 
-    const rol = session?.user?.rol;
+    const rol = role;
     const filteredTabs = tabsConfig.filter(tab =>
       tab.rolesAllowed.includes(rol)
     );
@@ -40,7 +40,7 @@ export default function PageShell({ tabsConfig, moduleTitle = 'Módulo' }) {
     } else {
       setActiveTab(filteredTabs[0].key);
     }
-  }, [session, tabFromUrl, tabsConfig, status]);
+  }, [role, tabFromUrl, tabsConfig, status]);
 
   // Mostrar alerta si no tiene acceso a ningún tab
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function PageShell({ tabsConfig, moduleTitle = 'Módulo' }) {
   // Mientras carga la sesión, los tabs, o el tab activo
   if (
     status !== 'authenticated' ||
-    !session?.user?.rol ||
+    !role ||
     !activeTab ||
     visibleTabs.length === 0
   ) {
