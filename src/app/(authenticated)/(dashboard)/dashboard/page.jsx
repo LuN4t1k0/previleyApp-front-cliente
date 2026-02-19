@@ -86,6 +86,7 @@ const DashboardPage = () => {
       limit: 5,
       sortField: "fechaGeneracion",
       sortOrder: "desc",
+      light: true,
     };
     if (empresaRuts.length > 0) {
       query.empresaRut = empresaRuts;
@@ -98,6 +99,7 @@ const DashboardPage = () => {
       limit: 50,
       sortField: "fechaGeneracion",
       sortOrder: "desc",
+      light: true,
     };
     if (empresaRuts.length > 0) {
       query.empresaRut = empresaRuts;
@@ -157,12 +159,20 @@ const DashboardPage = () => {
     let missingFacturaPdf = 0;
 
     prefList.forEach((pref) => {
-      if (!pref.prefacturaPdfUrl) {
+      const hasPrefPdf =
+        pref.prefacturaPdfAvailable !== undefined
+          ? Boolean(pref.prefacturaPdfAvailable)
+          : Boolean(pref.prefacturaPdfUrl);
+      if (!hasPrefPdf) {
         missingPrefPdf += 1;
       }
       const facturas = Array.isArray(pref.facturas) ? pref.facturas : [];
       facturas.forEach((factura) => {
-        if (!factura?.pdfUrl) {
+        const hasFacturaPdf =
+          factura?.pdfAvailable !== undefined
+            ? Boolean(factura.pdfAvailable)
+            : Boolean(factura?.pdfUrl);
+        if (!hasFacturaPdf) {
           missingFacturaPdf += 1;
         }
         const vencimiento = factura?.fechaVencimiento

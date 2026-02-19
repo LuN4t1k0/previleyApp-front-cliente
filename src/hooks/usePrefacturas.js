@@ -137,8 +137,8 @@ export const usePrefacturasSummary = (filters = {}) => {
         apiService.get("/prefacturas/filters", {
           params: sanitizedFilters,
         }),
-        apiService.get("/prefacturas/prefacturas", {
-          params: { ...sanitizedFilters, limit: 1, offset: 0 },
+        apiService.get("/prefacturas/summary", {
+          params: sanitizedFilters,
         }),
       ]);
 
@@ -150,20 +150,9 @@ export const usePrefacturasSummary = (filters = {}) => {
           ? statusOptions
           : ["pendiente", "facturada", "pagada"];
 
-      const totalsByStatus = await Promise.all(
-        statuses.map(async (estado) => {
-          const response = await apiService.get("/prefacturas/prefacturas", {
-            params: { ...sanitizedFilters, estado, limit: 1, offset: 0 },
-          });
-          const payload = response?.data || {};
-          return { estado, total: payload.total ?? 0 };
-        })
-      );
-
-      const totalPayload = totalsResponse?.data || {};
-
-      const byStatus = totalsByStatus.reduce((acc, item) => {
-        acc[item.estado] = item.total;
+      const totalPayload = totalsResponse?.data?.data || totalsResponse?.data || {};
+      const byStatus = statuses.reduce((acc, estado) => {
+        acc[estado] = totalPayload?.byStatus?.[estado] ?? 0;
         return acc;
       }, {});
 

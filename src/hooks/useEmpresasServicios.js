@@ -41,54 +41,42 @@ export const useEmpresasServicios = (empresas) => {
 
     setLoading(true);
     try {
-      const responses = await Promise.all(
-        normalizedEmpresas.map(async (empresa) => {
-          try {
-            const response = await apiService.get(
-              `/empresas/${empresa.empresaRut}/completa`
-            );
-            const payload = response?.data || {};
-            const serviciosAsignados = (payload.serviciosAsignados || []).map(
-              (servicio) => {
-                const serviceKey =
-                  servicio?.serviceKey ||
-                  resolveServiceKeyFromName(servicio?.nombre || "");
-                const definition = resolveServiceDefinition(serviceKey);
-
-                return {
-                  ...servicio,
-                  serviceKey,
-                  definition,
-                };
-              }
-            );
-
-            return {
-              empresaRut: empresa.empresaRut,
-              nombre:
-                payload.empresa?.nombre ||
-                empresa.nombre ||
-                empresa.empresaRut,
-              serviciosAsignados,
-              correosConfigurados: payload.correosConfigurados || [],
-            };
-          } catch (err) {
-            console.error(
-              `Error al obtener servicios para ${empresa.empresaRut}:`,
-              err
-            );
-            return {
-              empresaRut: empresa.empresaRut,
-              nombre: empresa.nombre || empresa.empresaRut,
-              serviciosAsignados: [],
-              correosConfigurados: [],
-              error: err,
-            };
-          }
-        })
+      const empresaMap = new Map(
+        normalizedEmpresas.map((empresa) => [empresa.empresaRut, empresa])
       );
 
-      setData(responses.filter(Boolean));
+      const response = await apiService.post("/empresas/completas", {
+        empresaRuts: normalizedEmpresas.map((empresa) => empresa.empresaRut),
+      });
+      const payloadList = response?.data?.data || [];
+
+      const responses = payloadList.map((payload) => {
+        const rut = payload?.empresa?.empresaRut || payload?.empresaRut;
+        const fallback = empresaMap.get(rut) || {};
+        const serviciosAsignados = (payload.serviciosAsignados || []).map(
+          (servicio) => {
+            const serviceKey =
+              servicio?.serviceKey ||
+              resolveServiceKeyFromName(servicio?.nombre || "");
+            const definition = resolveServiceDefinition(serviceKey);
+
+            return {
+              ...servicio,
+              serviceKey,
+              definition,
+            };
+          }
+        );
+
+        return {
+          empresaRut: rut,
+          nombre: payload.empresa?.nombre || fallback.nombre || rut,
+          serviciosAsignados,
+          correosConfigurados: payload.correosConfigurados || [],
+        };
+      });
+
+      setData(responses.filter((item) => item?.empresaRut));
       setError(null);
     } catch (err) {
       console.error("Error al obtener servicios por empresa:", err);
