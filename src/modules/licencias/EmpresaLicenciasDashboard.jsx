@@ -626,27 +626,26 @@ const EmpresaLicenciasDashboard = () => {
     setExportLoading(true);
     try {
       const response = await apiService.get(
-        `/licencia-dashboard/${empresaSeleccionada}/exportar-trabajadores-riesgo`,
+        `/licencia-dashboard/${empresaSeleccionada}/exportar-resumen`,
         {
-          params: { year: selectedYear },
           responseType: "blob",
         }
       );
       const blob = new Blob([response.data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      const filename = `trabajadores_riesgo_${empresaSeleccionada}_${selectedYear}.xlsx`;
+      const filename = `resumen_licencias_${empresaSeleccionada}.xlsx`;
       saveAs(blob, filename);
     } catch (err) {
-      console.error("Error al exportar trabajadores con riesgo:", err);
+      console.error("Error al exportar resumen de licencias:", err);
       setError(
         err?.response?.data?.message ||
-          "No fue posible exportar el reporte de trabajadores con licencias rechazadas."
+          "No fue posible exportar el resumen de licencias."
       );
     } finally {
       setExportLoading(false);
     }
-  }, [empresaSeleccionada, selectedYear]);
+  }, [empresaSeleccionada]);
 
   useEffect(() => {
     if (empresaSeleccionada) {
