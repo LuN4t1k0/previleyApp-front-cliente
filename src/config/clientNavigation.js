@@ -1,23 +1,23 @@
 export const clientMenu = [
   {
-    label: "Dashboard",
-    description: "Resumen de servicios y actividad reciente.",
+    label: "Inicio",
+    description: "Resumen general y actividad reciente.",
     href: "/dashboard",
   },
   {
-    label: "Servicios",
-    description: "Explora cada servicio contratado y sus resultados.",
+    label: "Dashboards",
+    description: "Accede a los dashboards de cada servicio contratado.",
     href: "/servicios",
-  },
-  {
-    label: "Contratos",
-    description: "Detalle de servicios contratados por empresa.",
-    href: "/contratos",
   },
   {
     label: "Prefacturas",
     description: "Panel de seguimiento de prefacturas.",
     href: "/prefacturas",
+  },
+  {
+    label: "Reportes",
+    description: "Genera reportes dinámicos y exporta datos.",
+    href: "/dashboard/reportes",
   },
   {
     label: "Documentos",

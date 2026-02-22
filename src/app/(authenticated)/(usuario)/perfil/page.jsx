@@ -9,6 +9,7 @@ import apiService from "@/app/api/apiService";
 const PerfilPage = () => {
   const { data: session, update } = useSession();
   const usuarioId = session?.user?.id;
+  const isClientAdmin = session?.user?.rol === "cliente_admin";
 
   const [formValues, setFormValues] = useState({
     nombre: "",
@@ -93,6 +94,25 @@ const PerfilPage = () => {
           </p>
           <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />
         </header>
+
+        {isClientAdmin && (
+          <section className="glass-panel rounded-[2rem] p-6">
+            <h2 className="text-base font-semibold text-[color:var(--text-primary)]">
+              Accesos internos
+            </h2>
+            <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
+              Estas opciones solo están disponibles para administradores del cliente.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href="/contratos"
+                className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-600 hover:text-white"
+              >
+                Ver contratos
+              </Link>
+            </div>
+          </section>
+        )}
 
         <form
           onSubmit={handleSubmit}

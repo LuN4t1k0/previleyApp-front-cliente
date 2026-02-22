@@ -37,7 +37,7 @@ const menuItems = [
     roles: ["admin", "trabajador", "empresa", "cliente", "trabajador"],
   },
   {
-    category: "Servicios",
+    category: "Dashboards",
     items: [
       {
         name: "Moras Presuntas",

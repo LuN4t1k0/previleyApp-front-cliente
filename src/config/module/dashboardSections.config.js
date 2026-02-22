@@ -11,7 +11,7 @@ const dashboardSections = [
     ),
   },
   {
-    title: "Servicios",
+    title: "Dashboards",
     items: modulesArray.filter(
       (mod) => mod.category === "servicio" && mod.visible !== false
     ),

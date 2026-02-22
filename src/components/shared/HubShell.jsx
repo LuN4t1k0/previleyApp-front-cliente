@@ -24,6 +24,7 @@ export default function HubShell({
   const router = useRouter();
 
   const rol = session?.user?.rol;
+  const effectiveRole = rol === 'cliente_admin' ? 'cliente' : rol;
   const nombre = session?.user?.nombre || '';
   const apellido = session?.user?.apellido || '';
   const saludo = nombre || apellido ? `, ${nombre} ${apellido}` : '';
@@ -34,7 +35,9 @@ export default function HubShell({
   const seccionesVisibles = config
     .map((seccion) => ({
       title: seccion.title,
-      items: seccion.items.filter((item) => item.roles.includes(rol)),
+      items: seccion.items.filter(
+        (item) => item.roles.includes(rol) || item.roles.includes(effectiveRole)
+      ),
     }))
     .filter((s) => s.items.length > 0); // eliminar secciones vacías
 

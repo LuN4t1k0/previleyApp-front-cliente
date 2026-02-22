@@ -144,19 +144,19 @@ const ServicesPage = () => {
             <div className="space-y-4">
               <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-600">
                 <RiSparkling2Line className="h-3 w-3" />
-                Servicios
+                Dashboards
               </span>
               <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">
                 Tus soluciones Previley
               </h1>
               <p className="max-w-2xl text-sm font-medium text-slate-500 sm:text-base">
-                Revisa cada servicio activo, accede a indicadores y comparte la
+                Revisa cada dashboard activo, accede a indicadores y comparte la
                 información necesaria para avanzar con la facturación.
               </p>
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-xs font-semibold text-slate-500">
               <RiBriefcaseLine className="h-4 w-4" />
-              Total de servicios: {servicesByType.length}
+              Total de dashboards: {servicesByType.length}
             </div>
           </div>
           <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />

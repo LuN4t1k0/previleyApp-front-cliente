@@ -106,7 +106,7 @@ export const footerSections = [
     title: "Plataforma",
     icon: RiApps2Line,
     links: [
-      { label: "Dashboard", href: "/dashboard", icon: RiLayoutGridLine },
+      { label: "Inicio", href: "/dashboard", icon: RiLayoutGridLine },
       { label: "Prefacturas", href: "/prefacturas", icon: RiFileTextLine },
       { label: "Perfil", href: "/perfil", icon: RiUserSettingsLine },
     ],
