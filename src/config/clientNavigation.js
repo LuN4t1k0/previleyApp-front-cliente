@@ -30,7 +30,7 @@ export const clientMenu = [
     href: "/perfil",
   },
   {
-    label: "Administración de Usuarios",
+    label: "Usuarios",
     description: "Gestiona subusuarios y permisos del tenant.",
     href: "/client-admin",
     roles: ["cliente_admin"],
