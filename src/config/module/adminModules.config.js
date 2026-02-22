@@ -45,7 +45,7 @@ const adminModules = {
     description: "Administrar poderes, RUT electrónicos, etc.",
     icon: "📑",
     path: "/admin/gestion-documentos",
-    roles: ["admin"],
+    roles: ["admin", "trabajador"],
     category: "administracion",
   },
   gestionComisiones: {
@@ -53,7 +53,7 @@ const adminModules = {
     description: "Hub de comisiones: tramos y resumen mensual.",
     icon: "💵",
     path: "/admin/comisiones",
-    roles: ["admin"],
+    roles: ["admin", "trabajador"],
     category: "administracion",
   },
   empresaCorreos: {

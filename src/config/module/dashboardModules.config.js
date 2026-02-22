@@ -28,7 +28,7 @@ const dashboardModules = {
     description: "Panel central de gestión y configuración avanzada.",
     icon: "🛠️",
     path: "/dashboard/administracion",
-    roles: ["admin"],
+    roles: ["admin", "trabajador"],
     category: "admin",
     visible: true,
     badge: { label: "Limitado", color: "orange" },
