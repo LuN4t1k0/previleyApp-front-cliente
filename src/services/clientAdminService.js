@@ -26,8 +26,19 @@ const clientAdminService = {
     );
     return unwrap(res);
   },
+  async revokeSessions(id, payload = {}) {
+    const res = await apiService.post(
+      `/client-admin/users/${id}/revoke-sessions`,
+      payload
+    );
+    return unwrap(res);
+  },
   async deleteUser(id) {
     const res = await apiService.delete(`/client-admin/users/${id}`);
+    return unwrap(res);
+  },
+  async deleteUserHard(id) {
+    const res = await apiService.delete(`/client-admin/users/${id}/hard`);
     return unwrap(res);
   },
 };

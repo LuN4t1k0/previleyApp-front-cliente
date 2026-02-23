@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Dialog, DialogPanel, TextInput, Select, SelectItem, Button } from "@tremor/react";
-import { RiAddLine, RiEditLine, RiSettings3Line, RiShieldKeyholeLine, RiUserUnfollowLine } from "@remixicon/react";
+import { RiAddLine, RiEditLine, RiSettings3Line, RiShieldKeyholeLine, RiUserUnfollowLine, RiLogoutCircleLine, RiDeleteBinLine } from "@remixicon/react";
 import { useRole } from "@/context/RoleContext";
 import Restricted from "@/components/restricted/Restricted";
 import CustomBadge from "@/components/badge/Badge";
@@ -29,7 +29,7 @@ export default function ClientAdminUsuariosPage() {
   const { isClientAdmin } = useRole();
   const { data: session } = useSession();
   const currentUserId = session?.user?.id ? Number(session.user.id) : null;
-  const { users, loading, error, createUser, updateUser, setEmpresas, setPermissions, deleteUser } =
+  const { users, loading, error, createUser, updateUser, setEmpresas, setPermissions, revokeSessions, deleteUser, deleteUserHard } =
     useClientAdminUsers();
   const { empresas: empresasPermitidas } = useEmpresasPermitidas();
 
@@ -104,6 +104,14 @@ export default function ClientAdminUsuariosPage() {
 
   const openDeactivate = (user) => {
     setModal({ type: "deactivate", user });
+  };
+
+  const openLogout = (user) => {
+    setModal({ type: "logout", user });
+  };
+
+  const openDelete = (user) => {
+    setModal({ type: "delete", user });
   };
 
   const handleCreate = async () => {
@@ -185,6 +193,26 @@ export default function ClientAdminUsuariosPage() {
       closeModal();
     } catch (err) {
       showErrorAlert("Error", err?.response?.data?.message || err?.message || "No se pudo desactivar.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await revokeSessions(modal.user.id, { reason: "CLIENT_ADMIN_FORCE_LOGOUT" });
+      showSuccessAlert("Sesión cerrada", "Se cerraron las sesiones activas del usuario.");
+      closeModal();
+    } catch (err) {
+      showErrorAlert("Error", err?.response?.data?.message || err?.message || "No se pudo cerrar sesión.");
+    }
+  };
+
+  const handleDeleteHard = async () => {
+    try {
+      await deleteUserHard(modal.user.id);
+      showSuccessAlert("Usuario eliminado", "El usuario fue eliminado definitivamente.");
+      closeModal();
+    } catch (err) {
+      showErrorAlert("Error", err?.response?.data?.message || err?.message || "No se pudo eliminar.");
     }
   };
 
@@ -319,11 +347,27 @@ export default function ClientAdminUsuariosPage() {
                             </button>
                             <button
                               type="button"
+                              onClick={() => openLogout(user)}
+                              className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm hover:bg-amber-100"
+                            >
+                              <RiLogoutCircleLine className="h-4 w-4" />
+                              Cerrar sesión
+                            </button>
+                            <button
+                              type="button"
                               onClick={() => openDeactivate(user)}
                               className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 shadow-sm hover:bg-rose-100"
                             >
                               <RiUserUnfollowLine className="h-4 w-4" />
                               Desactivar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openDelete(user)}
+                              className="inline-flex items-center gap-1 rounded-full border border-rose-300 bg-rose-100 px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-sm hover:bg-rose-200"
+                            >
+                              <RiDeleteBinLine className="h-4 w-4" />
+                              Eliminar
                             </button>
                           </>
                         )}
@@ -500,6 +544,34 @@ export default function ClientAdminUsuariosPage() {
           <div className="mt-6 flex justify-end gap-2">
             <Button variant="secondary" onClick={closeModal}>Cancelar</Button>
             <Button color="red" onClick={handleDeactivate}>Desactivar</Button>
+          </div>
+        </DialogPanel>
+      </Dialog>
+
+      {/* Modal Cerrar sesión */}
+      <Dialog open={modal.type === "logout"} onClose={closeModal} className="z-50 flex items-center justify-center">
+        <DialogPanel className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <h3 className="text-lg font-semibold text-slate-900">Cerrar sesión</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            Esto cerrará todas las sesiones activas del usuario.
+          </p>
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="secondary" onClick={closeModal}>Cancelar</Button>
+            <Button onClick={handleLogout}>Cerrar sesión</Button>
+          </div>
+        </DialogPanel>
+      </Dialog>
+
+      {/* Modal Eliminar */}
+      <Dialog open={modal.type === "delete"} onClose={closeModal} className="z-50 flex items-center justify-center">
+        <DialogPanel className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+          <h3 className="text-lg font-semibold text-slate-900">Eliminar usuario</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            Esta acción elimina definitivamente al usuario y no se puede deshacer.
+          </p>
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="secondary" onClick={closeModal}>Cancelar</Button>
+            <Button color="red" onClick={handleDeleteHard}>Eliminar</Button>
           </div>
         </DialogPanel>
       </Dialog>

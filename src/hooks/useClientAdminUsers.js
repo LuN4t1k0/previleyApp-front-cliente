@@ -47,8 +47,20 @@ const useClientAdminUsers = () => {
     return data;
   }, [fetchUsers]);
 
+  const revokeSessions = useCallback(async (id, payload) => {
+    const data = await clientAdminService.revokeSessions(id, payload);
+    await fetchUsers();
+    return data;
+  }, [fetchUsers]);
+
   const deleteUser = useCallback(async (id) => {
     const data = await clientAdminService.deleteUser(id);
+    await fetchUsers();
+    return data;
+  }, [fetchUsers]);
+
+  const deleteUserHard = useCallback(async (id) => {
+    const data = await clientAdminService.deleteUserHard(id);
     await fetchUsers();
     return data;
   }, [fetchUsers]);
@@ -62,7 +74,9 @@ const useClientAdminUsers = () => {
     updateUser,
     setEmpresas,
     setPermissions,
+    revokeSessions,
     deleteUser,
+    deleteUserHard,
   };
 };
 
