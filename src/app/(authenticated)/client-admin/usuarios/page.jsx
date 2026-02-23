@@ -17,7 +17,6 @@ const emptyForm = {
   rut: "",
   telefono: "",
   email: "",
-  password: "",
   rol: "cliente",
 };
 
@@ -85,7 +84,6 @@ export default function ClientAdminUsuariosPage() {
       rut: user.rut || "",
       telefono: user.telefono || "",
       email: user.email || "",
-      password: "",
       rol: user.rol || "cliente",
       estado: user.estado,
       status: user.status,
@@ -109,7 +107,7 @@ export default function ClientAdminUsuariosPage() {
   };
 
   const handleCreate = async () => {
-    if (!form.nombre || !form.apellido || !form.rut || !form.telefono || !form.email || !form.password) {
+    if (!form.nombre || !form.apellido || !form.rut || !form.telefono || !form.email) {
       showErrorAlert("Faltan datos", "Completa todos los campos obligatorios.");
       return;
     }
@@ -120,6 +118,10 @@ export default function ClientAdminUsuariosPage() {
     try {
       await createUser({ ...form, empresas: selectedEmpresas });
       showSuccessAlert("Usuario creado", "Subusuario creado correctamente.");
+      showInfoAlert(
+        "Activación requerida",
+        "Se enviará un correo para que el usuario cree su contraseña."
+      );
       closeModal();
     } catch (err) {
       showErrorAlert("Error", err?.response?.data?.message || err?.message || "No se pudo crear el usuario.");
@@ -344,7 +346,6 @@ export default function ClientAdminUsuariosPage() {
             <TextInput placeholder="RUT" value={form.rut} onChange={(e) => setForm({ ...form, rut: e.target.value })} />
             <TextInput placeholder="Teléfono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
             <TextInput placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <TextInput placeholder="Contraseña" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             <Select value={form.rol} onValueChange={(value) => setForm({ ...form, rol: value })}>
               {roleOptions.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
@@ -353,6 +354,10 @@ export default function ClientAdminUsuariosPage() {
               ))}
             </Select>
           </div>
+
+          <p className="mt-3 text-xs text-slate-500">
+            El subusuario recibirá un correo para crear su contraseña.
+          </p>
 
           <div className="mt-4">
             <p className="text-sm font-semibold text-slate-700">Empresas asignadas</p>
