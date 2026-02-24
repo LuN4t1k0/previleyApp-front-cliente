@@ -81,7 +81,9 @@ generateColumns(
   handleViewDetails, handleBulkDelete,
   monetaryColumns, dateColumns, badgesConfig,
   columnsConfig, sorting, setSorting,
-  actionHandlers, role, columnOrder
+  actionHandlers, role, columnOrder,
+  enableColumnVisibility, visibleColumns,
+  onVisibleColumnsChange, columnVisibilityKey
 }
 ```
 

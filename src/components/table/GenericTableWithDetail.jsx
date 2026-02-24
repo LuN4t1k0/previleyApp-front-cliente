@@ -88,8 +88,14 @@ const GenericTableWithDetail = ({
   scrollTriggerRef,
   useInfiniteScroll,
   periodoColumns = [],
+  enableColumnVisibility = false,
+  visibleColumns,
+  onVisibleColumnsChange,
+  columnVisibilityKey,
 }) => {
   const [rowSelection, setRowSelection] = useState({});
+  const [columnVisibility, setColumnVisibility] = useState({});
+  const [showColumnPicker, setShowColumnPicker] = useState(false);
   const paginationCount = useInfiniteScroll ? 0 : Math.ceil(total / limit);
 
   const allFieldsSet = new Set([
@@ -126,11 +132,118 @@ const GenericTableWithDetail = ({
     periodoColumns
   ]);
 
+  const enableColumnVisibilityUI =
+    enableColumnVisibility ||
+    Boolean(columnVisibilityKey) ||
+    Array.isArray(visibleColumns);
+
+  const defaultColumnVisibility = useMemo(() => {
+    const visibility = {};
+    columns.forEach((col) => {
+      const id = col.id ?? col.accessorKey;
+      if (id) visibility[id] = true;
+    });
+    return visibility;
+  }, [columns]);
+
+  const buildVisibilityFromList = useCallback(
+    (visibleIds) => {
+      const set = new Set(visibleIds || []);
+      const visibility = {};
+      columns.forEach((col) => {
+        const id = col.id ?? col.accessorKey;
+        if (id) visibility[id] = set.has(id);
+      });
+      return visibility;
+    },
+    [columns]
+  );
+
+  useEffect(() => {
+    let nextVisibility = defaultColumnVisibility;
+    if (Array.isArray(visibleColumns) && visibleColumns.length > 0) {
+      nextVisibility = buildVisibilityFromList(visibleColumns);
+    } else if (columnVisibilityKey) {
+      try {
+        const stored = JSON.parse(
+          localStorage.getItem(columnVisibilityKey) || "[]"
+        );
+        if (Array.isArray(stored) && stored.length > 0) {
+          nextVisibility = buildVisibilityFromList(stored);
+        }
+      } catch (_) {
+        // ignore storage errors
+      }
+    }
+
+    setColumnVisibility((prev) => {
+      if (!prev || Object.keys(prev).length === 0) return nextVisibility;
+      if (Array.isArray(visibleColumns)) return nextVisibility;
+      const merged = { ...defaultColumnVisibility, ...prev };
+      Object.keys(merged).forEach((id) => {
+        if (!(id in defaultColumnVisibility)) delete merged[id];
+      });
+      return merged;
+    });
+  }, [
+    defaultColumnVisibility,
+    buildVisibilityFromList,
+    visibleColumns,
+    columnVisibilityKey,
+  ]);
+
+  const getVisibleColumnIds = useCallback(
+    (visibility) =>
+      columns
+        .map((col) => col.id ?? col.accessorKey)
+        .filter(Boolean)
+        .filter((id) => visibility?.[id] ?? true),
+    [columns]
+  );
+
+  const toggleableColumns = useMemo(
+    () => columns.filter((col) => col.enableHiding !== false),
+    [columns]
+  );
+
+  const handleToggleColumn = useCallback((columnId) => {
+    setColumnVisibility((prev) => ({
+      ...prev,
+      [columnId]: !(prev?.[columnId] ?? true),
+    }));
+  }, []);
+
+  const handleShowAllColumns = useCallback(() => {
+    setColumnVisibility(defaultColumnVisibility);
+  }, [defaultColumnVisibility]);
+
+  useEffect(() => {
+    if (!enableColumnVisibilityUI) return;
+    const visibleIds = getVisibleColumnIds(columnVisibility);
+    if (onVisibleColumnsChange) {
+      onVisibleColumnsChange(visibleIds);
+    }
+    if (columnVisibilityKey) {
+      try {
+        localStorage.setItem(columnVisibilityKey, JSON.stringify(visibleIds));
+      } catch (_) {
+        // ignore storage errors
+      }
+    }
+  }, [
+    columnVisibility,
+    columnVisibilityKey,
+    getVisibleColumnIds,
+    onVisibleColumnsChange,
+    enableColumnVisibilityUI,
+  ]);
+
   const tableColumns = useMemo(() => {
     const cols = [...columns];
     if (canDelete) {
       cols.unshift({
         id: "select",
+        enableHiding: false,
         header: ({ table }) => (
           <IndeterminateCheckbox
             {...{
@@ -159,9 +272,10 @@ const GenericTableWithDetail = ({
   const table = useReactTable({
     data,
     columns: tableColumns,
-    state: { rowSelection, sorting },
+    state: { rowSelection, sorting, columnVisibility },
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
+    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     manualSorting: true,
   });
@@ -220,6 +334,59 @@ const GenericTableWithDetail = ({
               <span className="block sm:inline">
                 {error.message || "Ocurrió un error al cargar los datos."}
               </span>
+            </div>
+          )}
+
+          {enableColumnVisibilityUI && toggleableColumns.length > 0 && (
+            <div className="flex justify-end mb-2">
+              <div className="relative">
+                <button
+                  type="button"
+                  className="text-xs sm:text-sm px-3 py-1.5 border rounded-md bg-white hover:bg-gray-50"
+                  onClick={() => setShowColumnPicker((prev) => !prev)}
+                >
+                  Columnas
+                </button>
+                {showColumnPicker && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg p-2 z-20">
+                    <div className="text-xs text-gray-500 px-1 pb-2">
+                      Mostrar columnas
+                    </div>
+                    <div className="max-h-64 overflow-auto space-y-1">
+                      {toggleableColumns.map((col) => {
+                        const id = col.id ?? col.accessorKey;
+                        if (!id) return null;
+                        const label =
+                          col.meta?.headerLabel || col.accessorKey || id;
+                        const checked = columnVisibility?.[id] ?? true;
+                        return (
+                          <label
+                            key={id}
+                            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50"
+                          >
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                              checked={checked}
+                              onChange={() => handleToggleColumn(id)}
+                            />
+                            <span className="text-xs sm:text-sm">{label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="pt-2 mt-2 border-t flex justify-end">
+                      <button
+                        type="button"
+                        className="text-xs text-blue-600 hover:underline"
+                        onClick={handleShowAllColumns}
+                      >
+                        Mostrar todas
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

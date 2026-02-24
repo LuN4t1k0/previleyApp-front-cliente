@@ -295,18 +295,23 @@ export const generateColumns = (
 
       const { textTransform, headerAlign, bodyAlign } =
         getColumnStyles(columnConfig);
+      const headerLabel = columnConfig?.header || formatColumnName(field);
+      const enableHiding =
+        columnConfig?.enableHiding ?? columnConfig?.hideable ?? true;
 
       const common = {
         header: () => (
           <span className={`${textTransform}`}>
-            {columnConfig?.header || formatColumnName(field)}
+            {headerLabel}
           </span>
         ),
         accessorKey: field,
         enableSorting: isSortable || false,
+        enableHiding,
         meta: {
           align: bodyAlign,
           headerAlign: headerAlign,
+          headerLabel,
           ...columnConfig?.meta,
         },
       };
