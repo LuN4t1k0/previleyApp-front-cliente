@@ -1,140 +1,8 @@
-// import GenericModal from "@/components/modal/GenericModal";
-// import AsignarServiciosEmpresasModal from "@/components/modal/servicios/AsignarServiciosFormContent";
 
-// import { RiDeleteBinLine, RiEditLine } from "@remixicon/react";
-
-// const ContratosServicios = {
-//   // Rutas de la API
-//   createPath: "/servicios-empresas",
-//   updatePath: "/servicios-empresas",
-//   resourcePath: "/servicios-empresas",
-//   deletePath: "/servicios-empresas",
-//   filtersPath: "/servicios-empresas/filters",
-//   detailPath: "/servicios-empresas/detalle",
-//   bulkUploadPath: "",
-//   bulkUploadParentIdField: "",
-//   buildDetailEndpoint: (detailPath, folio) => `${detailPath}/${folio}`,
-
-//   // Información de UI
-//   title: "Contratos de Servicios",
-//   subtitle: "Crea nuevos contratos de servicios para empresas en PrevileyAPP.",
-
-//   // Definición de los filtros y su mapeo a los parámetros de consulta
-
-//   filters: [
-//     {
-//       key: "empresaRut",
-//       type: "multiselect",
-//       field: "empresaRut",
-//       placeholder: "Empresa...",
-//       options: "empresaRut", // 🟢 cambiar esto
-//     },
-//     {
-//       key: "servicioId",
-//       type: "multiselect",
-//       field: "servicioId",
-//       placeholder: "Servicio...",
-//       options: "servicioId",
-//     },
-//     {
-//       key: "porcentajeCobro",
-//       type: "text",
-//       field: "porcentajeCobro",
-//       placeholder: "Buscar por porcentaje...",
-//     },
-//   ],
-
-//   // Orden personalizado de las columnas
-//   columnOrder: [],
-
-//   // Columnas a excluir en la visualización de tablas
-//   excludeColumns: ["id", "servicioId"],
-
-//   // Columnas a formatear como moneda
-//   monetaryColumns: [], // Añade las columnas que necesites
-
-  
-
-//   // Añadir configuración de las columnas ordenables:
-//   columnsConfig: [
-//     { header: "Fecha Creacion", accessorKey: "createdAt" },
-//     { header: "Fecha Actualizacion", accessorKey: "updatedAt" },
-//     {
-//       header: "Acciones",
-//       accessorKey: "acciones",
-//       type: "actions",
-//       actions: [
-//         {
-//           id: "editar",
-//           icon: RiEditLine,
-//           label: "Editar",
-//           iconClass: "text-blue-600",
-//           rolesAllowed: ["admin", "editor", "trabajador"],
-//         },
-//         {
-//           id: "eliminar",
-//           icon: RiDeleteBinLine,
-//           label: "Eliminar",
-//           iconClass: "text-red-600",
-//           rolesAllowed: ["admin", "editor", "trabajador"],
-//         },
-//       ],
-      
-//     },
-//   ],
-
-//   // Columnas a formatear como fecha
-//   dateColumns: ["createdAt", "updatedAt"], // Añade las columnas que necesites
-
-//   // Configuración de badges
-//   badgesConfig: {},
-
-//   // Configuración de modales
-//   modalsConfig: {
-//     asignarServiciosForm: {
-//       component: GenericModal,
-//       title: "Agregar/Editar Producion",
-//       content: AsignarServiciosEmpresasModal,
-//       rolesAllowed: ["admin",],
-//     },
-//   },
-//   actionsConfig: [
-//     {
-//       id: "nuevo",
-//       buttonText: " Nuevo Contrato",
-//       rolesAllowed: ["admin",],
-//       actionType: "create",
-//       color: "blue",
-//       icon: "RiFileAddFill",
-//     },
-
-    
-//   ],
-// };
-
-// export default ContratosServicios;
-
-
-// NUEVO:
-// NUEVO:
-import LicenciasFormModal from "@/components/forms/LicenciasForm";
 import GenericModal from "@/components/modal/GenericModal";
 import LicenciaDetailsContent from "@/components/modal/LicenciaDetailsContent";
 import AsignarServiciosEmpresasModal from "@/components/modal/servicios/AsignarServiciosFormContent";
 
-import {
-  RiFilePdf2Line,
-  RiLockUnlockLine,
-  RiDeleteBinLine,
-  RiEditLine,
-  RiFileExcel2Line,
-  RiCheckLine,
-  RiCloseLine,
-} from "@remixicon/react";
-
-const ESTADOS_TERMINALES = ["pre-facturada", "validado", "facturada", "pagada"];
-const ESTADOS_INICIALES = ["pendiente"]; // Para acciones como validar/rechazar
-const ESTADOS_REVERTIBLES = ["validado", "rechazada"]; // Para la acción de reabrir
 
 const ContratosConfig = {
   // Rutas de la API
@@ -164,16 +32,7 @@ const ContratosConfig = {
   useInfiniteScroll: true,
   // Definición de los filtros y su mapeo a los parámetros de consulta
   filters: [
-    // {
-    //   key: "empresaRut",
-    //   type: "multiselect",
-    //   field: "empresaRut",
-    //   placeholder: "Empresa...",
-    //   options: "empresaRut",
-    //   // ⬆️ Debe coincidir con la propiedad en /filters
-    //   // Si tu backend devuelve "empresas", usa "empresas"
-    // },
-   
+
     {
       key: "empresaRut",
       type: "text",
@@ -194,7 +53,7 @@ const ContratosConfig = {
   ],
 
   // Columnas a excluir en la visualización de tablas
-  excludeColumns: ["id", "servicioId"],
+  excludeColumns: ["id", "servicioId","empresaId","createdAt","updatedAt","value"],
 
   // Columnas a formatear como moneda
   monetaryColumns: [], // Añade las columnas que necesites
@@ -205,37 +64,7 @@ const ContratosConfig = {
 
         { header: "Contrato", accessorKey: "createdAt" },
     { header: "Actualizacion", accessorKey: "updatedAt" },
-    // {
-    //   header: "Anticipo",
-    //   accessorKey: "montoAnticipo",
-    // },
-    
-
-
-
-    // {
-    //   header: "Acciones",
-    //   accessorKey: "acciones",
-    //   type: "actions",
-    //   actions: [
-    //     {
-    //       id: "editar",
-    //       icon: RiEditLine,
-    //       label: "editar",
-    //       iconClass: "text-blue-600",
-    //       rolesAllowed: ["admin", "editor", "trabajador"],
- 
-    //     },
-    //     {
-    //       id: "eliminar",
-    //       icon: RiDeleteBinLine,
-    //       label: "Eliminar",
-    //       iconClass: "text-red-600",
-    //       rolesAllowed: ["admin", "editor", "trabajador"],
-      
-    //     },
-    //   ],
-    // },
+   
   ],
 
   // Orden personalizado de las columnas
@@ -260,12 +89,7 @@ const ContratosConfig = {
       rolesAllowed: ["admin", "trabajador", "editor"],
     },
 
-    // rejectProduccion: {
-    //   component: GenericModal,
-    //   title: "Rechazar Producción",
-    //   content: LicenciaForm,
-    //   rolesAllowed: ["admin", "editor"],
-    // },
+
   },
 
   actionsConfig: [
