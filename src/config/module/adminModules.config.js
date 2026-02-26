@@ -73,6 +73,15 @@ const adminModules = {
     category: "administracion",
     badge: { label: "Nuevo", color: "green" },
   },
+  historialConexiones: {
+    name: "Historial de Conexiones",
+    description: "Historial global de sesiones y última actividad.",
+    icon: "🕒",
+    path: "/admin/historial-conexiones",
+    roles: ["admin"],
+    category: "administracion",
+    badge: { label: "Nuevo", color: "blue" },
+  },
 };
 
 export default adminModules;

@@ -23,6 +23,7 @@ import {
   RiDashboardLine,
   RiDatabase2Line,
   RiShieldKeyholeLine,
+  RiHistoryLine,
   RiFileList3Line,
   RiHome8Line,
   RiScalesLine,
@@ -213,6 +214,13 @@ const menuItems = [
         description: "Monitorea y desconecta sesiones activas.",
         href: "/admin/usuarios-activos",
         icon: RiShieldKeyholeLine,
+        roles: ["admin"],
+      },
+      {
+        name: "Historial de Conexiones",
+        description: "Revisa el historial global de sesiones y actividad.",
+        href: "/admin/historial-conexiones",
+        icon: RiHistoryLine,
         roles: ["admin"],
       },
       {
