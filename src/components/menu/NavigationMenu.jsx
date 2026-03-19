@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
@@ -23,6 +24,8 @@ import {
 import { menuItems } from '@/config/menuItems';
 import { cx } from '@/lib/utils';
 import api from '@/app/api/apiService';
+
+const NAVBAR_LOGO_URL = 'https://assets.previley.cl/logos/logo-previley-h.png';
 
 const NavigationMenu = () => {
   const { data: session } = useSession();
@@ -122,8 +125,15 @@ const NavigationMenu = () => {
     <header className="sticky top-0 z-40 border-b border-gray-200 bg-white">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 lg:px-6">
         <div className="flex items-center gap-2">
-          <Link href="/dashboard" className="text-sm font-semibold text-gray-900">
-            Previley APP
+          <Link href="/dashboard" className="flex items-center">
+            <Image
+              src={NAVBAR_LOGO_URL}
+              alt="Previley"
+              width={140}
+              height={30}
+              priority
+              className="h-8 w-auto"
+            />
           </Link>
         </div>
 

@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { RiDoorOpenLine, RiMenuLine, RiCloseLine } from "@remixicon/react";
 import { clientMenu } from "@/config/clientNavigation";
 import api from "@/app/api/apiService";
+
+const NAVBAR_LOGO_URL = "https://assets.previley.cl/logos/logo-previley-h.png";
 
 const initialsFromName = (nombre = "", apellido = "") => {
   const first = nombre?.trim()?.[0] || "";
@@ -66,14 +69,18 @@ const ClientHeader = () => {
         <div className="flex items-center gap-3">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 text-sm font-semibold tracking-wide text-[color:var(--text-primary)]"
+            className="flex items-center gap-3"
           >
-            <span className="icon-chip h-10 w-10 text-base">🪴</span>
-            <span>
-              Previley
-              <span className="ml-1 font-medium text-[color:var(--theme-primary)]">
-                Clientes
-              </span>
+            <Image
+              src={NAVBAR_LOGO_URL}
+              alt="Previley"
+              width={140}
+              height={30}
+              priority
+              className="h-8 w-auto"
+            />
+            <span className="rounded-full bg-[color:var(--theme-soft)] px-2.5 py-1 text-xs font-semibold tracking-wide text-[color:var(--theme-primary)]">
+              Clientes
             </span>
           </Link>
         </div>
