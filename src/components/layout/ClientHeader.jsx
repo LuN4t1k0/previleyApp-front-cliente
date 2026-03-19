@@ -65,62 +65,64 @@ const ClientHeader = () => {
 
   return (
     <header className="nav-shell sticky top-0 z-40 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 md:px-6">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-3"
-          >
-            <Image
-              src={NAVBAR_LOGO_URL}
-              alt="Previley"
-              width={140}
-              height={30}
-              priority
-              className="h-8 w-auto"
-            />
-            <span className="rounded-full bg-[color:var(--theme-soft)] px-2.5 py-1 text-xs font-semibold tracking-wide text-[color:var(--theme-primary)]">
-              Clientes
-            </span>
-          </Link>
-        </div>
-
-        <nav className="hidden items-center gap-2 md:flex">
-          {menuItems.map((item) => renderNavLink(item))}
-        </nav>
-
-        <div className="hidden items-center gap-3 md:flex">
-          <div className="flex items-center gap-2 rounded-full border border-white/60 bg-white/40 px-3 py-1.5 text-xs font-semibold text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--theme-soft)] text-sm font-semibold text-[color:var(--theme-primary)]">
-              {initialsFromName(nombre, apellido)}
-            </span>
-            <span className="max-w-[160px] truncate">
-              {nombre} {apellido}
-            </span>
+      <div className="mx-auto max-w-[1680px] px-4 py-4 md:px-6 xl:px-8">
+        <div className="flex items-center gap-4 xl:gap-6">
+          <div className="flex shrink-0 items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-3"
+            >
+              <Image
+                src={NAVBAR_LOGO_URL}
+                alt="Previley"
+                width={156}
+                height={34}
+                priority
+                className="h-8 w-auto xl:h-9"
+              />
+              <span className="rounded-full bg-[color:var(--theme-soft)] px-2.5 py-1 text-xs font-semibold tracking-wide text-[color:var(--theme-primary)]">
+                Clientes
+              </span>
+            </Link>
           </div>
+
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 overflow-x-auto md:flex">
+            {menuItems.map((item) => renderNavLink(item))}
+          </nav>
+
+          <div className="hidden shrink-0 items-center gap-3 md:flex">
+            <div className="flex items-center gap-2 rounded-full border border-white/60 bg-white/40 px-3 py-1.5 text-xs font-semibold text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--theme-soft)] text-sm font-semibold text-[color:var(--theme-primary)]">
+                {initialsFromName(nombre, apellido)}
+              </span>
+              <span className="max-w-[160px] truncate">
+                {nombre} {apellido}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="inline-flex items-center gap-1 rounded-full border border-transparent bg-[color:var(--theme-primary)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[color:var(--theme-primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme-primary)] focus-visible:ring-offset-2"
+            >
+              <RiDoorOpenLine className="h-4 w-4" aria-hidden="true" />
+              Salir
+            </button>
+          </div>
+
           <button
             type="button"
-            onClick={handleSignOut}
-            className="inline-flex items-center gap-1 rounded-full border border-transparent bg-[color:var(--theme-primary)] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[color:var(--theme-primary-dark)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme-primary)] focus-visible:ring-offset-2"
+            className="ml-auto flex items-center justify-center rounded-full border border-white/60 bg-white/40 p-2 text-[color:var(--text-primary)] shadow-sm backdrop-blur md:hidden"
+            onClick={() => setOpen((prev) => !prev)}
+            aria-expanded={open}
+            aria-label="Abrir menú"
           >
-            <RiDoorOpenLine className="h-4 w-4" aria-hidden="true" />
-            Salir
+            {open ? (
+              <RiCloseLine className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <RiMenuLine className="h-5 w-5" aria-hidden="true" />
+            )}
           </button>
         </div>
-
-        <button
-          type="button"
-          className="flex items-center justify-center rounded-full border border-white/60 bg-white/40 p-2 text-[color:var(--text-primary)] shadow-sm backdrop-blur md:hidden"
-          onClick={() => setOpen((prev) => !prev)}
-          aria-expanded={open}
-          aria-label="Abrir menú"
-        >
-          {open ? (
-            <RiCloseLine className="h-5 w-5" aria-hidden="true" />
-          ) : (
-            <RiMenuLine className="h-5 w-5" aria-hidden="true" />
-          )}
-        </button>
       </div>
 
       {open && (
