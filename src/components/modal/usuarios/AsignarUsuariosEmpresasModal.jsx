@@ -462,8 +462,35 @@ const AsignarUsuariosEmpresasModal = ({ onClose }) => {
   // --- FUNCIONES API ---
   const cargarUsuarios = async () => {
     try {
-      const response = await apiService.get("/usuarios/");
-      setUsuarios(response.data.data);
+      const pageSize = 1000;
+      const response = await apiService.get("/usuarios/", {
+        params: { limit: pageSize, offset: 0 },
+      });
+
+      const usuariosIniciales = response.data?.data || [];
+      const totalUsuarios = Number(response.data?.total || usuariosIniciales.length);
+
+      if (usuariosIniciales.length >= totalUsuarios) {
+        setUsuarios(usuariosIniciales);
+        return;
+      }
+
+      const requests = [];
+      for (let offset = usuariosIniciales.length; offset < totalUsuarios; offset += pageSize) {
+        requests.push(
+          apiService.get("/usuarios/", {
+            params: { limit: pageSize, offset },
+          })
+        );
+      }
+
+      const responses = await Promise.all(requests);
+      const usuariosCompletos = [
+        ...usuariosIniciales,
+        ...responses.flatMap((item) => item.data?.data || []),
+      ];
+
+      setUsuarios(usuariosCompletos);
     } catch (error) {
       showErrorAlert("Error al cargar usuarios", error.message);
     }
