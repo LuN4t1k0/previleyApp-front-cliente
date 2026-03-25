@@ -25,6 +25,11 @@ export const clientMenu = [
     href: "/documentos",
   },
   {
+    label: "Ayuda",
+    description: "Guías y recursos de uso del portal cliente.",
+    href: "/documentacion",
+  },
+  {
     label: "Perfil",
     description: "Tus datos de contacto y ajustes de cuenta.",
     href: "/perfil",
