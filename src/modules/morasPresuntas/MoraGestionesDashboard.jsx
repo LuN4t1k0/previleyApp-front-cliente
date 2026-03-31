@@ -3,10 +3,36 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DateRangePicker } from "@tremor/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
-import ServiceTimeline from "@/components/servicios/ServiceTimeline";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
 import apiService from "@/app/api/apiService";
-import { RiBankLine, RiBuildingLine, RiCalendarLine } from "@remixicon/react";
+import { formatCurrency, formatDate } from "@/utils/formatters";
+import {
+  RiBankLine,
+  RiBuildingLine,
+  RiCalendarLine,
+  RiExternalLinkLine,
+  RiFileDownloadLine,
+} from "@remixicon/react";
+
+const formatEstado = (estado) => {
+  if (!estado) return "Sin estado";
+  return String(estado)
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const estadoTone = {
+  cerrada: "border-slate-200 bg-slate-100 text-slate-700",
+  cerrado: "border-slate-200 bg-slate-100 text-slate-700",
+  pendiente: "border-amber-200 bg-amber-50 text-amber-700",
+  analisis: "border-sky-200 bg-sky-50 text-sky-700",
+  pagado: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  regularizado: "border-emerald-200 bg-emerald-50 text-emerald-700",
+};
+
+const getEstadoTone = (estado) =>
+  estadoTone[String(estado || "").toLowerCase()] ||
+  "border-slate-200 bg-slate-50 text-slate-700";
 
 const MoraGestionesDashboard = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
@@ -14,9 +40,36 @@ const MoraGestionesDashboard = () => {
   const [empresaInput, setEmpresaInput] = useState("");
   const lastEmpresaLabel = useRef("");
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
-  const [entidadesDisponibles, setEntidadesDisponibles] = useState([]);
   const [entidadSeleccionada, setEntidadSeleccionada] = useState("");
-  const [cargandoEntidades, setCargandoEntidades] = useState(false);
+  const [gestiones, setGestiones] = useState([]);
+  const [loadingGestiones, setLoadingGestiones] = useState(false);
+  const [errorGestiones, setErrorGestiones] = useState("");
+
+  const handleDownloadDetalle = useCallback(async (gestion) => {
+    if (!gestion?.id) return;
+    try {
+      const response = await apiService.get(`/gestion-mora/${gestion.id}/export`, {
+        responseType: "blob",
+      });
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `detalle_gestion_${gestion.folio || gestion.id}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error descargando archivo de detalle", error);
+      setErrorGestiones("No se pudo descargar el archivo de detalle de la gestión.");
+    }
+  }, []);
 
   const empresaOptions = useMemo(
     () =>
@@ -45,64 +98,68 @@ const MoraGestionesDashboard = () => {
   }, [empresaOptions, empresaSeleccionada]);
 
   useEffect(() => {
-    const fetchEntidades = async () => {
+    const fetchGestiones = async () => {
       if (!empresaSeleccionada) {
-        setEntidadesDisponibles([]);
-        setEntidadSeleccionada("");
+        setGestiones([]);
+        setErrorGestiones("");
         return;
       }
 
       try {
-        setCargandoEntidades(true);
-        const res = await apiService.get(
-          "/mora-dashboard/operativo/distribucion-estado-por-entidad",
-          { params: { empresaRut: empresaSeleccionada } }
-        );
-        const data = res.data.data || [];
-        const vistos = new Set();
-        const opciones = [];
+        setLoadingGestiones(true);
+        setErrorGestiones("");
+        const params = {
+          empresaRut: empresaSeleccionada,
+          limit: 500,
+          offset: 0,
+        };
 
-        data.forEach((item) => {
-          if (!item.entidadId || vistos.has(item.entidadId)) return;
-          vistos.add(item.entidadId);
-          opciones.push({
-            value: String(item.entidadId),
-            label: item.entidadNombre || item.entidad || "Entidad sin nombre",
-          });
-        });
-
-        const ordenadas = opciones.sort((a, b) => a.label.localeCompare(b.label, "es"));
-        setEntidadesDisponibles(ordenadas);
-        if (!ordenadas.find((op) => op.value === entidadSeleccionada)) {
-          setEntidadSeleccionada("");
+        if (entidadSeleccionada) {
+          params.entidadId = entidadSeleccionada;
         }
+
+        if (dateRange?.from instanceof Date) {
+          params.fechaGestion_inicio = dateRange.from.toISOString().split("T")[0];
+        }
+
+        if (dateRange?.to instanceof Date) {
+          params.fechaGestion_termino = dateRange.to.toISOString().split("T")[0];
+        }
+
+        const response = await apiService.get("/gestion-mora", { params });
+        setGestiones(Array.isArray(response?.data?.data) ? response.data.data : []);
       } catch (error) {
-        console.error("Error cargando entidades disponibles", error);
-        setEntidadesDisponibles([]);
-        setEntidadSeleccionada("");
+        console.error("Error cargando gestiones de mora", error);
+        setGestiones([]);
+        setErrorGestiones(
+          error?.response?.data?.message || "No se pudieron cargar las gestiones."
+        );
       } finally {
-        setCargandoEntidades(false);
+        setLoadingGestiones(false);
       }
     };
 
-    fetchEntidades();
-  }, [empresaSeleccionada]);
+    fetchGestiones();
+  }, [empresaSeleccionada, entidadSeleccionada, dateRange]);
 
-  const handleEntitiesResolved = useCallback((entities) => {
-    if (!Array.isArray(entities) || entities.length === 0) return;
-    setEntidadesDisponibles((prev) => {
-      const byValue = new Map(
-        (Array.isArray(prev) ? prev : []).map((item) => [item.value, item])
-      );
-      entities.forEach((entity) => {
-        if (!entity?.value) return;
-        byValue.set(entity.value, entity);
+  const entidadesDisponibles = useMemo(() => {
+    const byId = new Map();
+    gestiones.forEach((gestion) => {
+      if (!gestion?.entidadId || byId.has(String(gestion.entidadId))) return;
+      byId.set(String(gestion.entidadId), {
+        value: String(gestion.entidadId),
+        label: gestion.entidad || "Entidad sin nombre",
       });
-      return Array.from(byValue.values()).sort((a, b) =>
-        a.label.localeCompare(b.label, "es")
-      );
     });
-  }, []);
+    return Array.from(byId.values()).sort((a, b) => a.label.localeCompare(b.label, "es"));
+  }, [gestiones]);
+
+  useEffect(() => {
+    if (!entidadSeleccionada) return;
+    if (!entidadesDisponibles.find((item) => item.value === entidadSeleccionada)) {
+      setEntidadSeleccionada("");
+    }
+  }, [entidadesDisponibles, entidadSeleccionada]);
 
   const handleEmpresaInputChange = useCallback(
     (value) => {
@@ -204,10 +261,10 @@ const MoraGestionesDashboard = () => {
                     className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none"
                     value={entidadSeleccionada}
                     onChange={(event) => setEntidadSeleccionada(event.target.value)}
-                    disabled={cargandoEntidades || entidadesDisponibles.length === 0}
+                    disabled={loadingGestiones}
                   >
                     <option value="">
-                      {cargandoEntidades ? "Cargando entidades..." : "Todas las entidades"}
+                      {loadingGestiones ? "Cargando entidades..." : "Todas las entidades"}
                     </option>
                     {entidadesDisponibles.map((entidad) => (
                       <option key={entidad.value} value={entidad.value}>
@@ -231,13 +288,154 @@ const MoraGestionesDashboard = () => {
           </section>
 
           {empresaSeleccionada ? (
-            <ServiceTimeline
-              empresaRut={empresaSeleccionada}
-              serviceKey="mora"
-              dateRange={dateRange}
-              entidadId={entidadSeleccionada || undefined}
-              onEntitiesResolved={handleEntitiesResolved}
-            />
+            <section className="rounded-[2rem] border border-slate-200 bg-white/60 p-6 shadow-xl shadow-slate-200/40 backdrop-blur-md">
+              <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-800">
+                    Gestiones de la empresa
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    Se muestran todas las gestiones registradas para la empresa seleccionada, incluidas las cerradas.
+                  </p>
+                </div>
+                <div className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-slate-500 shadow-sm">
+                  {gestiones.length} Gestiones
+                </div>
+              </div>
+
+              {loadingGestiones ? (
+                <div className="py-16 text-center text-sm text-slate-400">
+                  Cargando gestiones...
+                </div>
+              ) : errorGestiones ? (
+                <div className="rounded-2xl border border-rose-100 bg-rose-50 p-5 text-sm font-medium text-rose-700">
+                  {errorGestiones}
+                </div>
+              ) : gestiones.length === 0 ? (
+                <div className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-slate-50/50 py-16 text-center">
+                  <p className="text-lg font-semibold text-slate-600">Sin gestiones</p>
+                  <p className="text-sm text-slate-400">
+                    No hay gestiones registradas para los filtros seleccionados.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {gestiones.map((gestion) => {
+                    const montoTotal =
+                      Number(gestion?.montoRegularizado || 0) + Number(gestion?.montoPago || 0);
+
+                    const documentos = [
+                      {
+                        label: "Certificado inicial",
+                        href: gestion?.certificadoInicial,
+                      },
+                      {
+                        label: "Certificado final",
+                        href: gestion?.certificadoFinal,
+                      },
+                      {
+                        label: "Comprobante pago",
+                        href: gestion?.comprobantePago,
+                      },
+                    ].filter((item) => item.href);
+
+                    return (
+                      <article
+                        key={gestion.id}
+                        className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="text-xs font-black uppercase tracking-tighter text-slate-400">
+                                Gestión #{gestion.id}
+                              </span>
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight ${getEstadoTone(
+                                  gestion.estado
+                                )}`}
+                              >
+                                {formatEstado(gestion.estado)}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1">
+                              <h3 className="text-lg font-semibold text-slate-800">
+                                {gestion.folio || `Gestión #${gestion.id}`}
+                              </h3>
+                              <p className="text-sm text-slate-500">
+                                {gestion.empresa || gestion.empresaRut}
+                              </p>
+                            </div>
+
+                            <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                              <p>
+                                <span className="font-semibold text-slate-700">Entidad:</span>{" "}
+                                {gestion.entidad || "Sin entidad"}
+                              </p>
+                              <p>
+                                <span className="font-semibold text-slate-700">Analista:</span>{" "}
+                                {gestion.analista || "Sin analista"}
+                              </p>
+                              <p>
+                                <span className="font-semibold text-slate-700">Fecha gestión:</span>{" "}
+                                {gestion.fechaGestion ? formatDate(gestion.fechaGestion) : "Sin fecha"}
+                              </p>
+                              <p>
+                                <span className="font-semibold text-slate-700">Fecha pago:</span>{" "}
+                                {gestion.fechaPago ? formatDate(gestion.fechaPago) : "Sin fecha"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="min-w-[180px] rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-right">
+                            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
+                              Monto total
+                            </p>
+                            <p className="mt-1 text-lg font-black text-slate-800">
+                              {formatCurrency(montoTotal)}
+                            </p>
+                            <p className="mt-2 text-xs text-slate-500">
+                              Regularizado: {formatCurrency(gestion?.montoRegularizado || 0)}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              Pago: {formatCurrency(gestion?.montoPago || 0)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-6 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadDetalle(gestion)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 transition-all hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600"
+                          >
+                            <RiFileDownloadLine className="h-4 w-4" />
+                            Archivo de detalle
+                          </button>
+
+                          {documentos.length ? (
+                            documentos.map((documento) => (
+                              <a
+                                key={`${gestion.id}-${documento.label}`}
+                                href={documento.href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 transition-all hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600"
+                              >
+                                <RiFileDownloadLine className="h-4 w-4" />
+                                {documento.label}
+                                <RiExternalLinkLine className="h-3.5 w-3.5" />
+                              </a>
+                            ))
+                          ) : null}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           ) : (
             <section className="rounded-3xl border border-white/70 bg-white/80 p-6 text-center shadow-sm backdrop-blur">
               <p className="text-sm text-[color:var(--text-secondary)]">

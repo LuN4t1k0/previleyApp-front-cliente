@@ -1,5 +1,6 @@
 import PagexDashboard from "@/modules/pagex/PagexDashboard";
 import PagexGlobalDashboard from "@/modules/pagex/PagexGlobalDashboard";
+import PagexGestionesDashboard from "@/modules/pagex/PagexGestionesDashboard";
 
 const pagexTabsConfig = [
   {
@@ -12,6 +13,12 @@ const pagexTabsConfig = [
     key: "dashboard-operativo",
     label: "Dashboard Operativo",
     component: <PagexDashboard />,
+    rolesAllowed: ["cliente"],
+  },
+  {
+    key: "gestiones",
+    label: "Gestiones",
+    component: <PagexGestionesDashboard />,
     rolesAllowed: ["cliente"],
   },
 ];
