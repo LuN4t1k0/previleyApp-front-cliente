@@ -12,6 +12,7 @@ import {
 } from "@remixicon/react";
 import Image from "next/image";
 import Link from "next/link";
+import logoPrevileyV from "../../../assets/logo-previley-v.png";
 
 const heroMessages = [
   {
@@ -221,18 +222,20 @@ const LoginV2 = () => {
     <div className="flex min-h-screen bg-white">
       {/* SECCIÓN IZQUIERDA: FORMULARIO (Responsive) */}
       <div className="flex w-full flex-col justify-center px-6 py-10 md:px-12 lg:w-[45%] xl:w-[35%] lg:px-16 bg-white shrink-0">
-        <div className="mx-auto w-full max-w-sm">
-          <div className="mb-8 text-center lg:text-left">
+        <div className="mx-auto w-full max-w-md">
+          <div className="mb-10 flex flex-col items-center text-center">
             <Image
               alt="Previley Asesorías"
-              src="https://firebasestorage.googleapis.com/v0/b/storage-previleyapp.appspot.com/o/previleApp%2FlogoAzul-web.png?alt=media&token=1b4fb56f-1179-41c1-95d3-6eec9649446e"
-              width={200}
-              height={60}
+              src={logoPrevileyV}
+              width={280}
+              height={96}
               priority
-              className="object-contain mb-6 mx-auto lg:mx-0"
+              className="mb-7 h-auto w-[220px] object-contain sm:w-[250px] lg:w-[280px]"
             />
-            <h1 className="text-xl font-bold text-slate-800 mb-1">Acceso a Plataforma</h1>
-            <p className="text-sm text-slate-500 leading-relaxed">
+            <h1 className="mb-2 text-[1.9rem] font-bold tracking-[-0.02em] text-slate-800">
+              Acceso a Plataforma
+            </h1>
+            <p className="max-w-xs text-sm leading-relaxed text-slate-500 sm:max-w-sm">
               Gestión centralizada para analistas y clientes de Previley.
             </p>
           </div>
