@@ -42,6 +42,35 @@ export default function CargaMasivaRealtime({ title, endpoint, refreshData, fetc
       return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Number(n||0));
     } catch (_) { return String(n ?? 0); }
   }, []);
+  const normalizePrecheck = React.useCallback((payload) => {
+    const summary = payload?.summary || payload?.result?.summary || payload?.resultado?.summary || payload?.result || payload?.resultado || payload || {};
+    const rejectedRecords = Array.isArray(summary.rejectedRecords) ? summary.rejectedRecords : [];
+    const erroredRecords = Array.isArray(summary.erroredRecords) ? summary.erroredRecords : [];
+
+    return {
+      summary,
+      total: Number(summary.total || 0),
+      validCount: Number(summary.validCount || 0),
+      rejectedCount: Number(summary.rejectedCount ?? rejectedRecords.length ?? 0),
+      rejectedRecords,
+      erroredRecords,
+    };
+  }, []);
+
+  const formatRejectReason = React.useCallback((item) => {
+    const raw = String(
+      item?.errorMessage ||
+      item?.error ||
+      item?.detail ||
+      item?.reason ||
+      ""
+    ).trim();
+
+    if (!raw) return "Error no especificado";
+    return raw
+      .replaceAll("DUP_IN_FILE", "Duplicado en este archivo")
+      .replaceAll("EXISTS_IN_DB", "Ya existe en base");
+  }, []);
   const [startTrigger, setStartTrigger] = React.useState(0);
   const [cancelTrigger, setCancelTrigger] = React.useState(0);
 
@@ -111,7 +140,7 @@ export default function CargaMasivaRealtime({ title, endpoint, refreshData, fetc
                   body: fd,
                 });
                 const data = await res.json();
-                setPrecheck(data?.result || data?.resultado || data);
+                setPrecheck(normalizePrecheck(data));
               } catch (_) {
                 setPrecheck({ error: true });
               } finally {
@@ -143,6 +172,11 @@ export default function CargaMasivaRealtime({ title, endpoint, refreshData, fetc
               <div className="text-xs text-tremor-content">Descartadas: {precheck.rejectedCount ?? rr.length} (Duplicadas en archivo: {dupInFile}, Ya existen en base: {existsDb})</div>
             );
           })()}
+          {Array.isArray(precheck.erroredRecords) && precheck.erroredRecords.length > 0 ? (
+            <div className="mt-2 rounded-tremor-default border border-red-200 bg-red-50 p-2 text-xs text-red-800">
+              Errores de procesamiento: {precheck.erroredRecords.length}
+            </div>
+          ) : null}
           {Array.isArray(precheck.rejectedRecords) && precheck.rejectedRecords.length > 0 ? (
             <div className="mt-2">
               <div className="text-xs text-tremor-content-strong mb-1">Detalles descartados</div>
@@ -150,12 +184,23 @@ export default function CargaMasivaRealtime({ title, endpoint, refreshData, fetc
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-tremor-background-muted">
-                      <th className="text-left px-2 py-1">Folio</th>
-                      {type !== 'licencias' && (
-                        <th className="text-left px-2 py-1">Documento/Fecha</th>
-                      )}
-                      {type !== 'licencias' && (
-                        <th className="text-left px-2 py-1">Monto</th>
+                      <th className="text-left px-2 py-1">Fila</th>
+                      {type === 'detalleMora' ? (
+                        <>
+                          <th className="text-left px-2 py-1">Trabajador</th>
+                          <th className="text-left px-2 py-1">Periodo</th>
+                          <th className="text-left px-2 py-1">Monto</th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="text-left px-2 py-1">Folio</th>
+                          {type !== 'licencias' && (
+                            <th className="text-left px-2 py-1">Documento/Fecha</th>
+                          )}
+                          {type !== 'licencias' && (
+                            <th className="text-left px-2 py-1">Monto</th>
+                          )}
+                        </>
                       )}
                       <th className="text-left px-2 py-1">Motivo</th>
                     </tr>
@@ -163,20 +208,29 @@ export default function CargaMasivaRealtime({ title, endpoint, refreshData, fetc
                   <tbody>
                     {precheck.rejectedRecords.slice(0, 50).map((item, idx) => {
                       const r = item.row || {};
-                      const reason = String(item.error || '')
-                        .replace('DUP_IN_FILE','Duplicado en este archivo')
-                        .replace('EXISTS_IN_DB','Ya existe en base');
+                      const reason = formatRejectReason(item);
                       return (
                         <tr key={idx} className="border-t">
-                          <td className="px-2 py-1 font-medium">{r.folio || '-'}</td>
-                          {type === 'subsidio' && (
-                            <td className="px-2 py-1">{r.numeroDocumento || '-'} · {r.fechaDeposito || '-'}</td>
-                          )}
-                          {type === 'anticipo' && (
-                            <td className="px-2 py-1">{r.fechaAnticipo || '-'}</td>
-                          )}
-                          {type !== 'licencias' && (
-                            <td className="px-2 py-1">{fmtCLP(type === 'subsidio' ? r.montoDeposito : r.anticipo)}</td>
+                          <td className="px-2 py-1 font-medium">{r.__sourceRow || idx + 2}</td>
+                          {type === 'detalleMora' ? (
+                            <>
+                              <td className="px-2 py-1">{r.trabajadorRut || '-'}</td>
+                              <td className="px-2 py-1">{r.periodoPago || '-'}</td>
+                              <td className="px-2 py-1">{fmtCLP(r.montoActualizado)}</td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-2 py-1 font-medium">{r.folio || '-'}</td>
+                              {type === 'subsidio' && (
+                                <td className="px-2 py-1">{r.numeroDocumento || '-'} · {r.fechaDeposito || '-'}</td>
+                              )}
+                              {type === 'anticipo' && (
+                                <td className="px-2 py-1">{r.fechaAnticipo || '-'}</td>
+                              )}
+                              {type !== 'licencias' && (
+                                <td className="px-2 py-1">{fmtCLP(type === 'subsidio' ? r.montoDeposito : r.anticipo)}</td>
+                              )}
+                            </>
                           )}
                           <td className="px-2 py-1 text-tremor-content-subtle">{reason}</td>
                         </tr>
