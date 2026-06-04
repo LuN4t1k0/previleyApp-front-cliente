@@ -222,7 +222,7 @@ const MoraPresuntaConfig = {
           iconClass: "text-green-600",
           rolesAllowed: ["admin", "trabajador"],
           visibleWhen: (row) =>
-            row.estado === "analisis" || row.estado === "pendiente",
+            String(row?.estado || "").trim().toLowerCase() === "analisis",
         },
         {
           id: "reabrirGestion",
@@ -261,9 +261,13 @@ const MoraPresuntaConfig = {
     estado: {
       type: "status",
       variants: {
+        registrada: "neutral",
         resuelto: "success",
         analisis: "warning",
+        "solicitud cliente": "warning",
+        "respuesta cliente": "info",
         rechazada: "error",
+        cerrada: "success",
       },
     },
     prioridadNivel: {

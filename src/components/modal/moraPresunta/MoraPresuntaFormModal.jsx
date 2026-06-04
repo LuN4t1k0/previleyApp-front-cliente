@@ -77,7 +77,7 @@ const MoraPresuntaFormModal = ({
     initialValues: {
       empresaRut: initialData.empresaRut || "",
       entidadId: initialData.entidadId?.toString() || "",
-      estado: initialData.estado || "analisis",
+      estado: initialData.estado || "registrada",
       fechaGestion: initialData.fechaGestion
         ? new Date(initialData.fechaGestion).toISOString().split("T")[0]
         : new Date().toISOString().split("T")[0],
@@ -207,7 +207,10 @@ const MoraPresuntaFormModal = ({
         onValueChange={(value) => formik.setFieldValue("estado", value)}
         disabled={formik.isSubmitting}
       >
+        <SelectItem value="registrada">Registrada</SelectItem>
         <SelectItem value="analisis">Análisis</SelectItem>
+        <SelectItem value="solicitud cliente">Solicitud cliente</SelectItem>
+        <SelectItem value="respuesta cliente">Respuesta cliente</SelectItem>
         <SelectItem value="cerrada">Cerrada</SelectItem>
         <SelectItem value="pendiente">Pendiente</SelectItem>
       </Select>
