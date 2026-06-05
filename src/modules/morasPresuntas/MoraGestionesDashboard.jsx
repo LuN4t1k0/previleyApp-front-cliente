@@ -68,7 +68,6 @@ const MoraGestionesDashboard = () => {
   const [gestiones, setGestiones] = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingGestiones, setLoadingGestiones] = useState(false);
-  const [loadingSolicitudes, setLoadingSolicitudes] = useState(false);
   const [errorGestiones, setErrorGestiones] = useState("");
   const [solicitudActiva, setSolicitudActiva] = useState(null);
   const [respuestaCliente, setRespuestaCliente] = useState("");
@@ -180,14 +179,11 @@ const MoraGestionesDashboard = () => {
     }
 
     try {
-      setLoadingSolicitudes(true);
       const response = await apiService.get("/solicitudes-mora");
       setSolicitudes(Array.isArray(response?.data?.data) ? response.data.data : []);
     } catch (error) {
       console.error("Error cargando solicitudes de mora", error);
       setSolicitudes([]);
-    } finally {
-      setLoadingSolicitudes(false);
     }
   }, [empresaSeleccionada]);
 
@@ -427,14 +423,14 @@ const MoraGestionesDashboard = () => {
 
   return (
     <div className="theme-mora">
-      <main className="min-h-screen bg-[#f7f4fb] px-4 py-6 md:px-8 md:py-9">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-          <section className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+      <main className="min-h-screen bg-[#f7f4fb] px-4 py-5 md:px-6 md:py-7">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5">
+          <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <h1 className="text-4xl font-bold tracking-normal text-[#06164b] md:text-5xl">
+              <h1 className="text-[clamp(2rem,2.3vw,2.85rem)] font-bold leading-tight tracking-normal text-[#06164b]">
                 Bandeja de Gestiones
               </h1>
-              <p className="mt-3 max-w-4xl text-base text-slate-600 md:text-xl">
+              <p className="mt-2 max-w-4xl text-base text-slate-600 md:text-lg">
                 Monitorea y administra las solicitudes de Mora Presunta en tiempo real.
               </p>
             </div>
@@ -443,24 +439,24 @@ const MoraGestionesDashboard = () => {
               <button
                 type="button"
                 onClick={() => setFiltersOpen((open) => !open)}
-                className="inline-flex items-center gap-3 rounded-2xl border border-slate-300 bg-white/70 px-4 py-2.5 text-sm font-bold text-[#06164b] shadow-sm transition hover:bg-white"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white/70 px-4 py-2 text-sm font-bold text-[#06164b] shadow-sm transition hover:bg-white"
               >
-                <RiFilter3Line className="h-5 w-5" />
+                <RiFilter3Line className="h-4 w-4" />
                 Filtrar
               </button>
               <button
                 type="button"
                 onClick={handleRefresh}
-                className="inline-flex items-center gap-3 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500"
               >
-                <RiRefreshLine className="h-5 w-5" />
+                <RiRefreshLine className="h-4 w-4" />
                 Actualizar
               </button>
             </div>
           </section>
 
           {filtersOpen ? (
-            <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="grid gap-4 lg:grid-cols-[minmax(260px,1.2fr)_minmax(220px,0.8fr)_minmax(260px,1fr)]">
                 <div className="flex flex-col gap-2">
                   <label
@@ -469,8 +465,8 @@ const MoraGestionesDashboard = () => {
                   >
                     Empresa
                   </label>
-                  <div className="relative flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                    <RiBuildingLine className="h-5 w-5 text-blue-600" aria-hidden="true" />
+                  <div className="relative flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                    <RiBuildingLine className="h-4 w-4 text-blue-600" aria-hidden="true" />
                     <input
                       id="mora-gestiones-empresa"
                       type="text"
@@ -506,8 +502,8 @@ const MoraGestionesDashboard = () => {
                   >
                     Entidad
                   </label>
-                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                    <RiBankLine className="h-5 w-5 text-blue-600" aria-hidden="true" />
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                    <RiBankLine className="h-4 w-4 text-blue-600" aria-hidden="true" />
                     <select
                       id="mora-gestiones-entidad"
                       aria-label="Filtrar por entidad"
@@ -532,8 +528,8 @@ const MoraGestionesDashboard = () => {
                   <span className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
                     Rango de fechas
                   </span>
-                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
-                    <RiCalendarLine className="h-5 w-5 text-blue-600" aria-hidden="true" />
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                    <RiCalendarLine className="h-4 w-4 text-blue-600" aria-hidden="true" />
                     <DateRangePicker
                       value={dateRange}
                       onValueChange={setDateRange}
@@ -547,28 +543,28 @@ const MoraGestionesDashboard = () => {
             </section>
           ) : null}
 
-          <section className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4">
+          <section className="grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
                 Gestiones
               </p>
-              <p className="mt-2 text-2xl font-bold text-[#06164b]">
+              <p className="mt-1 text-xl font-bold text-[#06164b]">
                 {resumenBandeja.gestiones}
               </p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4">
+            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
                 Solicitudes pendientes
               </p>
-              <p className="mt-2 text-2xl font-bold text-[#06164b]">
+              <p className="mt-1 text-xl font-bold text-[#06164b]">
                 {resumenBandeja.pendientesCliente}
               </p>
             </div>
-            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4">
+            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
                 Monto total
               </p>
-              <p className="mt-2 text-2xl font-bold text-[#06164b]">
+              <p className="mt-1 text-xl font-bold text-[#06164b]">
                 {formatCurrency(resumenBandeja.montoTotal)}
               </p>
             </div>
@@ -596,7 +592,7 @@ const MoraGestionesDashboard = () => {
               </p>
             </section>
           ) : (
-            <section className="space-y-6">
+            <section className="space-y-5">
               {gestionesEnriquecidas.map((item) => {
                 const { gestion, solicitudesGestion, solicitudesAccionables } = item;
                 const estado = formatEstado(gestion.estado);
@@ -604,49 +600,49 @@ const MoraGestionesDashboard = () => {
                 return (
                   <article
                     key={gestion.id}
-                    className="rounded-[1.75rem] border border-slate-300 bg-white p-5 shadow-sm md:p-6"
+                    className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm md:p-5"
                   >
-                    <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_240px]">
+                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_220px]">
                       <div>
-                        <div className="flex flex-wrap items-center gap-4">
-                          <span className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide ${getEstadoTone(gestion.estado)}`}>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span className={`rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide ${getEstadoTone(gestion.estado)}`}>
                             {estado}
                           </span>
-                          <h2 className="text-2xl font-bold tracking-normal text-[#06164b]">
+                          <h2 className="text-xl font-bold tracking-normal text-[#06164b]">
                             Gestión #{gestion.id}
                           </h2>
                           {gestion.folio ? (
                             <>
-                              <span className="text-2xl font-semibold text-slate-400">/</span>
-                              <span className="text-2xl font-semibold text-slate-400">
+                              <span className="text-xl font-semibold text-slate-400">/</span>
+                              <span className="text-xl font-semibold text-slate-400">
                                 {gestion.folio}
                               </span>
                             </>
                           ) : null}
                         </div>
 
-                        <div className="mt-6 grid gap-5 md:grid-cols-2">
+                        <div className="mt-5 grid gap-4 md:grid-cols-2">
                           <div>
-                            <p className="text-sm font-bold uppercase text-slate-600">Empresa</p>
-                            <p className="mt-2 text-lg font-bold text-slate-950">
+                            <p className="text-xs font-bold uppercase text-slate-600">Empresa</p>
+                            <p className="mt-1.5 text-base font-bold text-slate-950">
                               {gestion.empresa || gestion.empresaRut}
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm font-bold uppercase text-slate-600">Entidad</p>
-                            <p className="mt-2 text-lg font-bold text-slate-950">
+                            <p className="text-xs font-bold uppercase text-slate-600">Entidad</p>
+                            <p className="mt-1.5 text-base font-bold text-slate-950">
                               {gestion.entidad || "Sin entidad"}
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm font-bold uppercase text-slate-600">Analista</p>
-                            <p className="mt-2 text-xl text-slate-950">
+                            <p className="text-xs font-bold uppercase text-slate-600">Analista</p>
+                            <p className="mt-1.5 text-base text-slate-950">
                               {gestion.analista || "Sin analista"}
                             </p>
                           </div>
                           <div>
-                            <p className="text-sm font-bold uppercase text-slate-600">Fecha inicio</p>
-                            <p className="mt-2 text-xl text-slate-950">
+                            <p className="text-xs font-bold uppercase text-slate-600">Fecha inicio</p>
+                            <p className="mt-1.5 text-base text-slate-950">
                               {gestion.fechaGestion ? formatDate(gestion.fechaGestion) : "Sin fecha"}
                             </p>
                           </div>
@@ -654,25 +650,25 @@ const MoraGestionesDashboard = () => {
                       </div>
 
                       <div className="text-left xl:text-right">
-                        <p className="text-sm font-bold uppercase tracking-wide text-slate-600">
+                        <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
                           Monto total
                         </p>
-                        <p className="mt-2 text-4xl font-bold text-[#06164b]">
+                        <p className="mt-1.5 text-3xl font-bold text-[#06164b]">
                           {formatCurrency(item.montoTotal)}
                         </p>
-                        <p className="mt-1 text-sm text-slate-500">CLP</p>
-                        <div className="mt-4 grid gap-1 text-sm text-slate-500">
+                        <p className="text-xs text-slate-500">CLP</p>
+                        <div className="mt-3 grid gap-1 text-xs text-slate-500">
                           <span>Regularizado: {formatCurrency(gestion?.montoRegularizado || 0)}</span>
                           <span>Pago: {formatCurrency(gestion?.montoPago || 0)}</span>
                         </div>
                       </div>
                     </div>
 
-                    <section className="mt-8 rounded-[1.5rem] border border-slate-300 bg-[#f8f7fb] p-5 md:p-7">
+                    <section className="mt-6 rounded-2xl border border-slate-300 bg-[#f8f7fb] p-4 md:p-5">
                       <div className="flex flex-wrap items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <RiFileList3Line className="h-6 w-6 text-blue-600" />
-                          <h3 className="text-xl font-semibold tracking-normal text-[#06164b]">
+                          <RiFileList3Line className="h-5 w-5 text-blue-600" />
+                          <h3 className="text-lg font-semibold tracking-normal text-[#06164b]">
                             Solicitudes de antecedentes
                           </h3>
                         </div>
@@ -690,17 +686,17 @@ const MoraGestionesDashboard = () => {
                       </div>
 
                       {solicitudesAccionables.length > 0 ? (
-                        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+                        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
                           <p className="text-sm font-bold text-amber-900">
                             Acción requerida del cliente
                           </p>
-                          <p className="mt-1 text-sm leading-6 text-amber-800">
+                          <p className="mt-1 text-sm leading-5 text-amber-800">
                             Previley necesita antecedentes para continuar esta gestión. Revisa el documento solicitado y adjunta la respuesta correspondiente.
                           </p>
                         </div>
                       ) : null}
 
-                      <div className="mt-6 grid gap-4 md:grid-cols-3">
+                      <div className="mt-4 grid gap-3 md:grid-cols-3">
                         {solicitudesGestion.length === 0 ? (
                           <div className="rounded-2xl border border-slate-300 bg-white px-4 py-5 text-sm font-semibold text-slate-500 md:col-span-3">
                             No hay solicitudes de antecedentes asociadas a esta gestión.
@@ -717,12 +713,12 @@ const MoraGestionesDashboard = () => {
                                 key={solicitud.id}
                                 className={
                                   accionable
-                                    ? "rounded-2xl border-2 border-amber-300 bg-white px-5 py-5 shadow-sm md:col-span-3"
-                                    : "flex items-center justify-between gap-4 rounded-2xl border border-slate-300 bg-white px-4 py-5"
+                                    ? "rounded-2xl border-2 border-amber-300 bg-white px-4 py-4 shadow-sm md:col-span-3"
+                                    : "flex items-center justify-between gap-4 rounded-xl border border-slate-300 bg-white px-4 py-4"
                                 }
                               >
                                 {accionable ? (
-                                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
+                                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px] lg:items-center">
                                     <div>
                                       <div className="flex flex-wrap items-center gap-3">
                                         <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-800">
@@ -732,7 +728,7 @@ const MoraGestionesDashboard = () => {
                                           {formatEstado(solicitud.estado)}
                                         </span>
                                       </div>
-                                      <h4 className="mt-4 text-xl font-bold text-[#06164b]">
+                                      <h4 className="mt-3 text-lg font-bold text-[#06164b]">
                                         Adjuntar {solicitudLabel}
                                       </h4>
                                       {solicitud.mensaje ? (
@@ -749,7 +745,7 @@ const MoraGestionesDashboard = () => {
                                     <button
                                       type="button"
                                       onClick={() => openResponderSolicitud(solicitud)}
-                                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-amber-500"
+                                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-500"
                                     >
                                       <RiFileUploadLine className="h-5 w-5" />
                                       Adjuntar respuesta
@@ -772,7 +768,7 @@ const MoraGestionesDashboard = () => {
                       </div>
                     </section>
 
-                    <div className="mt-8 border-t border-slate-300 pt-6">
+                    <div className="mt-6 border-t border-slate-300 pt-5">
                       <div className="flex flex-wrap justify-end gap-3">
                         {item.documentos.map((documento) => {
                           const buttonClass = documento.primary
@@ -785,7 +781,7 @@ const MoraGestionesDashboard = () => {
                                 key={documento.key}
                                 type="button"
                                 onClick={documento.onClick}
-                                className={`inline-flex items-center gap-3 rounded-2xl border px-5 py-3 text-sm font-bold transition ${buttonClass}`}
+                                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${buttonClass}`}
                               >
                                 <RiFileDownloadLine className="h-5 w-5" />
                                 {documento.label}
@@ -799,7 +795,7 @@ const MoraGestionesDashboard = () => {
                                 key={documento.key}
                                 type="button"
                                 disabled
-                                className="inline-flex cursor-not-allowed items-center gap-3 rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-bold text-slate-400"
+                                className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-400"
                               >
                                 <RiFileDownloadLine className="h-5 w-5" />
                                 {documento.label}
@@ -813,7 +809,7 @@ const MoraGestionesDashboard = () => {
                               href={documento.href}
                               target="_blank"
                               rel="noreferrer"
-                              className={`inline-flex items-center gap-3 rounded-2xl border px-5 py-3 text-sm font-bold transition ${buttonClass}`}
+                              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${buttonClass}`}
                             >
                               <RiFileDownloadLine className="h-5 w-5" />
                               {documento.label}
@@ -832,62 +828,62 @@ const MoraGestionesDashboard = () => {
       </main>
 
       {solicitudActiva && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-3xl overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-2xl">
-            <div className="border-b border-slate-200 bg-white px-6 py-5 md:px-8 md:py-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 px-4 py-5 backdrop-blur-sm">
+          <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            <div className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 md:px-6">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-[#06164b]">
                 Acción requerida
               </p>
-              <h3 className="mt-3 text-3xl font-black tracking-normal text-[#06164b] md:text-4xl">
+              <h3 className="mt-2 text-[clamp(1.6rem,2vw,2.15rem)] font-black leading-tight tracking-normal text-[#06164b]">
                 Adjuntar {tipoSolicitudLabels[solicitudActiva.tipoSolicitud] || solicitudActiva.tipoSolicitud}
               </h3>
-              <p className="mt-3 text-base leading-7 text-slate-600 md:text-lg">
+              <p className="mt-2 text-sm leading-6 text-slate-600 md:text-base">
                 Este antecedente es necesario para que Previley pueda continuar con la gestión.
               </p>
             </div>
 
-            <div className="space-y-6 px-6 py-6 md:px-8">
-              <div className="rounded-2xl border border-amber-200 bg-white px-5 py-4">
+            <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 md:px-6">
+              <div className="rounded-xl border border-amber-200 bg-white px-4 py-3">
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
                   Solicitud de Previley
                 </p>
-                <p className="mt-4 text-base leading-7 text-slate-700 md:text-lg">
+                <p className="mt-3 text-sm leading-6 text-slate-700 md:text-base">
                   {solicitudActiva.mensaje ||
                     "Necesitamos que adjuntes el documento solicitado y agregues cualquier contexto relevante para revisar la gestión."}
                 </p>
               </div>
 
               <div>
-                <label htmlFor="respuesta-solicitud-mora" className="text-lg font-black text-[#06164b]">
+                <label htmlFor="respuesta-solicitud-mora" className="text-base font-black text-[#06164b]">
                   Comentario para Previley
                 </label>
                 <textarea
                   id="respuesta-solicitud-mora"
                   value={respuestaCliente}
                   onChange={(event) => setRespuestaCliente(event.target.value)}
-                  rows={4}
+                  rows={3}
                   maxLength={4000}
-                  className="mt-3 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
                   placeholder="Ej: Adjunto contrato firmado de los trabajadores solicitados."
                   disabled={enviandoRespuesta}
                 />
               </div>
 
               <div>
-                <label htmlFor="archivo-solicitud-mora" className="text-lg font-black text-[#06164b]">
+                <label htmlFor="archivo-solicitud-mora" className="text-base font-black text-[#06164b]">
                   Documento adjunto
                 </label>
                 <label
                   htmlFor="archivo-solicitud-mora"
-                  className="mt-3 flex min-h-[190px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-blue-200 bg-sky-50/20 px-6 py-8 text-center transition hover:border-blue-500 hover:bg-blue-50"
+                  className="mt-2 flex min-h-[145px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-blue-200 bg-sky-50/20 px-5 py-6 text-center transition hover:border-blue-500 hover:bg-blue-50"
                 >
-                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-blue-600 text-white">
-                    <RiFileUploadLine className="h-8 w-8" />
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
+                    <RiFileUploadLine className="h-6 w-6" />
                   </span>
-                  <span className="mt-5 text-xl font-black text-[#06164b]">
+                  <span className="mt-4 max-w-full break-words text-lg font-black text-[#06164b]">
                     {respuestaArchivo ? respuestaArchivo.name : "Seleccionar archivo"}
                   </span>
-                  <span className="mt-2 text-base text-slate-500">
+                  <span className="mt-1 text-sm text-slate-500">
                     Adjunta el respaldo solicitado para cerrar esta solicitud.
                   </span>
                 </label>
@@ -901,11 +897,11 @@ const MoraGestionesDashboard = () => {
               </div>
             </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-6 py-5 sm:flex-row sm:justify-end md:px-8">
+            <div className="shrink-0 flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end md:px-6">
               <button
                 type="button"
                 onClick={closeResponderSolicitud}
-                className="rounded-2xl border border-slate-300 bg-white px-7 py-3 text-base font-bold text-slate-700 hover:bg-slate-50"
+                className="rounded-xl border border-slate-300 bg-white px-6 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
                 disabled={enviandoRespuesta}
               >
                 Cancelar
@@ -914,7 +910,7 @@ const MoraGestionesDashboard = () => {
                 type="button"
                 onClick={handleResponderSolicitud}
                 disabled={enviandoRespuesta || (!respuestaCliente.trim() && !respuestaArchivo)}
-                className="rounded-2xl bg-blue-600 px-7 py-3 text-base font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {enviandoRespuesta ? "Enviando..." : "Enviar respuesta a Previley"}
               </button>

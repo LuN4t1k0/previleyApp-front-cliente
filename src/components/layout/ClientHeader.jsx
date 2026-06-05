@@ -65,8 +65,8 @@ const ClientHeader = () => {
 
   return (
     <header className="nav-shell sticky top-0 z-40 backdrop-blur">
-      <div className="mx-auto max-w-[1680px] px-4 py-4 md:px-6 xl:px-8">
-        <div className="flex items-center gap-4 xl:gap-6">
+      <div className="mx-auto max-w-[1440px] px-4 py-3 md:px-6 xl:px-8">
+        <div className="flex items-center gap-3 xl:gap-5">
           <div className="flex shrink-0 items-center gap-3">
             <Link
               href="/dashboard"
@@ -78,7 +78,7 @@ const ClientHeader = () => {
                 width={156}
                 height={34}
                 priority
-                className="h-8 w-auto xl:h-9"
+                className="h-7 w-auto xl:h-8"
               />
               <span className="rounded-full bg-[color:var(--theme-soft)] px-2.5 py-1 text-xs font-semibold tracking-wide text-[color:var(--theme-primary)]">
                 Clientes
@@ -86,7 +86,7 @@ const ClientHeader = () => {
             </Link>
           </div>
 
-          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 overflow-x-auto md:flex">
+          <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1.5 overflow-x-auto md:flex">
             {menuItems.map((item) => renderNavLink(item))}
           </nav>
 
