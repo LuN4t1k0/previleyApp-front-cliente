@@ -8,6 +8,7 @@ import IndicadoresOperativos from "@/components/dashboard/mora-operativo/Indicad
 import DistribucionEstadoOperativo from "@/components/dashboard/mora-operativo/DistribucionEstadoOperativo";
 import DistribucionMotivoOperativo from "@/components/dashboard/mora-operativo/DistribucionMotivoOperativo";
 import DistribucionEntidadOperativo from "@/components/dashboard/mora-operativo/DistribucionEntidadOperativo";
+import PendienteOperativoDetalle from "@/components/dashboard/mora-operativo/PendienteOperativoDetalle";
 import PriorizacionEntidades from "@/components/dashboard/mora-operativo/PriorizacionEntidades";
 import PriorizacionGestiones from "@/components/dashboard/mora-operativo/PriorizacionGestiones";
 import HistoricoOperativo from "@/components/dashboard/mora-operativo/HistoricoOperativo";
@@ -17,12 +18,18 @@ import TopTrabajadoresDeuda from "@/components/dashboard/mora-analitico/TopTraba
 import DistribucionRecuperadoTipo from "@/components/dashboard/mora-analitico/DistribucionRecuperadoTipo";
 import ExportarResumenGlobal from "@/components/dashboard/mora-analitico/ExportarResumenGlobal";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
-import ServiceTimeline from "@/components/servicios/ServiceTimeline";
 import {
   RiBuildingLine,
   RiCalendarLine,
   RiFilterLine,
+  RiStackLine,
 } from "@remixicon/react";
+
+const SectionPanel = ({ children, className = "" }) => (
+  <section className={`rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6 ${className}`}>
+    {children}
+  </section>
+);
 
 const MoraOperativaDashboard = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
@@ -148,7 +155,7 @@ const MoraOperativaDashboard = () => {
     };
 
     fetchEntidades();
-  }, [empresaSeleccionada]);
+  }, [empresaSeleccionada, entidadSeleccionada]);
 
   const filtrosActivos = useMemo(() => {
     const filtros = [];
@@ -168,36 +175,55 @@ const MoraOperativaDashboard = () => {
     return <DashboardMoraAnaliticoSkeleton />;
   }
 
-  const surface =
-    "rounded-3xl border border-white/70 bg-white/80 p-6 shadow-sm backdrop-blur";
+  const surface = "rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6";
 
   return (
-    <div className="theme-mora">
-      <main className="dashboard-gradient min-h-screen px-4 py-8 md:px-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-8">
-          <section className="glass-panel rounded-[2.5rem] p-6 md:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[color:var(--theme-primary)]">
-                  Panel operativo
+    <main className="min-h-screen bg-slate-50 text-slate-950">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-4 flex items-center gap-3">
+                <span className="h-2 w-2 rounded-sm bg-emerald-500" aria-hidden="true" />
+                <span className="text-xs font-semibold uppercase text-slate-500">
+                  Dashboard Operativo
                 </span>
-                <h1 className="text-3xl font-semibold text-[color:var(--text-primary)] md:text-4xl">
-                  Dashboard operativo de mora presunta
-                </h1>
-                <p className="text-sm text-[color:var(--text-secondary)] md:text-base">
-                  Prioriza entidades, gestiones y seguimiento de recuperaciones en tiempo real.
-                </p>
               </div>
+              <h1 className="text-3xl font-semibold text-slate-950 md:text-4xl">
+                Mora presunta por empresa
+              </h1>
+              <p className="mt-3 text-sm leading-6 text-slate-600 md:text-base">
+                Prioriza entidades, gestiones y seguimiento de recuperaciones desde una vista de
+                trabajo diaria.
+              </p>
+            </div>
 
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <div className="relative flex min-w-[260px] flex-1 items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
-                  <RiBuildingLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
+            <div className="grid gap-3 text-sm font-medium text-slate-700 sm:grid-cols-2 lg:min-w-[420px]">
+              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <RiBuildingLine className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                <span>{empresaSeleccionada || "Sin empresa seleccionada"}</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                <RiStackLine className="h-4 w-4 text-slate-500" aria-hidden="true" />
+                <span>{entidadesDisponibles.length} entidades</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6">
+          <SectionPanel>
+            <div className="grid gap-4 lg:grid-cols-[minmax(280px,1fr)_minmax(260px,0.75fr)] xl:grid-cols-[minmax(320px,1fr)_320px_260px]">
+              <label className="flex flex-col gap-2">
+                <span className="text-xs font-semibold uppercase text-slate-500">Empresa</span>
+                <div className="relative flex items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                  <RiBuildingLine className="h-5 w-5 text-slate-500" aria-hidden="true" />
                   <input
                     type="text"
-                    placeholder={
-                      loadingEmpresas ? "Cargando empresas..." : "Busca por nombre o RUT"
-                    }
-                    className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] placeholder:text-gray-400 outline-none"
+                    placeholder={loadingEmpresas ? "Cargando empresas..." : "Busca por nombre o RUT"}
+                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-950 placeholder:text-slate-400 outline-none"
                     value={empresaInput}
                     onChange={(event) => handleEmpresaInputChange(event.target.value)}
                     onFocus={(event) => {
@@ -214,30 +240,25 @@ const MoraOperativaDashboard = () => {
                     ))}
                   </datalist>
                 </div>
+              </label>
 
-                <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
-                  <RiCalendarLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
+              <fieldset className="flex flex-col gap-2">
+                <legend className="text-xs font-semibold uppercase text-slate-500">Periodo</legend>
+                <div className="flex items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                  <RiCalendarLine className="h-5 w-5 shrink-0 text-slate-500" aria-hidden="true" />
                   <DateRangePicker
                     value={dateRange}
                     onValueChange={setDateRange}
                     enableClear
-                    className="min-w-[220px]"
+                    className="min-w-0 flex-1"
                   />
                 </div>
-              </div>
-            </div>
-          </section>
+              </fieldset>
 
-          <section className="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-sm backdrop-blur md:p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-3 text-sm font-semibold text-[color:var(--text-primary)]">
-                <RiFilterLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
-                <span>Filtros activos</span>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <label className="flex flex-col gap-2">
+                <span className="text-xs font-semibold uppercase text-slate-500">Entidad</span>
                 <select
-                  className="min-w-[240px] rounded-2xl border border-white/70 bg-white/95 px-3 py-2 text-sm text-[color:var(--text-primary)] shadow-sm"
+                  className="min-h-[42px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                   value={entidadSeleccionada}
                   onChange={(event) => setEntidadSeleccionada(event.target.value)}
                   disabled={cargandoEntidades || entidadesDisponibles.length === 0}
@@ -251,41 +272,59 @@ const MoraOperativaDashboard = () => {
                     </option>
                   ))}
                 </select>
-
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-[color:var(--theme-primary)] hover:underline"
-                  onClick={() => {
-                    setEntidadSeleccionada("");
-                    setDateRange({ from: undefined, to: undefined });
-                  }}
-                >
-                  Limpiar filtros
-                </button>
-              </div>
+              </label>
             </div>
 
-            {filtrosActivos.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
+                <RiFilterLine className="h-5 w-5 text-slate-500" aria-hidden="true" />
+                <span>Filtros activos</span>
+              </div>
+
+              <button
+                type="button"
+                className="w-fit rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-slate-900 hover:bg-slate-900 hover:text-white"
+                onClick={() => {
+                  setEntidadSeleccionada("");
+                  setDateRange({ from: undefined, to: undefined });
+                }}
+              >
+                Limpiar filtros
+              </button>
+            </div>
+
+            {filtrosActivos.length > 0 ? (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
                 {filtrosActivos.map((filtro) => (
                   <span
                     key={filtro.etiqueta}
-                    className="inline-flex items-center rounded-full bg-[color:var(--theme-soft)] px-3 py-1 text-xs font-semibold text-[color:var(--theme-primary)]"
+                    className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
                   >
                     {filtro.etiqueta}: {filtro.valor}
                   </span>
                 ))}
               </div>
+            ) : (
+              <p className="mt-4 text-sm text-slate-500">Sin filtros adicionales aplicados.</p>
             )}
-          </section>
+          </SectionPanel>
 
           {empresaSeleccionada ? (
-            <div className="space-y-8">
+            <div className="space-y-6">
               <section className={surface}>
                 <IndicadoresOperativos
                   empresaRut={empresaSeleccionada}
                   entidadId={entidadSeleccionada || undefined}
                   dateRange={dateRange}
+                />
+              </section>
+
+              <section className={surface}>
+                <PendienteOperativoDetalle
+                  empresaRut={empresaSeleccionada}
+                  entidadId={entidadSeleccionada || undefined}
+                  dateRange={dateRange}
+                  onSelectEntidad={(valor) => setEntidadSeleccionada(String(valor))}
                 />
               </section>
 
@@ -359,13 +398,6 @@ const MoraOperativaDashboard = () => {
                 />
               </section>
 
-              <ServiceTimeline
-                empresaRut={empresaSeleccionada}
-                serviceKey="mora"
-                dateRange={dateRange}
-                entidadId={entidadSeleccionada || undefined}
-              />
-
               <section className={surface}>
                 <ResumenCasosOperativos
                   empresaRut={empresaSeleccionada}
@@ -380,14 +412,14 @@ const MoraOperativaDashboard = () => {
             </div>
           ) : (
             <section className={`${surface} text-center`}>
-              <p className="text-sm text-[color:var(--text-secondary)]">
+              <p className="text-sm text-slate-500">
                 Selecciona una empresa para visualizar indicadores operativos.
               </p>
             </section>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 };
 

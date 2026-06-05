@@ -36,38 +36,18 @@ const IndicadoresOperativos = ({ empresaRut, entidadId, dateRange }) => {
 
   const resumen = useMemo(() => {
     if (!metrics) return null;
-    const {
-      totalDeuda = 0,
-      totalRegularizado = 0,
-      totalPagado = 0,
-      totalRecuperado = 0,
-      totalPendiente = 0,
-      totalCasos = 0,
-      estadoPrevired = null,
-    } = metrics;
-
-    const recuperacionPorcentaje = totalDeuda > 0 ? (totalRecuperado / totalDeuda) * 100 : 0;
+    const { totalDeuda = 0, totalRegularizado = 0, totalPagado = 0 } = metrics;
 
     return {
       totalDeuda,
       totalRegularizado,
       totalPagado,
-      totalRecuperado,
-      totalPendiente,
-      totalCasos,
-      estadoPrevired,
-      recuperacionPorcentaje,
     };
   }, [metrics]);
 
   if (!resumen) {
     return null;
   }
-
-  const judicialMonto = resumen.estadoPrevired?.judicial?.monto || 0;
-  const judicialCasos = resumen.estadoPrevired?.judicial?.casos || 0;
-  const noJudicialMonto = resumen.estadoPrevired?.noJudicial?.monto || 0;
-  const noJudicialCasos = resumen.estadoPrevired?.noJudicial?.casos || 0;
 
   const cards = [
     {
@@ -87,38 +67,12 @@ const IndicadoresOperativos = ({ empresaRut, entidadId, dateRange }) => {
       description: "Pagos confirmados por la entidad.",
       delta: resumen.totalDeuda > 0 ? (resumen.totalPagado / resumen.totalDeuda) * 100 : 0,
     },
-    {
-      label: "Pendiente",
-      value: formatoCLP(resumen.totalPendiente),
-      description: "Saldo aún en gestión.",
-    },
-    {
-      label: "Regularización",
-      value: `${resumen.recuperacionPorcentaje.toFixed(1)}%`,
-      description: "Porcentaje regularizado vs deuda total.",
-      highlight: true,
-    },
-    {
-      label: "Casos totales",
-      value: resumen.totalCasos.toLocaleString("es-CL"),
-      description: "Número de detalles considerados.",
-    },
-    {
-      label: "Estado Previred · Judicial",
-      value: formatoCLP(judicialMonto),
-      description: `${judicialCasos.toLocaleString("es-CL")} casos en estado judicial`,
-    },
-    {
-      label: "Estado Previred · No Judicial",
-      value: formatoCLP(noJudicialMonto),
-      description: `${noJudicialCasos.toLocaleString("es-CL")} casos fuera de juicio`,
-    },
   ];
 
   return (
     <Grid numItemsSm={2} numItemsLg={3} className="gap-4">
-      {cards.map(({ label, value, description, delta, highlight }) => (
-        <Card key={label} className={highlight ? "border-emerald-200 dark:border-emerald-500/40" : undefined}>
+      {cards.map(({ label, value, description, delta }) => (
+        <Card key={label}>
           <Flex justifyContent="between" alignItems="start">
             <Text className="text-sm text-gray-500">{label}</Text>
             {typeof delta === "number" && !Number.isNaN(delta) ? (

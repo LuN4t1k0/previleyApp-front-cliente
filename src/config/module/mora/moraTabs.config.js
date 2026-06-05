@@ -11,7 +11,7 @@ const moraTabsConfig = [
   // },
   {
     key: 'dashboard-global',
-    label: 'Dashboard Global',
+    label: 'Dashboard Analítico',
     component: <MoraGlobalDashboard />,
     rolesAllowed: ['cliente'],
   },

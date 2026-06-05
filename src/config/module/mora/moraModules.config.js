@@ -1,18 +1,18 @@
 const moraModules = {
   dashboardGlobal: {
-    name: "Dashboard Global",
-    description: "Consolida métricas multi-empresa y permite comparar resultados.",
+    name: "Dashboard Analítico",
+    description: "Consolida métricas multi-empresa, riesgo, recuperación y prioridades.",
     icon: "🌐",
-    path: "/dashboard/mora-presunta/dashboard-global",
+    path: "/servicios/mora-presunta/dashboard-analitico",
     roles: ["cliente"],
     category: "analitica",
     theme: "mora",
   },
   dashboardOperativo: {
     name: "Dashboard Operativo",
-    description: "Indicadores y seguimiento por empresa específica.",
+    description: "Indicadores, filtros y seguimiento operativo por empresa específica.",
     icon: "📊",
-    path: "/dashboard/mora-presunta/dashboard-operativo",
+    path: "/servicios/mora-presunta/dashboard-operativo",
     roles: ["cliente"],
     category: "analitica",
     theme: "mora",
