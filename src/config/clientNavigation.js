@@ -5,8 +5,8 @@ export const clientMenu = [
     href: "/dashboard",
   },
   {
-    label: "Dashboards",
-    description: "Accede a los dashboards de cada servicio contratado.",
+    label: "Servicios",
+    description: "Accede a los servicios contratados por tus empresas.",
     href: "/servicios",
   },
   {

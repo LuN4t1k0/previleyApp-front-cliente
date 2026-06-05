@@ -5,6 +5,12 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { DateRangePicker, Divider } from "@tremor/react";
 import { toast } from "react-hot-toast";
+import {
+  RiArrowRightLine,
+  RiCalendarLine,
+  RiDashboardLine,
+  RiFileList3Line,
+} from "@remixicon/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { useEmpresasServicios } from "@/hooks/useEmpresasServicios";
 import useEmpresaCompleta from "@/hooks/useEmpresaCompleta";
@@ -77,13 +83,107 @@ const getServiceEntry = (servicesByType, definition, slug) => {
   );
 };
 
+const moraHubCards = [
+  {
+    title: "Dashboard",
+    description:
+      "Indicadores ejecutivos, evolución y estado general de mora presunta.",
+    href: "/servicios/mora-presunta?tab=dashboard-global",
+    icon: RiDashboardLine,
+    tone: "from-rose-500 to-amber-500",
+  },
+  {
+    title: "Gestiones",
+    description:
+      "Seguimiento operativo de casos, avances y estados de regularización.",
+    href: "/servicios/mora-presunta?tab=gestiones",
+    icon: RiFileList3Line,
+    tone: "from-blue-500 to-cyan-500",
+  },
+  {
+    title: "Planificación",
+    description:
+      "Organización de prioridades y próximos pasos del servicio.",
+    href: null,
+    icon: RiCalendarLine,
+    tone: "from-slate-700 to-indigo-500",
+    status: "Próximamente",
+  },
+];
+
+const MoraServiceHub = () => (
+  <section className="pb-16">
+    <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 pt-10 sm:px-6 lg:px-8">
+      <header className="glass-panel relative overflow-hidden rounded-[2.5rem] p-8 md:p-12">
+        <div className="relative z-10 max-w-3xl">
+          <span className="inline-flex items-center rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-rose-700">
+            Servicio contratado
+          </span>
+          <h1 className="mt-4 text-3xl font-bold text-slate-900 sm:text-4xl">
+            Mora Presunta
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-slate-500 sm:text-base">
+            Accede a las áreas principales del servicio desde un solo lugar.
+          </p>
+        </div>
+      </header>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        {moraHubCards.map((card) => {
+          const Icon = card.icon;
+          const content = (
+            <article className="group relative flex min-h-[280px] flex-col overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/85 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(15,23,42,0.10)]">
+              <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${card.tone}`} />
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-100 bg-slate-50 text-slate-700">
+                <Icon className="h-7 w-7" />
+              </div>
+              <h2 className="mt-6 text-xl font-semibold text-slate-950">
+                {card.title}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                {card.description}
+              </p>
+              {card.href ? (
+                <div className="mt-auto inline-flex items-center gap-2 text-sm font-semibold text-rose-700">
+                  Ingresar
+                  <RiArrowRightLine className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </div>
+              ) : (
+                <span className="mt-auto inline-flex w-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
+                  {card.status}
+                </span>
+              )}
+            </article>
+          );
+
+          return card.href ? (
+            <Link key={card.title} href={card.href}>
+              {content}
+            </Link>
+          ) : (
+            <div key={card.title} aria-disabled="true">
+              {content}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+);
+
 const ServiceDetailPage = () => {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params?.service;
+  const tabFromUrl = searchParams?.get("tab");
   const definition = resolveServiceDefinition(slug);
   const inferredKey = definition?.key || resolveServiceKeyFromName(slug);
 
   if (inferredKey === "mora") {
+    if (!tabFromUrl) {
+      return <MoraServiceHub />;
+    }
+
     return <PageShell moduleTitle="Mora Presunta" tabsConfig={moraTabsConfig} />;
   }
 

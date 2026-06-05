@@ -38,6 +38,12 @@ const menuItems = [
     roles: ["admin", "trabajador", "empresa", "cliente", "trabajador"],
   },
   {
+    name: "Servicios",
+    href: "/servicios",
+    icon: RiServiceLine,
+    roles: ["cliente", "cliente_admin"],
+  },
+  {
     category: "Dashboards",
     items: [
       {

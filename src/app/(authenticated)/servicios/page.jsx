@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { RiArrowRightLine, RiBriefcaseLine, RiSparkling2Line } from "@remixicon/react";
+import {
+  RiArrowRightLine,
+  RiBriefcaseLine,
+  RiBuilding4Line,
+  RiCheckboxCircleLine,
+  RiSparkling2Line,
+} from "@remixicon/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { useEmpresasServicios } from "@/hooks/useEmpresasServicios";
 import { resolveServiceDefinition } from "@/config/clientServices.config";
@@ -10,22 +16,6 @@ import { resolveServiceDefinition } from "@/config/clientServices.config";
 const buildServiceLink = (definition) => {
   if (!definition?.slug) return null;
   return `/servicios/${definition.slug}`;
-};
-
-const serviceTabsByKey = {
-  mora: ["Dashboard Global", "Dashboard Operativo", "Gestiones"],
-  pagex: ["Dashboard Global", "Dashboard Operativo"],
-  licencias: [
-    "Dashboard Global",
-    "Dashboard Operativo",
-    "Gestiones",
-    "Ficha Trabajador",
-  ],
-  "pagos-previsionales": ["Dashboard"],
-  "cargas-familiares": ["Dashboard"],
-  "depositos-convenidos": ["Dashboard"],
-  "notificaciones-previsionales": ["Dashboard"],
-  funes: ["Dashboard"],
 };
 
 const serviceOrder = [
@@ -37,10 +27,90 @@ const serviceOrder = [
   "depositos-convenidos",
 ];
 
+const serviceGroups = {
+  "mp-p": "mora",
+  "mp-r": "mora",
+  adml: "licencias",
+  rsil: "licencias",
+  dc: "depositos-convenidos",
+  cf: "cargas-familiares",
+};
+
+const serviceTones = {
+  mora: {
+    accent: "from-rose-500 to-amber-500",
+    soft: "bg-rose-50 text-rose-700 border-rose-100",
+    button: "border-rose-100 bg-rose-50 text-rose-700 group-hover:bg-rose-600 group-hover:text-white",
+  },
+  licencias: {
+    accent: "from-emerald-500 to-teal-500",
+    soft: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    button: "border-emerald-100 bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white",
+  },
+  pagex: {
+    accent: "from-blue-500 to-cyan-500",
+    soft: "bg-blue-50 text-blue-700 border-blue-100",
+    button: "border-blue-100 bg-blue-50 text-blue-700 group-hover:bg-blue-600 group-hover:text-white",
+  },
+  default: {
+    accent: "from-slate-700 to-indigo-500",
+    soft: "bg-slate-50 text-slate-700 border-slate-200",
+    button: "border-slate-200 bg-slate-50 text-slate-700 group-hover:bg-slate-900 group-hover:text-white",
+  },
+};
+
+const getCanonicalServiceKey = (service) => {
+  const definition =
+    service.definition || resolveServiceDefinition(service.serviceKey);
+  const key = definition?.key || service.serviceKey;
+  return serviceGroups[key] || key;
+};
+
+const groupContractedServices = (servicesByType = []) => {
+  const grouped = new Map();
+
+  servicesByType.forEach((service) => {
+    const canonicalKey = getCanonicalServiceKey(service);
+    if (!canonicalKey) return;
+
+    const definition = resolveServiceDefinition(canonicalKey);
+    if (!definition) return;
+
+    const empresas = service.empresas || [];
+    const existing = grouped.get(canonicalKey);
+
+    if (existing) {
+      empresas.forEach((empresa) => {
+        if (!existing.empresasByRut.has(empresa.empresaRut)) {
+          existing.empresasByRut.set(empresa.empresaRut, empresa);
+        }
+      });
+      return;
+    }
+
+    grouped.set(canonicalKey, {
+      serviceKey: canonicalKey,
+      definition,
+      empresasByRut: new Map(
+        empresas.map((empresa) => [empresa.empresaRut, empresa])
+      ),
+    });
+  });
+
+  return Array.from(grouped.values()).map((service) => ({
+    ...service,
+    empresas: Array.from(service.empresasByRut.values()),
+  }));
+};
+
 const ServicesPage = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
   const { servicesByType, loading: loadingServicios } =
     useEmpresasServicios(empresas);
+  const groupedServices = useMemo(
+    () => groupContractedServices(servicesByType),
+    [servicesByType]
+  );
 
   const content = useMemo(() => {
     if (loadingEmpresas || loadingServicios) {
@@ -51,7 +121,7 @@ const ServicesPage = () => {
       );
     }
 
-    if (!servicesByType.length) {
+    if (!groupedServices.length) {
       return (
         <div className="glass-panel rounded-[2rem] p-6 text-sm text-slate-500">
           Aún no tienes servicios contratados. Si crees que esto es un error, por
@@ -60,7 +130,7 @@ const ServicesPage = () => {
       );
     }
 
-    const orderedServices = [...servicesByType].sort((a, b) => {
+    const orderedServices = [...groupedServices].sort((a, b) => {
       const aIndex = serviceOrder.indexOf(a.serviceKey);
       const bIndex = serviceOrder.indexOf(b.serviceKey);
       const safeA = aIndex === -1 ? serviceOrder.length + 1 : aIndex;
@@ -76,65 +146,56 @@ const ServicesPage = () => {
           if (!definition) return null;
           const empresasConServicio = service.empresas || [];
           const link = buildServiceLink(definition);
-          const tabs = serviceTabsByKey[definition.key] || [];
+          const tone = serviceTones[service.serviceKey] || serviceTones.default;
+
           return (
             <article
               key={service.serviceKey}
-              className="group relative overflow-hidden rounded-[2rem] border border-white/60 bg-white/70 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(15,23,42,0.08)]"
+              className="group relative flex min-h-[260px] flex-col overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/85 p-6 shadow-sm backdrop-blur transition hover:-translate-y-1 hover:shadow-[0_24px_50px_rgba(15,23,42,0.10)]"
             >
+              <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${tone.accent}`} />
+
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.35em] text-blue-600">
-                    Servicio
-                  </span>
-                  <h2 className="mt-2 text-xl font-semibold text-slate-900">
-                    {definition.icon} {definition.label}
-                  </h2>
+                <div className="flex items-start gap-4">
+                  <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border text-2xl ${tone.soft}`}>
+                    {definition.icon}
+                  </div>
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-400">
+                      <RiCheckboxCircleLine className="h-3.5 w-3.5" />
+                      Contratado
+                    </span>
+                    <h2 className="mt-2 text-xl font-semibold text-slate-950">
+                      {definition.label}
+                    </h2>
+                  </div>
                 </div>
-                <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
-                  {empresasConServicio.length} {" "}
+                <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${tone.soft}`}>
+                  <RiBuilding4Line className="h-3.5 w-3.5" />
+                  {empresasConServicio.length}{" "}
                   {empresasConServicio.length === 1 ? "empresa" : "empresas"}
                 </span>
               </div>
 
-              <p className="mt-4 text-sm text-slate-500">
+              <p className="mt-5 text-sm leading-6 text-slate-500">
                 {definition.description}
               </p>
-
-              <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold text-slate-500">
-                {tabs.length > 0 ? (
-                  tabs.map((tab) => (
-                    <span
-                      key={tab}
-                      className="rounded-full border border-slate-200 bg-white/80 px-3 py-1"
-                    >
-                      {tab}
-                    </span>
-                  ))
-                ) : (
-                  <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1">
-                    Dashboard disponible
-                  </span>
-                )}
-              </div>
 
               {link ? (
                 <Link
                   href={link}
-                  className="mt-6 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-600 transition group-hover:bg-blue-600 group-hover:text-white"
+                  className={`mt-auto inline-flex w-full items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition ${tone.button}`}
                 >
-                  Ir al servicio
+                  Ver servicio
                   <RiArrowRightLine className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               ) : null}
-
-              <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-blue-100/40 blur-3xl" />
             </article>
           );
         })}
       </div>
     );
-  }, [loadingEmpresas, loadingServicios, servicesByType]);
+  }, [groupedServices, loadingEmpresas, loadingServicios]);
 
   return (
     <section className="pb-16">
@@ -144,22 +205,21 @@ const ServicesPage = () => {
             <div className="space-y-4">
               <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-600">
                 <RiSparkling2Line className="h-3 w-3" />
-                Dashboards
+                Servicios
               </span>
               <h1 className="text-3xl font-bold text-slate-900 sm:text-4xl">
-                Tus soluciones Previley
+                Servicios contratados
               </h1>
               <p className="max-w-2xl text-sm font-medium text-slate-500 sm:text-base">
-                Revisa cada dashboard activo, accede a indicadores y comparte la
-                información necesaria para avanzar con la facturación.
+                Revisa los servicios activos para tus empresas, accede a sus
+                indicadores y gestiones disponibles desde un solo lugar.
               </p>
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 py-3 text-xs font-semibold text-slate-500">
               <RiBriefcaseLine className="h-4 w-4" />
-              Total de dashboards: {servicesByType.length}
+              Total de servicios: {groupedServices.length}
             </div>
           </div>
-          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />
         </header>
 
         {content}
