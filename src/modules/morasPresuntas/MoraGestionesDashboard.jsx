@@ -13,10 +13,14 @@ import {
   RiBankLine,
   RiBuildingLine,
   RiCalendarLine,
+  RiCheckboxCircleLine,
   RiExternalLinkLine,
+  RiFilter3Line,
   RiFileDownloadLine,
+  RiFileList3Line,
   RiFileUploadLine,
   RiQuestionAnswerLine,
+  RiRefreshLine,
 } from "@remixicon/react";
 
 const formatEstado = (estado) => {
@@ -70,6 +74,7 @@ const MoraGestionesDashboard = () => {
   const [respuestaCliente, setRespuestaCliente] = useState("");
   const [respuestaArchivo, setRespuestaArchivo] = useState(null);
   const [enviandoRespuesta, setEnviandoRespuesta] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const handleDownloadDetalle = useCallback(async (gestion) => {
     if (!gestion?.id) return;
@@ -303,6 +308,72 @@ const MoraGestionesDashboard = () => {
     return map;
   }, [solicitudes]);
 
+  const gestionesEnriquecidas = useMemo(
+    () =>
+      gestiones.map((gestion) => {
+        const solicitudesGestion = solicitudesPorGestion.get(Number(gestion.id)) || [];
+        const solicitudesAccionables = solicitudesGestion.filter((solicitud) =>
+          ["pendiente", "rechazada"].includes(String(solicitud.estado || "").toLowerCase())
+        );
+        const montoTotal =
+          Number(gestion?.montoRegularizado || 0) + Number(gestion?.montoPago || 0);
+        const documentos = [
+          {
+            key: "comprobante",
+            label: "Comprobante de pago",
+            href: gestion?.comprobantePago,
+          },
+          {
+            key: "detalle",
+            label: "Archivo de detalle",
+            onClick: () => handleDownloadDetalle(gestion),
+          },
+          {
+            key: "final",
+            label: "Certificado final",
+            href: gestion?.certificadoFinal,
+          },
+          {
+            key: "inicial",
+            label: "Certificado inicial",
+            href: gestion?.certificadoInicial,
+            primary: true,
+          },
+        ];
+
+        return {
+          gestion,
+          documentos,
+          montoTotal,
+          solicitudesGestion,
+          solicitudesAccionables,
+        };
+      }),
+    [gestiones, handleDownloadDetalle, solicitudesPorGestion]
+  );
+
+  const resumenBandeja = useMemo(() => {
+    const pendientesCliente = gestionesEnriquecidas.reduce(
+      (total, item) => total + item.solicitudesAccionables.length,
+      0
+    );
+    const montoTotal = gestionesEnriquecidas.reduce(
+      (total, item) => total + item.montoTotal,
+      0
+    );
+
+    return {
+      gestiones: gestionesEnriquecidas.length,
+      pendientesCliente,
+      montoTotal,
+    };
+  }, [gestionesEnriquecidas]);
+
+  const handleRefresh = useCallback(() => {
+    fetchGestiones();
+    fetchSolicitudes();
+  }, [fetchGestiones, fetchSolicitudes]);
+
   const openResponderSolicitud = useCallback((solicitud) => {
     setSolicitudActiva(solicitud);
     setRespuestaCliente("");
@@ -356,308 +427,354 @@ const MoraGestionesDashboard = () => {
 
   return (
     <div className="theme-mora">
-      <main className="dashboard-gradient min-h-screen px-4 py-8 md:px-8 md:py-12">
+      <main className="min-h-screen bg-[#f7f4fb] px-4 py-8 md:px-8 md:py-12">
         <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-8">
-          <section className="glass-panel rounded-[2.5rem] p-6 md:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[color:var(--theme-primary)]">
-                  Gestiones
-                </span>
-                <h1 className="text-3xl font-semibold text-[color:var(--text-primary)] md:text-4xl">
-                  Trazabilidad de gestiones
-                </h1>
-                <p className="text-sm text-[color:var(--text-secondary)] md:text-base">
-                  Línea de tiempo con las gestiones realizadas y su estado actual.
-                </p>
-              </div>
+          <section className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <h1 className="text-4xl font-bold tracking-normal text-[#06164b] md:text-6xl">
+                Bandeja de Gestiones
+              </h1>
+              <p className="mt-3 max-w-4xl text-lg text-slate-600 md:text-2xl">
+                Monitorea y administra las solicitudes de Mora Presunta en tiempo real.
+              </p>
+            </div>
 
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <div className="relative flex min-w-[260px] flex-1 items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
-                  <RiBuildingLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
-                  <input
-                    type="text"
-                    aria-label="Buscar empresa"
-                    placeholder={
-                      loadingEmpresas ? "Cargando empresas..." : "Busca por nombre o RUT"
-                    }
-                    className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] placeholder:text-gray-400 outline-none"
-                    value={empresaInput}
-                    onChange={(event) => handleEmpresaInputChange(event.target.value)}
-                    onFocus={(event) => {
-                      event.target.select();
-                      handleEmpresaFocus();
-                    }}
-                    onBlur={handleEmpresaBlur}
-                    list="mora-gestiones-empresas"
-                    disabled={loadingEmpresas}
-                  />
-                  <datalist id="mora-gestiones-empresas">
-                    {empresaOptions.map((empresa) => (
-                      <option key={empresa.rut} value={empresa.label} />
-                    ))}
-                  </datalist>
-                </div>
-
-                <div className="flex min-w-[220px] items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
-                  <RiBankLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
-                  <select
-                    aria-label="Filtrar por entidad"
-                    className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] outline-none"
-                    value={entidadSeleccionada}
-                    onChange={(event) => setEntidadSeleccionada(event.target.value)}
-                    disabled={loadingGestiones}
-                  >
-                    <option value="">
-                      {loadingGestiones ? "Cargando entidades..." : "Todas las entidades"}
-                    </option>
-                    {entidadesDisponibles.map((entidad) => (
-                      <option key={entidad.value} value={entidad.value}>
-                        {entidad.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
-                  <RiCalendarLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
-                  <DateRangePicker
-                    value={dateRange}
-                    onValueChange={setDateRange}
-                    enableClear
-                    className="min-w-[220px]"
-                  />
-                </div>
-              </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((open) => !open)}
+                className="inline-flex items-center gap-3 rounded-2xl border border-slate-300 bg-white/70 px-5 py-3 text-sm font-bold text-[#06164b] shadow-sm transition hover:bg-white"
+              >
+                <RiFilter3Line className="h-5 w-5" />
+                Filtrar
+              </button>
+              <button
+                type="button"
+                onClick={handleRefresh}
+                className="inline-flex items-center gap-3 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500"
+              >
+                <RiRefreshLine className="h-5 w-5" />
+                Actualizar
+              </button>
             </div>
           </section>
 
-          {empresaSeleccionada ? (
-            <section className="rounded-[2rem] border border-slate-200 bg-white/60 p-6 shadow-xl shadow-slate-200/40 backdrop-blur-md">
-              <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight text-slate-800">
-                    Gestiones de la empresa
-                  </h2>
-                  <p className="text-sm text-slate-500">
-                    Se muestran todas las gestiones registradas para la empresa seleccionada, incluidas las cerradas.
-                  </p>
+          {filtersOpen ? (
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="grid gap-4 lg:grid-cols-[minmax(260px,1.2fr)_minmax(220px,0.8fr)_minmax(260px,1fr)]">
+                <div className="flex flex-col gap-2">
+                  <label
+                    htmlFor="mora-gestiones-empresa"
+                    className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500"
+                  >
+                    Empresa
+                  </label>
+                  <div className="relative flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                    <RiBuildingLine className="h-5 w-5 text-blue-600" aria-hidden="true" />
+                    <input
+                      id="mora-gestiones-empresa"
+                      type="text"
+                      aria-label="Buscar empresa"
+                      placeholder={
+                        loadingEmpresas ? "Cargando empresas..." : "Busca por nombre o RUT"
+                      }
+                      className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 outline-none"
+                      value={empresaInput}
+                      onChange={(event) => handleEmpresaInputChange(event.target.value)}
+                      onFocus={(event) => {
+                        event.target.select();
+                        handleEmpresaFocus();
+                      }}
+                      onBlur={handleEmpresaBlur}
+                      list="mora-gestiones-empresas"
+                      disabled={loadingEmpresas}
+                    />
+                    <datalist id="mora-gestiones-empresas">
+                      {empresaOptions.map((empresa) => (
+                        <option key={empresa.rut} value={empresa.label} label={empresa.label}>
+                          {empresa.label}
+                        </option>
+                      ))}
+                    </datalist>
+                  </div>
                 </div>
-                <div className="rounded-full border border-slate-200 bg-white px-4 py-1.5 text-[11px] font-black uppercase tracking-widest text-slate-500 shadow-sm">
-                  {gestiones.length} Gestiones
+
+                <div className="flex flex-col gap-2">
+                  <label
+                    htmlFor="mora-gestiones-entidad"
+                    className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500"
+                  >
+                    Entidad
+                  </label>
+                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                    <RiBankLine className="h-5 w-5 text-blue-600" aria-hidden="true" />
+                    <select
+                      id="mora-gestiones-entidad"
+                      aria-label="Filtrar por entidad"
+                      className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none"
+                      value={entidadSeleccionada}
+                      onChange={(event) => setEntidadSeleccionada(event.target.value)}
+                      disabled={loadingGestiones}
+                    >
+                      <option value="">
+                        {loadingGestiones ? "Cargando entidades..." : "Todas las entidades"}
+                      </option>
+                      {entidadesDisponibles.map((entidad) => (
+                        <option key={entidad.value} value={entidad.value}>
+                          {entidad.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+                    Rango de fechas
+                  </span>
+                  <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                    <RiCalendarLine className="h-5 w-5 text-blue-600" aria-hidden="true" />
+                    <DateRangePicker
+                      value={dateRange}
+                      onValueChange={setDateRange}
+                      enableClear
+                      aria-label="Filtrar por rango de fechas"
+                      className="min-w-[220px]"
+                    />
+                  </div>
                 </div>
               </div>
+            </section>
+          ) : null}
 
-              {loadingGestiones ? (
-                <div className="py-16 text-center text-sm text-slate-400">
-                  Cargando gestiones...
-                </div>
-              ) : errorGestiones ? (
-                <div className="rounded-2xl border border-rose-100 bg-rose-50 p-5 text-sm font-medium text-rose-700">
-                  {errorGestiones}
-                </div>
-              ) : gestiones.length === 0 ? (
-                <div className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-slate-50/50 py-16 text-center">
-                  <p className="text-lg font-semibold text-slate-600">Sin gestiones</p>
-                  <p className="text-sm text-slate-400">
-                    No hay gestiones registradas para los filtros seleccionados.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {gestiones.map((gestion) => {
-                    const montoTotal =
-                      Number(gestion?.montoRegularizado || 0) + Number(gestion?.montoPago || 0);
+          <section className="grid gap-4 md:grid-cols-3">
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+                Gestiones
+              </p>
+              <p className="mt-2 text-3xl font-bold text-[#06164b]">
+                {resumenBandeja.gestiones}
+              </p>
+            </div>
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+                Solicitudes pendientes
+              </p>
+              <p className="mt-2 text-3xl font-bold text-[#06164b]">
+                {resumenBandeja.pendientesCliente}
+              </p>
+            </div>
+            <div className="rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
+                Monto total
+              </p>
+              <p className="mt-2 text-3xl font-bold text-[#06164b]">
+                {formatCurrency(resumenBandeja.montoTotal)}
+              </p>
+            </div>
+          </section>
 
-                    const documentos = [
-                      {
-                        label: "Certificado inicial",
-                        href: gestion?.certificadoInicial,
-                      },
-                      {
-                        label: "Certificado final",
-                        href: gestion?.certificadoFinal,
-                      },
-                      {
-                        label: "Comprobante pago",
-                        href: gestion?.comprobantePago,
-                      },
-                    ].filter((item) => item.href);
-                    const solicitudesGestion = solicitudesPorGestion.get(Number(gestion.id)) || [];
-                    const solicitudesAccionables = solicitudesGestion.filter((solicitud) =>
-                      ["pendiente", "rechazada"].includes(String(solicitud.estado || "").toLowerCase())
-                    );
+          {!empresaSeleccionada ? (
+            <section className="rounded-[2rem] border border-slate-200 bg-white p-8 text-center">
+              <p className="text-sm text-slate-600">
+                Selecciona una empresa para visualizar la bandeja de gestiones.
+              </p>
+            </section>
+          ) : loadingGestiones ? (
+            <section className="rounded-[2rem] border border-slate-200 bg-white py-16 text-center text-sm text-slate-500">
+              Cargando gestiones...
+            </section>
+          ) : errorGestiones ? (
+            <section className="rounded-[2rem] border border-rose-100 bg-rose-50 p-6 text-sm font-medium text-rose-700">
+              {errorGestiones}
+            </section>
+          ) : gestionesEnriquecidas.length === 0 ? (
+            <section className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-white/70 py-16 text-center">
+              <p className="text-lg font-semibold text-slate-700">Sin gestiones</p>
+              <p className="text-sm text-slate-500">
+                No hay gestiones registradas para los filtros seleccionados.
+              </p>
+            </section>
+          ) : (
+            <section className="space-y-6">
+              {gestionesEnriquecidas.map((item) => {
+                const { gestion, solicitudesGestion, solicitudesAccionables } = item;
+                const estado = formatEstado(gestion.estado);
 
-                    return (
-                      <article
-                        key={gestion.id}
-                        className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:border-blue-200 hover:shadow-xl hover:shadow-blue-900/5"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div className="space-y-3">
-                            <div className="flex flex-wrap items-center gap-3">
-                              <span className="text-xs font-black uppercase tracking-tighter text-slate-400">
-                                Gestión #{gestion.id}
+                return (
+                  <article
+                    key={gestion.id}
+                    className="rounded-[2rem] border border-slate-300 bg-white p-6 shadow-sm md:p-8"
+                  >
+                    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_280px]">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-4">
+                          <span className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide ${getEstadoTone(gestion.estado)}`}>
+                            {estado}
+                          </span>
+                          <h2 className="text-2xl font-bold tracking-normal text-[#06164b] md:text-3xl">
+                            Gestión #{gestion.id}
+                          </h2>
+                          {gestion.folio ? (
+                            <>
+                              <span className="text-2xl font-semibold text-slate-400">/</span>
+                              <span className="text-2xl font-semibold text-slate-400 md:text-3xl">
+                                {gestion.folio}
                               </span>
-                              <span
-                                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight ${getEstadoTone(
-                                  gestion.estado
-                                )}`}
-                              >
-                                {formatEstado(gestion.estado)}
-                              </span>
-                            </div>
-
-                            <div className="space-y-1">
-                              <h3 className="text-lg font-semibold text-slate-800">
-                                {gestion.folio || `Gestión #${gestion.id}`}
-                              </h3>
-                              <p className="text-sm text-slate-500">
-                                {gestion.empresa || gestion.empresaRut}
-                              </p>
-                            </div>
-
-                            <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                              <p>
-                                <span className="font-semibold text-slate-700">Entidad:</span>{" "}
-                                {gestion.entidad || "Sin entidad"}
-                              </p>
-                              <p>
-                                <span className="font-semibold text-slate-700">Analista:</span>{" "}
-                                {gestion.analista || "Sin analista"}
-                              </p>
-                              <p>
-                                <span className="font-semibold text-slate-700">Fecha gestión:</span>{" "}
-                                {gestion.fechaGestion ? formatDate(gestion.fechaGestion) : "Sin fecha"}
-                              </p>
-                              <p>
-                                <span className="font-semibold text-slate-700">Fecha pago:</span>{" "}
-                                {gestion.fechaPago ? formatDate(gestion.fechaPago) : "Sin fecha"}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="min-w-[180px] rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 text-right">
-                            <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">
-                              Monto total
-                            </p>
-                            <p className="mt-1 text-lg font-black text-slate-800">
-                              {formatCurrency(montoTotal)}
-                            </p>
-                            <p className="mt-2 text-xs text-slate-500">
-                              Regularizado: {formatCurrency(gestion?.montoRegularizado || 0)}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              Pago: {formatCurrency(gestion?.montoPago || 0)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="mt-6 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadDetalle(gestion)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 transition-all hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600"
-                          >
-                            <RiFileDownloadLine className="h-4 w-4" />
-                            Archivo de detalle
-                          </button>
-
-                          {documentos.length ? (
-                            documentos.map((documento) => (
-                              <a
-                                key={`${gestion.id}-${documento.label}`}
-                                href={documento.href}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 transition-all hover:border-blue-500 hover:bg-blue-50 hover:text-blue-600"
-                              >
-                                <RiFileDownloadLine className="h-4 w-4" />
-                                {documento.label}
-                                <RiExternalLinkLine className="h-3.5 w-3.5" />
-                              </a>
-                            ))
+                            </>
                           ) : null}
                         </div>
 
-                        {solicitudesGestion.length > 0 && (
-                          <div className="mt-5 rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
-                            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                              <div className="flex items-center gap-2">
-                                <RiQuestionAnswerLine className="h-5 w-5 text-amber-600" />
-                                <h4 className="text-sm font-black uppercase tracking-wide text-amber-800">
-                                  Solicitudes de antecedentes
-                                </h4>
-                              </div>
-                              {loadingSolicitudes && (
-                                <span className="text-xs font-semibold text-amber-600">
-                                  Actualizando...
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="space-y-3">
-                              {solicitudesGestion.map((solicitud) => {
-                                const accionable = solicitudesAccionables.some(
-                                  (item) => item.id === solicitud.id
-                                );
-                                return (
-                                  <div
-                                    key={solicitud.id}
-                                    className="rounded-xl border border-white/80 bg-white p-3 shadow-sm"
-                                  >
-                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                      <div>
-                                        <p className="text-sm font-bold text-slate-800">
-                                          {tipoSolicitudLabels[solicitud.tipoSolicitud] || solicitud.tipoSolicitud}
-                                        </p>
-                                        {solicitud.mensaje && (
-                                          <p className="mt-1 text-sm text-slate-600">
-                                            {solicitud.mensaje}
-                                          </p>
-                                        )}
-                                        {solicitud.respuestaCliente && (
-                                          <p className="mt-2 text-xs text-slate-500">
-                                            Respuesta enviada: {solicitud.respuestaCliente}
-                                          </p>
-                                        )}
-                                      </div>
-                                      <span
-                                        className={`inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${getEstadoTone(
-                                          solicitud.estado
-                                        )}`}
-                                      >
-                                        {formatEstado(solicitud.estado)}
-                                      </span>
-                                    </div>
-
-                                    {accionable && (
-                                      <button
-                                        type="button"
-                                        onClick={() => openResponderSolicitud(solicitud)}
-                                        className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-amber-500"
-                                      >
-                                        <RiFileUploadLine className="h-4 w-4" />
-                                        Responder solicitud
-                                      </button>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
+                        <div className="mt-7 grid gap-6 md:grid-cols-2">
+                          <div>
+                            <p className="text-sm font-bold uppercase text-slate-600">Empresa</p>
+                            <p className="mt-2 text-xl font-bold text-slate-950">
+                              {gestion.empresa || gestion.empresaRut}
+                            </p>
                           </div>
+                          <div>
+                            <p className="text-sm font-bold uppercase text-slate-600">Entidad</p>
+                            <p className="mt-2 text-xl font-bold text-slate-950">
+                              {gestion.entidad || "Sin entidad"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold uppercase text-slate-600">Analista</p>
+                            <p className="mt-2 text-xl text-slate-950">
+                              {gestion.analista || "Sin analista"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold uppercase text-slate-600">Fecha inicio</p>
+                            <p className="mt-2 text-xl text-slate-950">
+                              {gestion.fechaGestion ? formatDate(gestion.fechaGestion) : "Sin fecha"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-left xl:text-right">
+                        <p className="text-sm font-bold uppercase tracking-wide text-slate-600">
+                          Monto total
+                        </p>
+                        <p className="mt-2 text-4xl font-bold text-[#06164b]">
+                          {formatCurrency(item.montoTotal)}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">CLP</p>
+                        <div className="mt-4 grid gap-1 text-sm text-slate-500">
+                          <span>Regularizado: {formatCurrency(gestion?.montoRegularizado || 0)}</span>
+                          <span>Pago: {formatCurrency(gestion?.montoPago || 0)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <section className="mt-8 rounded-[1.5rem] border border-slate-300 bg-[#f8f7fb] p-5 md:p-7">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <RiFileList3Line className="h-6 w-6 text-blue-600" />
+                          <h3 className="text-xl font-semibold tracking-normal text-[#06164b]">
+                            Solicitudes de antecedentes
+                          </h3>
+                        </div>
+                        <span className="rounded-full bg-slate-200 px-4 py-1 text-xs font-bold uppercase text-slate-700">
+                          {solicitudesGestion.length} documento
+                          {solicitudesGestion.length === 1 ? "" : "s"}
+                        </span>
+                      </div>
+
+                      <div className="mt-6 grid gap-4 md:grid-cols-3">
+                        {solicitudesGestion.length === 0 ? (
+                          <div className="rounded-2xl border border-slate-300 bg-white px-4 py-5 text-sm font-semibold text-slate-500 md:col-span-3">
+                            No hay solicitudes de antecedentes asociadas a esta gestión.
+                          </div>
+                        ) : (
+                          solicitudesGestion.map((solicitud) => {
+                            const accionable = solicitudesAccionables.some(
+                              (actual) => actual.id === solicitud.id
+                            );
+                            return (
+                              <div
+                                key={solicitud.id}
+                                className="flex items-center justify-between gap-4 rounded-2xl border border-slate-300 bg-white px-4 py-5"
+                              >
+                                <span className="text-base font-medium text-slate-950">
+                                  {tipoSolicitudLabels[solicitud.tipoSolicitud] || solicitud.tipoSolicitud}
+                                </span>
+                                {accionable ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => openResponderSolicitud(solicitud)}
+                                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-blue-600 text-blue-600 transition hover:bg-blue-600 hover:text-white"
+                                    aria-label="Responder solicitud"
+                                  >
+                                    <RiQuestionAnswerLine className="h-5 w-5" />
+                                  </button>
+                                ) : (
+                                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600">
+                                    <RiCheckboxCircleLine className="h-5 w-5" />
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })
                         )}
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          ) : (
-            <section className="rounded-3xl border border-white/70 bg-white/80 p-6 text-center shadow-sm backdrop-blur">
-              <p className="text-sm text-[color:var(--text-secondary)]">
-                Selecciona una empresa para visualizar la trazabilidad de gestiones.
-              </p>
+                      </div>
+                    </section>
+
+                    <div className="mt-8 border-t border-slate-300 pt-6">
+                      <div className="flex flex-wrap justify-end gap-3">
+                        {item.documentos.map((documento) => {
+                          const buttonClass = documento.primary
+                            ? "border-[#06164b] bg-[#06164b] text-white hover:bg-blue-700"
+                            : "border-slate-400 bg-white text-slate-700 hover:border-blue-600 hover:bg-blue-600 hover:text-white";
+
+                          if (documento.onClick) {
+                            return (
+                              <button
+                                key={documento.key}
+                                type="button"
+                                onClick={documento.onClick}
+                                className={`inline-flex items-center gap-3 rounded-2xl border px-5 py-3 text-sm font-bold transition ${buttonClass}`}
+                              >
+                                <RiFileDownloadLine className="h-5 w-5" />
+                                {documento.label}
+                              </button>
+                            );
+                          }
+
+                          if (!documento.href) {
+                            return (
+                              <button
+                                key={documento.key}
+                                type="button"
+                                disabled
+                                className="inline-flex cursor-not-allowed items-center gap-3 rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-bold text-slate-400"
+                              >
+                                <RiFileDownloadLine className="h-5 w-5" />
+                                {documento.label}
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <a
+                              key={documento.key}
+                              href={documento.href}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={`inline-flex items-center gap-3 rounded-2xl border px-5 py-3 text-sm font-bold transition ${buttonClass}`}
+                            >
+                              <RiFileDownloadLine className="h-5 w-5" />
+                              {documento.label}
+                              <RiExternalLinkLine className="h-4 w-4" />
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </section>
           )}
         </div>

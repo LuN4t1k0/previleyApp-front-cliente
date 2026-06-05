@@ -96,7 +96,7 @@ const moraHubCards = [
     title: "Gestiones",
     description:
       "Seguimiento operativo de casos, avances y estados de regularización.",
-    href: "/servicios/mora-presunta?tab=gestiones",
+    href: "/servicios/mora-presunta/gestiones",
     icon: RiFileList3Line,
     tone: "from-blue-500 to-cyan-500",
   },
