@@ -52,6 +52,16 @@ const compactText = (value, fallback = "Sin información registrada.", maxLength
   return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text;
 };
 
+const formatDurationHours = (hours) => {
+  if (hours === null || hours === undefined || Number.isNaN(Number(hours))) return "Sin dato";
+  const value = Number(hours);
+  if (value < 1) return "Menos de 1 h";
+  if (value < 24) return `${Math.round(value)} h`;
+  const days = Math.floor(value / 24);
+  const restHours = Math.round(value % 24);
+  return restHours > 0 ? `${days} d ${restHours} h` : `${days} d`;
+};
+
 const tipoSolicitudLabels = {
   certificado_deuda_actualizado: "Certificado de deuda actualizado",
   certificado_pago: "Certificado de pago",
@@ -618,48 +628,50 @@ const MoraGestionesDashboard = () => {
                 return (
                   <article
                     key={gestion.id}
-                    className="rounded-2xl border border-slate-300 bg-white p-4 shadow-sm md:p-5"
+                    className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)] md:p-5"
                   >
-                    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_220px]">
-                      <div>
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-sky-400 to-emerald-400" />
+
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+                      <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-3">
-                          <span className={`rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide ${getEstadoTone(gestion.estado)}`}>
+                          <span className={`rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-wide ${getEstadoTone(gestion.estado)}`}>
                             {estado}
                           </span>
-                          <h2 className="text-xl font-bold tracking-normal text-[#06164b]">
+                          <h2 className="text-2xl font-black leading-tight tracking-normal text-[#06164b]">
                             Gestión #{gestion.id}
                           </h2>
                           {gestion.folio ? (
                             <>
-                              <span className="text-xl font-semibold text-slate-400">/</span>
-                              <span className="text-xl font-semibold text-slate-400">
+                              <span className="text-2xl font-semibold text-slate-300">/</span>
+                              <span className="text-2xl font-bold text-slate-400">
                                 {gestion.folio}
                               </span>
                             </>
                           ) : null}
                         </div>
 
-                        <div className="mt-5 grid gap-4 md:grid-cols-2">
-                          <div>
-                            <p className="text-xs font-bold uppercase text-slate-600">Empresa</p>
-                            <p className="mt-1.5 text-base font-bold text-slate-950">
+                        <div className="mt-5 grid gap-3 md:grid-cols-2">
+                          <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3">
+                            <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">Empresa</p>
+                            <p className="mt-1.5 truncate text-base font-bold text-slate-950">
                               {gestion.empresa || gestion.empresaRut}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs font-bold uppercase text-slate-600">Entidad</p>
-                            <p className="mt-1.5 text-base font-bold text-slate-950">
+                          <div className="rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3">
+                            <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">Entidad</p>
+                            <p className="mt-1.5 truncate text-base font-bold text-slate-950">
                               {gestion.entidad || "Sin entidad"}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs font-bold uppercase text-slate-600">Analista</p>
-                            <p className="mt-1.5 text-base text-slate-950">
+                          <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                            <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">Analista</p>
+                            <p className="mt-1.5 truncate text-base text-slate-950">
                               {gestion.analista || "Sin analista"}
                             </p>
                           </div>
-                          <div>
-                            <p className="text-xs font-bold uppercase text-slate-600">Fecha inicio</p>
+                          <div className="rounded-xl border border-slate-100 bg-white px-4 py-3">
+                            <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">Fecha inicio</p>
                             <p className="mt-1.5 text-base text-slate-950">
                               {gestion.fechaGestion ? formatDate(gestion.fechaGestion) : "Sin fecha"}
                             </p>
@@ -667,49 +679,82 @@ const MoraGestionesDashboard = () => {
                         </div>
                       </div>
 
-                      <div className="text-left xl:text-right">
-                        <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
+                      <aside className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-4 text-left shadow-inner xl:text-right">
+                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
                           Pendiente
                         </p>
-                        <p className="mt-1.5 text-3xl font-bold text-[#06164b]">
+                        <p className="mt-1 text-4xl font-black leading-none text-[#06164b]">
                           {formatCurrency(item.montoTotal)}
                         </p>
-                        <p className="text-xs text-slate-500">CLP</p>
-                        <div className="mt-3 grid gap-2 text-xs text-slate-600">
-                          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="mt-1 text-xs font-semibold text-slate-500">CLP</p>
+                        <div className="mt-4 grid gap-2 text-xs text-slate-600">
+                          <div className="rounded-xl border border-blue-100 bg-white px-3 py-2.5">
                             <div className="flex items-center justify-between gap-3">
-                              <span className="font-bold uppercase text-slate-500">
+                              <span className="font-black uppercase tracking-wide text-slate-500">
                                 Casos judiciales
                               </span>
                               <span className="font-black text-[#06164b]">
                                 {Number(gestion?.casosJudiciales || 0).toLocaleString("es-CL")}
                               </span>
                             </div>
-                            <p className="mt-1 text-right font-semibold text-slate-500">
+                            <p className="mt-1 font-bold text-slate-500 xl:text-right">
                               {formatCurrency(gestion?.montoJudicial || 0)}
                             </p>
                           </div>
-                          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                          <div className="rounded-xl border border-emerald-100 bg-white px-3 py-2.5">
                             <div className="flex items-center justify-between gap-3">
-                              <span className="font-bold uppercase text-slate-500">
+                              <span className="font-black uppercase tracking-wide text-slate-500">
                                 Casos no judiciales
                               </span>
                               <span className="font-black text-[#06164b]">
                                 {Number(gestion?.casosNoJudiciales || 0).toLocaleString("es-CL")}
                               </span>
                             </div>
-                            <p className="mt-1 text-right font-semibold text-slate-500">
+                            <p className="mt-1 font-bold text-slate-500 xl:text-right">
                               {formatCurrency(gestion?.montoNoJudicial || 0)}
                             </p>
                           </div>
                         </div>
+                      </aside>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-3 md:grid-cols-3">
+                      <div className="rounded-xl bg-white px-4 py-3">
+                        <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+                          Registrada
+                        </p>
+                        <p className="mt-1.5 text-sm font-bold text-slate-950">
+                          {gestion.fechaRegistro || gestion.createdAt
+                            ? formatDate(gestion.fechaRegistro || gestion.createdAt)
+                            : "Sin fecha"}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-white px-4 py-3">
+                        <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+                          Pasó a análisis
+                        </p>
+                        <p className="mt-1.5 text-sm font-bold text-slate-950">
+                          {gestion.fechaAnalisis ? formatDate(gestion.fechaAnalisis) : "Pendiente"}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-white px-4 py-3">
+                        <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+                          Tiempo de resolución
+                        </p>
+                        <p className="mt-1.5 text-sm font-bold text-[#06164b]">
+                          {gestion.fechaCierre
+                            ? formatDurationHours(gestion.horasResolucionTotal)
+                            : "En curso"}
+                        </p>
                       </div>
                     </div>
 
-                    <section className="mt-6 rounded-2xl border border-slate-300 bg-[#f8f7fb] p-4 md:p-5">
+                    <section className="mt-6 rounded-2xl border border-slate-200 bg-[#f8f7fb] p-4 md:p-5">
                       <div className="flex flex-wrap items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <RiFileList3Line className="h-5 w-5 text-blue-600" />
+                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                            <RiFileList3Line className="h-5 w-5" />
+                          </span>
                           <h3 className="text-lg font-semibold tracking-normal text-[#06164b]">
                             Solicitudes de antecedentes
                           </h3>
@@ -740,7 +785,7 @@ const MoraGestionesDashboard = () => {
 
                       <div className="mt-4 grid gap-3 md:grid-cols-3">
                         {solicitudesGestion.length === 0 ? (
-                          <div className="rounded-2xl border border-slate-300 bg-white px-4 py-5 text-sm font-semibold text-slate-500 md:col-span-3">
+                          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-500 md:col-span-3">
                             No hay solicitudes de antecedentes asociadas a esta gestión.
                           </div>
                         ) : (
@@ -756,8 +801,8 @@ const MoraGestionesDashboard = () => {
                                 key={solicitud.id}
                                 className={
                                   accionable
-                                    ? "rounded-2xl border-2 border-amber-300 bg-white px-4 py-4 shadow-sm md:col-span-3"
-                                    : "rounded-xl border border-slate-300 bg-white px-4 py-3 md:col-span-3"
+                                    ? "rounded-2xl border border-amber-300 bg-amber-50/40 px-4 py-4 shadow-sm md:col-span-3"
+                                    : "rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:border-blue-200 hover:shadow-md md:col-span-3"
                                 }
                               >
                                 {accionable ? (
@@ -798,8 +843,8 @@ const MoraGestionesDashboard = () => {
                                   <div className="w-full">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                       <div className="flex items-center gap-3">
-                                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600">
-                                          <RiCheckboxCircleLine className="h-5 w-5" />
+                                        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700">
+                                          <RiCheckboxCircleLine className="h-6 w-6" />
                                         </span>
                                         <div className="min-w-0">
                                           <div className="flex flex-wrap items-center gap-2">
@@ -827,16 +872,16 @@ const MoraGestionesDashboard = () => {
                                           </p>
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-3">
+                                      <div className="flex flex-wrap items-center gap-3">
                                         {solicitud.fechaRespuesta ? (
-                                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                                          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
                                             {formatDate(solicitud.fechaRespuesta)}
                                           </span>
                                         ) : null}
                                         <button
                                           type="button"
                                           onClick={() => toggleSolicitudDetalle(solicitud.id)}
-                                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[#06164b] transition hover:border-blue-300 hover:bg-blue-50"
+                                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-black text-[#06164b] shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
                                           aria-expanded={isExpanded}
                                         >
                                           {isExpanded ? "Ocultar detalle" : "Ver detalle"}
@@ -848,8 +893,8 @@ const MoraGestionesDashboard = () => {
                                     </div>
 
                                     {isExpanded ? (
-                                      <div className="mt-4 grid gap-3 border-t border-slate-200 pt-4 lg:grid-cols-2">
-                                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                                      <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 lg:grid-cols-2">
+                                        <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
                                           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
                                             <RiQuestionAnswerLine className="h-4 w-4 text-blue-600" />
                                             Previley solicitó
@@ -862,7 +907,7 @@ const MoraGestionesDashboard = () => {
                                           </p>
                                         </div>
 
-                                        <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                                        <div className="rounded-xl border border-emerald-100 bg-emerald-50/30 px-4 py-3">
                                           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
                                             <RiFileList3Line className="h-4 w-4 text-emerald-600" />
                                             Cliente respondió
@@ -887,12 +932,12 @@ const MoraGestionesDashboard = () => {
                       </div>
                     </section>
 
-                    <div className="mt-6 border-t border-slate-300 pt-5">
-                      <div className="flex flex-wrap justify-end gap-3">
+                    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-4">
+                      <div className="flex flex-wrap justify-end gap-2.5">
                         {item.documentos.map((documento) => {
                           const buttonClass = documento.primary
-                            ? "border-[#06164b] bg-[#06164b] text-white hover:bg-blue-700"
-                            : "border-slate-400 bg-white text-slate-700 hover:border-blue-600 hover:bg-blue-600 hover:text-white";
+                            ? "border-[#06164b] bg-[#06164b] text-white shadow-sm hover:bg-blue-700"
+                            : "border-slate-300 bg-white text-slate-700 shadow-sm hover:border-blue-600 hover:bg-blue-600 hover:text-white";
 
                           if (documento.onClick) {
                             return (
@@ -900,7 +945,7 @@ const MoraGestionesDashboard = () => {
                                 key={documento.key}
                                 type="button"
                                 onClick={documento.onClick}
-                                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${buttonClass}`}
+                                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-black transition ${buttonClass}`}
                               >
                                 <RiFileDownloadLine className="h-5 w-5" />
                                 {documento.label}
@@ -914,7 +959,7 @@ const MoraGestionesDashboard = () => {
                                 key={documento.key}
                                 type="button"
                                 disabled
-                                className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-bold text-slate-400"
+                                className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-black text-slate-400"
                               >
                                 <RiFileDownloadLine className="h-5 w-5" />
                                 {documento.label}
@@ -928,7 +973,7 @@ const MoraGestionesDashboard = () => {
                               href={documento.href}
                               target="_blank"
                               rel="noreferrer"
-                              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${buttonClass}`}
+                              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-black transition ${buttonClass}`}
                             >
                               <RiFileDownloadLine className="h-5 w-5" />
                               {documento.label}
