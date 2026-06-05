@@ -427,14 +427,14 @@ const MoraGestionesDashboard = () => {
 
   return (
     <div className="theme-mora">
-      <main className="min-h-screen bg-[#f7f4fb] px-4 py-8 md:px-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-8">
-          <section className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+      <main className="min-h-screen bg-[#f7f4fb] px-4 py-6 md:px-8 md:py-9">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+          <section className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
             <div>
-              <h1 className="text-4xl font-bold tracking-normal text-[#06164b] md:text-6xl">
+              <h1 className="text-4xl font-bold tracking-normal text-[#06164b] md:text-5xl">
                 Bandeja de Gestiones
               </h1>
-              <p className="mt-3 max-w-4xl text-lg text-slate-600 md:text-2xl">
+              <p className="mt-3 max-w-4xl text-base text-slate-600 md:text-xl">
                 Monitorea y administra las solicitudes de Mora Presunta en tiempo real.
               </p>
             </div>
@@ -443,7 +443,7 @@ const MoraGestionesDashboard = () => {
               <button
                 type="button"
                 onClick={() => setFiltersOpen((open) => !open)}
-                className="inline-flex items-center gap-3 rounded-2xl border border-slate-300 bg-white/70 px-5 py-3 text-sm font-bold text-[#06164b] shadow-sm transition hover:bg-white"
+                className="inline-flex items-center gap-3 rounded-2xl border border-slate-300 bg-white/70 px-4 py-2.5 text-sm font-bold text-[#06164b] shadow-sm transition hover:bg-white"
               >
                 <RiFilter3Line className="h-5 w-5" />
                 Filtrar
@@ -451,7 +451,7 @@ const MoraGestionesDashboard = () => {
               <button
                 type="button"
                 onClick={handleRefresh}
-                className="inline-flex items-center gap-3 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500"
+                className="inline-flex items-center gap-3 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500"
               >
                 <RiRefreshLine className="h-5 w-5" />
                 Actualizar
@@ -552,7 +552,7 @@ const MoraGestionesDashboard = () => {
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
                 Gestiones
               </p>
-              <p className="mt-2 text-3xl font-bold text-[#06164b]">
+              <p className="mt-2 text-2xl font-bold text-[#06164b]">
                 {resumenBandeja.gestiones}
               </p>
             </div>
@@ -560,7 +560,7 @@ const MoraGestionesDashboard = () => {
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
                 Solicitudes pendientes
               </p>
-              <p className="mt-2 text-3xl font-bold text-[#06164b]">
+              <p className="mt-2 text-2xl font-bold text-[#06164b]">
                 {resumenBandeja.pendientesCliente}
               </p>
             </div>
@@ -568,7 +568,7 @@ const MoraGestionesDashboard = () => {
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
                 Monto total
               </p>
-              <p className="mt-2 text-3xl font-bold text-[#06164b]">
+              <p className="mt-2 text-2xl font-bold text-[#06164b]">
                 {formatCurrency(resumenBandeja.montoTotal)}
               </p>
             </div>
@@ -604,37 +604,37 @@ const MoraGestionesDashboard = () => {
                 return (
                   <article
                     key={gestion.id}
-                    className="rounded-[2rem] border border-slate-300 bg-white p-6 shadow-sm md:p-8"
+                    className="rounded-[1.75rem] border border-slate-300 bg-white p-5 shadow-sm md:p-6"
                   >
-                    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_280px]">
+                    <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_240px]">
                       <div>
                         <div className="flex flex-wrap items-center gap-4">
                           <span className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide ${getEstadoTone(gestion.estado)}`}>
                             {estado}
                           </span>
-                          <h2 className="text-2xl font-bold tracking-normal text-[#06164b] md:text-3xl">
+                          <h2 className="text-2xl font-bold tracking-normal text-[#06164b]">
                             Gestión #{gestion.id}
                           </h2>
                           {gestion.folio ? (
                             <>
                               <span className="text-2xl font-semibold text-slate-400">/</span>
-                              <span className="text-2xl font-semibold text-slate-400 md:text-3xl">
+                              <span className="text-2xl font-semibold text-slate-400">
                                 {gestion.folio}
                               </span>
                             </>
                           ) : null}
                         </div>
 
-                        <div className="mt-7 grid gap-6 md:grid-cols-2">
+                        <div className="mt-6 grid gap-5 md:grid-cols-2">
                           <div>
                             <p className="text-sm font-bold uppercase text-slate-600">Empresa</p>
-                            <p className="mt-2 text-xl font-bold text-slate-950">
+                            <p className="mt-2 text-lg font-bold text-slate-950">
                               {gestion.empresa || gestion.empresaRut}
                             </p>
                           </div>
                           <div>
                             <p className="text-sm font-bold uppercase text-slate-600">Entidad</p>
-                            <p className="mt-2 text-xl font-bold text-slate-950">
+                            <p className="mt-2 text-lg font-bold text-slate-950">
                               {gestion.entidad || "Sin entidad"}
                             </p>
                           </div>
@@ -676,11 +676,29 @@ const MoraGestionesDashboard = () => {
                             Solicitudes de antecedentes
                           </h3>
                         </div>
-                        <span className="rounded-full bg-slate-200 px-4 py-1 text-xs font-bold uppercase text-slate-700">
-                          {solicitudesGestion.length} documento
-                          {solicitudesGestion.length === 1 ? "" : "s"}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {solicitudesAccionables.length > 0 ? (
+                            <span className="rounded-full border border-amber-200 bg-amber-100 px-4 py-1 text-xs font-bold uppercase text-amber-800">
+                              {solicitudesAccionables.length} requiere respuesta
+                            </span>
+                          ) : null}
+                          <span className="rounded-full bg-slate-200 px-4 py-1 text-xs font-bold uppercase text-slate-700">
+                            {solicitudesGestion.length} documento
+                            {solicitudesGestion.length === 1 ? "" : "s"}
+                          </span>
+                        </div>
                       </div>
+
+                      {solicitudesAccionables.length > 0 ? (
+                        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+                          <p className="text-sm font-bold text-amber-900">
+                            Acción requerida del cliente
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-amber-800">
+                            Previley necesita antecedentes para continuar esta gestión. Revisa el documento solicitado y adjunta la respuesta correspondiente.
+                          </p>
+                        </div>
+                      ) : null}
 
                       <div className="mt-6 grid gap-4 md:grid-cols-3">
                         {solicitudesGestion.length === 0 ? (
@@ -692,27 +710,60 @@ const MoraGestionesDashboard = () => {
                             const accionable = solicitudesAccionables.some(
                               (actual) => actual.id === solicitud.id
                             );
+                            const solicitudLabel =
+                              tipoSolicitudLabels[solicitud.tipoSolicitud] || solicitud.tipoSolicitud;
                             return (
                               <div
                                 key={solicitud.id}
-                                className="flex items-center justify-between gap-4 rounded-2xl border border-slate-300 bg-white px-4 py-5"
+                                className={
+                                  accionable
+                                    ? "rounded-2xl border-2 border-amber-300 bg-white px-5 py-5 shadow-sm md:col-span-3"
+                                    : "flex items-center justify-between gap-4 rounded-2xl border border-slate-300 bg-white px-4 py-5"
+                                }
                               >
-                                <span className="text-base font-medium text-slate-950">
-                                  {tipoSolicitudLabels[solicitud.tipoSolicitud] || solicitud.tipoSolicitud}
-                                </span>
                                 {accionable ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => openResponderSolicitud(solicitud)}
-                                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-blue-600 text-blue-600 transition hover:bg-blue-600 hover:text-white"
-                                    aria-label="Responder solicitud"
-                                  >
-                                    <RiQuestionAnswerLine className="h-5 w-5" />
-                                  </button>
+                                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
+                                    <div>
+                                      <div className="flex flex-wrap items-center gap-3">
+                                        <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-800">
+                                          Pendiente de respuesta
+                                        </span>
+                                        <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase ${getEstadoTone(solicitud.estado)}`}>
+                                          {formatEstado(solicitud.estado)}
+                                        </span>
+                                      </div>
+                                      <h4 className="mt-4 text-xl font-bold text-[#06164b]">
+                                        Adjuntar {solicitudLabel}
+                                      </h4>
+                                      {solicitud.mensaje ? (
+                                        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
+                                          {solicitud.mensaje}
+                                        </p>
+                                      ) : (
+                                        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-700">
+                                          Necesitamos que adjuntes este antecedente para continuar con el análisis de la gestión.
+                                        </p>
+                                      )}
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => openResponderSolicitud(solicitud)}
+                                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-amber-500"
+                                    >
+                                      <RiFileUploadLine className="h-5 w-5" />
+                                      Adjuntar respuesta
+                                    </button>
+                                  </div>
                                 ) : (
-                                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600">
-                                    <RiCheckboxCircleLine className="h-5 w-5" />
-                                  </span>
+                                  <>
+                                    <span className="text-base font-medium text-slate-950">
+                                      {solicitudLabel}
+                                    </span>
+                                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600">
+                                      <RiCheckboxCircleLine className="h-5 w-5" />
+                                    </span>
+                                  </>
                                 )}
                               </div>
                             );
@@ -781,56 +832,80 @@ const MoraGestionesDashboard = () => {
       </main>
 
       {solicitudActiva && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
-            <div className="mb-5">
-              <p className="text-xs font-black uppercase tracking-widest text-amber-600">
-                Responder solicitud
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-3xl overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-2xl">
+            <div className="border-b border-slate-200 bg-white px-6 py-5 md:px-8 md:py-6">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-[#06164b]">
+                Acción requerida
               </p>
-              <h3 className="mt-1 text-xl font-bold text-slate-900">
-                {tipoSolicitudLabels[solicitudActiva.tipoSolicitud] || solicitudActiva.tipoSolicitud}
+              <h3 className="mt-3 text-3xl font-black tracking-normal text-[#06164b] md:text-4xl">
+                Adjuntar {tipoSolicitudLabels[solicitudActiva.tipoSolicitud] || solicitudActiva.tipoSolicitud}
               </h3>
-              {solicitudActiva.mensaje && (
-                <p className="mt-2 text-sm text-slate-500">{solicitudActiva.mensaje}</p>
-              )}
+              <p className="mt-3 text-base leading-7 text-slate-600 md:text-lg">
+                Este antecedente es necesario para que Previley pueda continuar con la gestión.
+              </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6 px-6 py-6 md:px-8">
+              <div className="rounded-2xl border border-amber-200 bg-white px-5 py-4">
+                <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                  Solicitud de Previley
+                </p>
+                <p className="mt-4 text-base leading-7 text-slate-700 md:text-lg">
+                  {solicitudActiva.mensaje ||
+                    "Necesitamos que adjuntes el documento solicitado y agregues cualquier contexto relevante para revisar la gestión."}
+                </p>
+              </div>
+
               <div>
-                <label htmlFor="respuesta-solicitud-mora" className="text-sm font-semibold text-slate-700">
-                  Comentario
+                <label htmlFor="respuesta-solicitud-mora" className="text-lg font-black text-[#06164b]">
+                  Comentario para Previley
                 </label>
                 <textarea
                   id="respuesta-solicitud-mora"
                   value={respuestaCliente}
                   onChange={(event) => setRespuestaCliente(event.target.value)}
-                  rows={5}
+                  rows={4}
                   maxLength={4000}
-                  className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                  placeholder="Indica que documento enviaste o agrega contexto para Previley."
+                  className="mt-3 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Ej: Adjunto contrato firmado de los trabajadores solicitados."
                   disabled={enviandoRespuesta}
                 />
               </div>
 
               <div>
-                <label htmlFor="archivo-solicitud-mora" className="text-sm font-semibold text-slate-700">
+                <label htmlFor="archivo-solicitud-mora" className="text-lg font-black text-[#06164b]">
                   Documento adjunto
+                </label>
+                <label
+                  htmlFor="archivo-solicitud-mora"
+                  className="mt-3 flex min-h-[190px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-blue-200 bg-sky-50/20 px-6 py-8 text-center transition hover:border-blue-500 hover:bg-blue-50"
+                >
+                  <span className="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-blue-600 text-white">
+                    <RiFileUploadLine className="h-8 w-8" />
+                  </span>
+                  <span className="mt-5 text-xl font-black text-[#06164b]">
+                    {respuestaArchivo ? respuestaArchivo.name : "Seleccionar archivo"}
+                  </span>
+                  <span className="mt-2 text-base text-slate-500">
+                    Adjunta el respaldo solicitado para cerrar esta solicitud.
+                  </span>
                 </label>
                 <input
                   id="archivo-solicitud-mora"
                   type="file"
                   onChange={(event) => setRespuestaArchivo(event.target.files?.[0] || null)}
-                  className="mt-1 block w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm"
+                  className="sr-only"
                   disabled={enviandoRespuesta}
                 />
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 px-6 py-5 sm:flex-row sm:justify-end md:px-8">
               <button
                 type="button"
                 onClick={closeResponderSolicitud}
-                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                className="rounded-2xl border border-slate-300 bg-white px-7 py-3 text-base font-bold text-slate-700 hover:bg-slate-50"
                 disabled={enviandoRespuesta}
               >
                 Cancelar
@@ -839,9 +914,9 @@ const MoraGestionesDashboard = () => {
                 type="button"
                 onClick={handleResponderSolicitud}
                 disabled={enviandoRespuesta || (!respuestaCliente.trim() && !respuestaArchivo)}
-                className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white hover:bg-amber-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="rounded-2xl bg-blue-600 px-7 py-3 text-base font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                {enviandoRespuesta ? "Enviando..." : "Enviar respuesta"}
+                {enviandoRespuesta ? "Enviando..." : "Enviar respuesta a Previley"}
               </button>
             </div>
           </div>
