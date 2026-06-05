@@ -10,6 +10,7 @@ import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraA
 import apiService from "@/app/api/apiService";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import {
+  RiArrowDownSLine,
   RiBankLine,
   RiBuildingLine,
   RiCalendarLine,
@@ -45,6 +46,12 @@ const getEstadoTone = (estado) =>
   estadoTone[String(estado || "").toLowerCase()] ||
   "border-slate-200 bg-slate-50 text-slate-700";
 
+const compactText = (value, fallback = "Sin información registrada.", maxLength = 150) => {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  if (!text) return fallback;
+  return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text;
+};
+
 const tipoSolicitudLabels = {
   certificado_deuda_actualizado: "Certificado de deuda actualizado",
   certificado_pago: "Certificado de pago",
@@ -74,6 +81,7 @@ const MoraGestionesDashboard = () => {
   const [respuestaArchivo, setRespuestaArchivo] = useState(null);
   const [enviandoRespuesta, setEnviandoRespuesta] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [expandedSolicitudId, setExpandedSolicitudId] = useState(null);
 
   const handleDownloadDetalle = useCallback(async (gestion) => {
     if (!gestion?.id) return;
@@ -311,8 +319,11 @@ const MoraGestionesDashboard = () => {
         const solicitudesAccionables = solicitudesGestion.filter((solicitud) =>
           ["pendiente", "rechazada"].includes(String(solicitud.estado || "").toLowerCase())
         );
-        const montoTotal =
+        const deudaPendiente = Number(gestion?.deudaPendiente || 0);
+        const deudaTotal = Number(gestion?.deudaTotal || 0);
+        const montoCierre =
           Number(gestion?.montoRegularizado || 0) + Number(gestion?.montoPago || 0);
+        const montoTotal = deudaPendiente || deudaTotal || montoCierre;
         const documentos = [
           {
             key: "comprobante",
@@ -341,6 +352,9 @@ const MoraGestionesDashboard = () => {
           gestion,
           documentos,
           montoTotal,
+          deudaPendiente,
+          deudaTotal,
+          montoCierre,
           solicitudesGestion,
           solicitudesAccionables,
         };
@@ -374,6 +388,10 @@ const MoraGestionesDashboard = () => {
     setSolicitudActiva(solicitud);
     setRespuestaCliente("");
     setRespuestaArchivo(null);
+  }, []);
+
+  const toggleSolicitudDetalle = useCallback((solicitudId) => {
+    setExpandedSolicitudId((current) => (current === solicitudId ? null : solicitudId));
   }, []);
 
   const closeResponderSolicitud = useCallback(() => {
@@ -651,15 +669,39 @@ const MoraGestionesDashboard = () => {
 
                       <div className="text-left xl:text-right">
                         <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
-                          Monto total
+                          Pendiente
                         </p>
                         <p className="mt-1.5 text-3xl font-bold text-[#06164b]">
                           {formatCurrency(item.montoTotal)}
                         </p>
                         <p className="text-xs text-slate-500">CLP</p>
-                        <div className="mt-3 grid gap-1 text-xs text-slate-500">
-                          <span>Regularizado: {formatCurrency(gestion?.montoRegularizado || 0)}</span>
-                          <span>Pago: {formatCurrency(gestion?.montoPago || 0)}</span>
+                        <div className="mt-3 grid gap-2 text-xs text-slate-600">
+                          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-bold uppercase text-slate-500">
+                                Casos judiciales
+                              </span>
+                              <span className="font-black text-[#06164b]">
+                                {Number(gestion?.casosJudiciales || 0).toLocaleString("es-CL")}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-right font-semibold text-slate-500">
+                              {formatCurrency(gestion?.montoJudicial || 0)}
+                            </p>
+                          </div>
+                          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="font-bold uppercase text-slate-500">
+                                Casos no judiciales
+                              </span>
+                              <span className="font-black text-[#06164b]">
+                                {Number(gestion?.casosNoJudiciales || 0).toLocaleString("es-CL")}
+                              </span>
+                            </div>
+                            <p className="mt-1 text-right font-semibold text-slate-500">
+                              {formatCurrency(gestion?.montoNoJudicial || 0)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -708,13 +750,14 @@ const MoraGestionesDashboard = () => {
                             );
                             const solicitudLabel =
                               tipoSolicitudLabels[solicitud.tipoSolicitud] || solicitud.tipoSolicitud;
+                            const isExpanded = expandedSolicitudId === solicitud.id;
                             return (
                               <div
                                 key={solicitud.id}
                                 className={
                                   accionable
                                     ? "rounded-2xl border-2 border-amber-300 bg-white px-4 py-4 shadow-sm md:col-span-3"
-                                    : "flex items-center justify-between gap-4 rounded-xl border border-slate-300 bg-white px-4 py-4"
+                                    : "rounded-xl border border-slate-300 bg-white px-4 py-3 md:col-span-3"
                                 }
                               >
                                 {accionable ? (
@@ -752,14 +795,90 @@ const MoraGestionesDashboard = () => {
                                     </button>
                                   </div>
                                 ) : (
-                                  <>
-                                    <span className="text-base font-medium text-slate-950">
-                                      {solicitudLabel}
-                                    </span>
-                                    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600">
-                                      <RiCheckboxCircleLine className="h-5 w-5" />
-                                    </span>
-                                  </>
+                                  <div className="w-full">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                      <div className="flex items-center gap-3">
+                                        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 text-emerald-600">
+                                          <RiCheckboxCircleLine className="h-5 w-5" />
+                                        </span>
+                                        <div className="min-w-0">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <p className="text-base font-bold text-slate-950">
+                                              {solicitudLabel}
+                                            </p>
+                                            {solicitud.respuestaArchivoUrl ? (
+                                              <a
+                                                href={solicitud.respuestaArchivoUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
+                                              >
+                                                Adjunto
+                                                <RiExternalLinkLine className="h-3.5 w-3.5" />
+                                              </a>
+                                            ) : solicitud.respuestaArchivo ? (
+                                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                                                Adjunto recibido
+                                              </span>
+                                            ) : null}
+                                          </div>
+                                          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                                            Respuesta recibida
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        {solicitud.fechaRespuesta ? (
+                                          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                                            {formatDate(solicitud.fechaRespuesta)}
+                                          </span>
+                                        ) : null}
+                                        <button
+                                          type="button"
+                                          onClick={() => toggleSolicitudDetalle(solicitud.id)}
+                                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[#06164b] transition hover:border-blue-300 hover:bg-blue-50"
+                                          aria-expanded={isExpanded}
+                                        >
+                                          {isExpanded ? "Ocultar detalle" : "Ver detalle"}
+                                          <RiArrowDownSLine
+                                            className={`h-4 w-4 transition ${isExpanded ? "rotate-180" : ""}`}
+                                          />
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    {isExpanded ? (
+                                      <div className="mt-4 grid gap-3 border-t border-slate-200 pt-4 lg:grid-cols-2">
+                                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                            <RiQuestionAnswerLine className="h-4 w-4 text-blue-600" />
+                                            Previley solicitó
+                                          </div>
+                                          <p className="mt-2 text-sm leading-5 text-slate-700">
+                                            {compactText(
+                                              solicitud.mensaje,
+                                              "Sin mensaje registrado para esta solicitud."
+                                            )}
+                                          </p>
+                                        </div>
+
+                                        <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
+                                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                            <RiFileList3Line className="h-4 w-4 text-emerald-600" />
+                                            Cliente respondió
+                                          </div>
+                                          <p className="mt-2 text-sm leading-5 text-slate-700">
+                                            {compactText(
+                                              solicitud.respuestaCliente,
+                                              solicitud.respuestaArchivo || solicitud.respuestaArchivoUrl
+                                                ? "El cliente adjuntó documentación sin comentario adicional."
+                                                : "Sin respuesta registrada."
+                                            )}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ) : null}
+                                  </div>
                                 )}
                               </div>
                             );
