@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card, Title, Text, Flex, Metric, Grid } from "@tremor/react";
+import { RiListCheck3 } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
+import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const palabras = (estado) => {
   if (!estado) return "Sin estado";
@@ -50,32 +51,33 @@ const ResumenCasosOperativos = ({ empresaRut, entidadId, dateRange }) => {
   }
 
   return (
-    <Card>
-      <Title>📍 Casos por estado</Title>
-      <Text className="text-sm text-gray-500 mb-4">
-        Total de casos: {totalCasos.toLocaleString("es-CL")}
-      </Text>
-      <Grid numItemsSm={2} numItemsLg={4} className="gap-4">
+    <SectionCard>
+      <SectionHeader
+        title="Casos por estado"
+        description={`Total de casos: ${totalCasos.toLocaleString("es-CL")}.`}
+        badge={`${resumen.length} estados`}
+        icon={RiListCheck3}
+      />
+
+      <div className="grid gap-4 border-t border-indigo-100 px-5 py-5 sm:grid-cols-2 xl:grid-cols-4">
         {resumen.map((item) => (
-          <Flex
+          <article
             key={item.estado}
-            justifyContent="between"
-            alignItems="start"
-            className="rounded border border-slate-100 dark:border-slate-700 p-3"
+            className="rounded-lg border border-indigo-100 bg-indigo-50 p-4"
           >
-            <div>
-              <Text className="text-xs text-gray-500 uppercase tracking-wide">
-                {item.estado}
-              </Text>
-              <Metric className="mt-1">{item.casos.toLocaleString("es-CL")}</Metric>
+            <div className="flex items-start justify-between gap-4">
+              <p className="text-xs font-semibold uppercase text-stone-600">{item.estado}</p>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
+                {totalCasos > 0 ? ((item.casos / totalCasos) * 100).toFixed(1) : 0}%
+              </span>
             </div>
-            <Text className="text-xs text-gray-400">
-              {totalCasos > 0 ? ((item.casos / totalCasos) * 100).toFixed(1) : 0}%
-            </Text>
-          </Flex>
+            <p className="mt-3 text-3xl font-bold text-slate-950">
+              {item.casos.toLocaleString("es-CL")}
+            </p>
+          </article>
         ))}
-      </Grid>
-    </Card>
+      </div>
+    </SectionCard>
   );
 };
 

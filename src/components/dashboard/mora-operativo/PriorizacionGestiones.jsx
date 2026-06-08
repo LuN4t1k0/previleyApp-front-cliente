@@ -1,21 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Card,
-  Title,
-  Text,
-  Table,
-  TableHead,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  TableCell,
-  BadgeDelta,
-} from "@tremor/react";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { RiFileList3Line } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
+import { ActionButton, RiskPill, SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const formatCLP = (valor) =>
   new Intl.NumberFormat("es-CL", {
@@ -23,12 +12,6 @@ const formatCLP = (valor) =>
     currency: "CLP",
     maximumFractionDigits: 0,
   }).format(valor || 0);
-
-const riesgoBadge = {
-  alto: <BadgeDelta deltaType="decrease">Alto</BadgeDelta>,
-  medio: <BadgeDelta deltaType="unchanged">Medio</BadgeDelta>,
-  bajo: <BadgeDelta deltaType="increase">Bajo</BadgeDelta>,
-};
 
 const riesgoOrden = {
   alto: 0,
@@ -81,71 +64,74 @@ const PriorizacionGestiones = ({ empresaRut, entidadId, dateRange, onSelectGesti
   }
 
   return (
-    <Card>
-      <Title>📋 Gestiones priorizadas</Title>
-      <Text className="text-sm text-gray-500 mb-4">
-        Ranking dinámico según deuda pendiente, riesgo judicial y casos críticos.
-      </Text>
+    <SectionCard>
+      <SectionHeader
+        title="Gestiones priorizadas"
+        description="Ranking dinámico según deuda pendiente, riesgo judicial y casos críticos."
+        badge={`${filas.length} gestiones`}
+        icon={RiFileList3Line}
+      />
 
-      <Table className="text-xs sm:text-sm">
-        <TableHead>
-          <TableRow>
-            <TableHeaderCell>#</TableHeaderCell>
-            <TableHeaderCell>Gestión</TableHeaderCell>
-            <TableHeaderCell>Entidad</TableHeaderCell>
-            <TableHeaderCell className="text-right">Deuda pendiente</TableHeaderCell>
-            <TableHeaderCell className="text-right">Casos judiciales</TableHeaderCell>
-            <TableHeaderCell className="text-right">Casos no judiciales</TableHeaderCell>
-            <TableHeaderCell className="text-right">Prioridad</TableHeaderCell>
-            <TableHeaderCell className="text-right">Acción</TableHeaderCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filas.map((fila) => (
-            <TableRow key={fila.gestionMoraId}>
-              <TableCell className="font-semibold">{fila.prioridadRanking}</TableCell>
-              <TableCell>
-                <div className="flex flex-col">
-                  <span className="font-medium text-gray-800">{fila.folio || `Gestión #${fila.gestionMoraId}`}</span>
-                  <span className="text-xs text-gray-500">{fila.estadoGestion?.toUpperCase()}</span>
-                </div>
-              </TableCell>
-              <TableCell>{fila.entidadNombre}</TableCell>
-              <TableCell className="text-right">{formatCLP(fila.deudaPendiente)}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex flex-col items-end">
-                  <span>{fila.casosJudiciales}</span>
-                  <span className="text-[11px] text-gray-400">{formatCLP(fila.montoJudicial)}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex flex-col items-end">
-                  <span>{fila.casosNoJudiciales}</span>
-                  <span className="text-[11px] text-gray-400">{formatCLP(fila.montoNoJudicial)}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-right">
-                {riesgoBadge[fila.nivelRiesgo] || <BadgeDelta deltaType="unchanged">-</BadgeDelta>}
-              </TableCell>
-              <TableCell className="text-right">
-                {typeof onSelectGestion === "function" ? (
-                  <button
-                    type="button"
-                    onClick={() => onSelectGestion(fila)}
-                    className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-500"
-                  >
-                    Ver gestión
-                    <RiArrowRightSLine className="size-4" />
-                  </button>
-                ) : (
-                  <span className="text-xs text-gray-400">Prioridad {fila.prioridadRanking}</span>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Card>
+      <div className="overflow-x-auto border-t border-indigo-100">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-slate-50 font-semibold text-stone-700">
+            <tr>
+              <th className="px-6 py-4">#</th>
+              <th className="px-6 py-4">Gestión</th>
+              <th className="px-6 py-4">Entidad</th>
+              <th className="px-6 py-4 text-right">Deuda pendiente</th>
+              <th className="px-6 py-4 text-right">Judicial</th>
+              <th className="px-6 py-4 text-right">No judicial</th>
+              <th className="px-6 py-4 text-right">Prioridad</th>
+              <th className="px-6 py-4 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-indigo-100">
+            {filas.map((fila) => (
+              <tr key={fila.gestionMoraId} className="bg-white hover:bg-slate-50">
+                <td className="px-6 py-5 font-semibold text-slate-950">{fila.prioridadRanking}</td>
+                <td className="px-6 py-5">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-slate-950">
+                      {fila.folio || `Gestión #${fila.gestionMoraId}`}
+                    </span>
+                    <span className="text-xs font-semibold uppercase text-slate-400">
+                      {fila.estadoGestion}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-5 font-semibold text-slate-800">{fila.entidadNombre}</td>
+                <td className="px-6 py-5 text-right font-semibold text-indigo-800">
+                  {formatCLP(fila.deudaPendiente)}
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <div className="flex flex-col items-end">
+                    <span className="font-semibold text-red-950">{fila.casosJudiciales}</span>
+                    <span className="text-xs text-red-700">{formatCLP(fila.montoJudicial)}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <div className="flex flex-col items-end">
+                    <span className="font-semibold text-slate-950">{fila.casosNoJudiciales}</span>
+                    <span className="text-xs text-slate-500">{formatCLP(fila.montoNoJudicial)}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <RiskPill level={fila.nivelRiesgo} />
+                </td>
+                <td className="px-6 py-5 text-right">
+                  {typeof onSelectGestion === "function" ? (
+                    <ActionButton onClick={() => onSelectGestion(fila)}>Ver gestión</ActionButton>
+                  ) : (
+                    <span className="text-xs text-slate-400">Prioridad {fila.prioridadRanking}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </SectionCard>
   );
 };
 

@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart, Card, Title, Text } from "@tremor/react";
+import { BarChart } from "@tremor/react";
+import { RiBuilding2Line } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
+import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const palette = ["indigo", "cyan", "emerald", "amber", "rose", "violet", "slate"];
 
@@ -44,18 +46,20 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
     fetchDistribucionPorEntidad();
   }, [empresaRut, entidadId, dateRange]);
 
-  const { chartData, categorias } = useMemo(() => {
+  const { chartData, categorias, totalMonto } = useMemo(() => {
     if (!Array.isArray(dataset) || dataset.length === 0) {
-      return { chartData: [], categorias: [] };
+      return { chartData: [], categorias: [], totalMonto: 0 };
     }
 
     const agrupado = new Map();
     const totalesPorEstado = new Map();
+    let total = 0;
 
     dataset.forEach((registro) => {
       const entidadNombre = registro.entidadNombre || registro.entidad || "Sin entidad";
       const estado = formatEstado(registro.estado);
       const monto = Number(registro.monto || 0);
+      total += monto;
 
       if (!agrupado.has(entidadNombre)) {
         agrupado.set(entidadNombre, { entidad: entidadNombre });
@@ -73,7 +77,7 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
 
     const data = Array.from(agrupado.values());
 
-    return { chartData: data, categorias: categoriasOrdenadas };
+    return { chartData: data, categorias: categoriasOrdenadas, totalMonto: total };
   }, [dataset]);
 
   if (!chartData.length || !categorias.length) {
@@ -83,30 +87,50 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
   const chartMinWidth = Math.max(640, chartData.length * 80);
 
   return (
-    <Card>
-      <Title>Distribución de deuda por estado y entidad</Title>
-      <Text className="text-sm text-gray-500 mb-4">
-        Identifica qué entidades concentran los montos más altos por estado operativo.
-      </Text>
-      <div className="mt-6 overflow-x-auto">
-        <div className="pr-4" style={{ minWidth: chartMinWidth }}>
-          <BarChart
-            data={chartData}
-            index="entidad"
-            categories={categorias}
-            valueFormatter={formatter}
-            colors={categorias.map((_, idx) => palette[idx % palette.length])}
-            stack
-            showLegend
-            showXAxis
-            showYAxis
-            tickGap={0}
-            rotateLabelX={{ angle: 0, verticalShift: 12, xAxisHeight: 80 }}
-            yAxisWidth={90}
-          />
+    <SectionCard>
+      <SectionHeader
+        title="Deuda por estado y entidad"
+        description="Identifica qué entidades concentran los montos más altos por estado operativo."
+        badge={`${chartData.length} entidades`}
+        icon={RiBuilding2Line}
+      />
+
+      <div className="border-t border-indigo-100 px-5 py-5">
+        <div className="mb-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+            <p className="text-xs font-semibold uppercase text-stone-600">Monto observado</p>
+            <p className="mt-2 text-xl font-bold text-slate-950">{formatter(totalMonto)}</p>
+          </div>
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+            <p className="text-xs font-semibold uppercase text-stone-600">Estados</p>
+            <p className="mt-2 text-xl font-bold text-slate-950">{categorias.length}</p>
+          </div>
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+            <p className="text-xs font-semibold uppercase text-stone-600">Entidades</p>
+            <p className="mt-2 text-xl font-bold text-slate-950">{chartData.length}</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <div className="pr-4" style={{ minWidth: chartMinWidth }}>
+            <BarChart
+              data={chartData}
+              index="entidad"
+              categories={categorias}
+              valueFormatter={formatter}
+              colors={categorias.map((_, idx) => palette[idx % palette.length])}
+              stack
+              showLegend
+              showXAxis
+              showYAxis
+              tickGap={0}
+              rotateLabelX={{ angle: 0, verticalShift: 12, xAxisHeight: 80 }}
+              yAxisWidth={90}
+            />
+          </div>
         </div>
       </div>
-    </Card>
+    </SectionCard>
   );
 };
 

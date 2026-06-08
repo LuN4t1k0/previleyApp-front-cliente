@@ -9,7 +9,6 @@ import DistribucionEstadoOperativo from "@/components/dashboard/mora-operativo/D
 import DistribucionMotivoOperativo from "@/components/dashboard/mora-operativo/DistribucionMotivoOperativo";
 import DistribucionEntidadOperativo from "@/components/dashboard/mora-operativo/DistribucionEntidadOperativo";
 import PendienteOperativoDetalle from "@/components/dashboard/mora-operativo/PendienteOperativoDetalle";
-import PriorizacionEntidades from "@/components/dashboard/mora-operativo/PriorizacionEntidades";
 import PriorizacionGestiones from "@/components/dashboard/mora-operativo/PriorizacionGestiones";
 import HistoricoOperativo from "@/components/dashboard/mora-operativo/HistoricoOperativo";
 import ResumenCasosOperativos from "@/components/dashboard/mora-operativo/ResumenCasosOperativos";
@@ -26,7 +25,7 @@ import {
 } from "@remixicon/react";
 
 const SectionPanel = ({ children, className = "" }) => (
-  <section className={`rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6 ${className}`}>
+  <section className={`rounded-lg border border-indigo-200 bg-white p-5 shadow-sm ${className}`}>
     {children}
   </section>
 );
@@ -175,35 +174,35 @@ const MoraOperativaDashboard = () => {
     return <DashboardMoraAnaliticoSkeleton />;
   }
 
-  const surface = "rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6";
+  const surface = "rounded-lg border border-indigo-200 bg-white p-5 text-center shadow-sm";
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <main className="min-h-screen bg-[#f6f6ff] text-slate-950">
+      <header className="border-b border-indigo-100 bg-[#f6f6ff]">
+        <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-5 px-4 py-7 sm:px-6 lg:px-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="h-2 w-2 rounded-sm bg-emerald-500" aria-hidden="true" />
-                <span className="text-xs font-semibold uppercase text-slate-500">
+              <div className="mb-3 flex items-center gap-3">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                <span className="text-[11px] font-semibold uppercase text-emerald-700">
                   Dashboard Operativo
                 </span>
               </div>
               <h1 className="text-3xl font-semibold text-slate-950 md:text-4xl">
                 Mora presunta por empresa
               </h1>
-              <p className="mt-3 text-sm leading-6 text-slate-600 md:text-base">
+              <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
                 Prioriza entidades, gestiones y seguimiento de recuperaciones desde una vista de
                 trabajo diaria.
               </p>
             </div>
 
-            <div className="grid gap-3 text-sm font-medium text-slate-700 sm:grid-cols-2 lg:min-w-[420px]">
-              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="grid gap-3 text-sm font-medium text-slate-700 sm:grid-cols-2">
+              <div className="flex items-center gap-3 rounded-lg border border-indigo-200 bg-white px-4 py-2.5 shadow-sm">
                 <RiBuildingLine className="h-4 w-4 text-slate-500" aria-hidden="true" />
                 <span>{empresaSeleccionada || "Sin empresa seleccionada"}</span>
               </div>
-              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex items-center gap-3 rounded-lg border border-indigo-200 bg-white px-4 py-2.5 shadow-sm">
                 <RiStackLine className="h-4 w-4 text-slate-500" aria-hidden="true" />
                 <span>{entidadesDisponibles.length} entidades</span>
               </div>
@@ -213,12 +212,12 @@ const MoraOperativaDashboard = () => {
       </header>
 
       <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6">
+        <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-6">
           <SectionPanel>
-            <div className="grid gap-4 lg:grid-cols-[minmax(280px,1fr)_minmax(260px,0.75fr)] xl:grid-cols-[minmax(320px,1fr)_320px_260px]">
+            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(300px,1fr)_minmax(380px,1.15fr)_minmax(260px,0.9fr)]">
               <label className="flex flex-col gap-2">
-                <span className="text-xs font-semibold uppercase text-slate-500">Empresa</span>
-                <div className="relative flex items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                <span className="text-[11px] font-semibold uppercase text-slate-500">Empresa</span>
+                <div className="relative flex min-h-[42px] items-center gap-3 rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm">
                   <RiBuildingLine className="h-5 w-5 text-slate-500" aria-hidden="true" />
                   <input
                     type="text"
@@ -243,8 +242,8 @@ const MoraOperativaDashboard = () => {
               </label>
 
               <fieldset className="flex flex-col gap-2">
-                <legend className="text-xs font-semibold uppercase text-slate-500">Periodo</legend>
-                <div className="flex items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                <legend className="text-[11px] font-semibold uppercase text-slate-500">Periodo</legend>
+                <div className="flex min-h-[42px] items-center gap-3 rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm">
                   <RiCalendarLine className="h-5 w-5 shrink-0 text-slate-500" aria-hidden="true" />
                   <DateRangePicker
                     value={dateRange}
@@ -255,10 +254,10 @@ const MoraOperativaDashboard = () => {
                 </div>
               </fieldset>
 
-              <label className="flex flex-col gap-2">
-                <span className="text-xs font-semibold uppercase text-slate-500">Entidad</span>
+              <label className="flex flex-col gap-2 lg:col-span-2 xl:col-span-1">
+                <span className="text-[11px] font-semibold uppercase text-slate-500">Entidad</span>
                 <select
-                  className="min-h-[42px] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                  className="min-h-[42px] rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                   value={entidadSeleccionada}
                   onChange={(event) => setEntidadSeleccionada(event.target.value)}
                   disabled={cargandoEntidades || entidadesDisponibles.length === 0}
@@ -275,15 +274,18 @@ const MoraOperativaDashboard = () => {
               </label>
             </div>
 
-            <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
+            <div className="mt-5 flex flex-col gap-3 border-t border-indigo-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
                 <RiFilterLine className="h-5 w-5 text-slate-500" aria-hidden="true" />
-                <span>Filtros activos</span>
+                <span>Filtros activos:</span>
+                {filtrosActivos.length === 0 ? (
+                  <span>Sin filtros adicionales aplicados.</span>
+                ) : null}
               </div>
 
               <button
                 type="button"
-                className="w-fit rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-slate-900 hover:bg-slate-900 hover:text-white"
+                className="w-fit rounded-md border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-800 hover:border-indigo-500 hover:bg-indigo-50"
                 onClick={() => {
                   setEntidadSeleccionada("");
                   setDateRange({ from: undefined, to: undefined });
@@ -298,120 +300,85 @@ const MoraOperativaDashboard = () => {
                 {filtrosActivos.map((filtro) => (
                   <span
                     key={filtro.etiqueta}
-                    className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                    className="inline-flex items-center rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-950"
                   >
                     {filtro.etiqueta}: {filtro.valor}
                   </span>
                 ))}
               </div>
-            ) : (
-              <p className="mt-4 text-sm text-slate-500">Sin filtros adicionales aplicados.</p>
-            )}
+            ) : null}
           </SectionPanel>
 
           {empresaSeleccionada ? (
             <div className="space-y-6">
-              <section className={surface}>
-                <IndicadoresOperativos
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                />
-              </section>
+              <IndicadoresOperativos
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+              />
 
-              <section className={surface}>
-                <PendienteOperativoDetalle
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                  onSelectEntidad={(valor) => setEntidadSeleccionada(String(valor))}
-                />
-              </section>
+              <PendienteOperativoDetalle
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+                onSelectEntidad={(valor) => setEntidadSeleccionada(String(valor))}
+              />
 
-              <section className={surface}>
-                <InstitucionesOperativo
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                />
-              </section>
+              <InstitucionesOperativo
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+              />
 
-              <section className={surface}>
-                <DistribucionEstadoOperativo
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                />
-              </section>
+              <DistribucionEstadoOperativo
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+              />
 
-              <section className={surface}>
-                <DistribucionMotivoOperativo
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                />
-              </section>
+              <DistribucionMotivoOperativo
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+              />
 
-              <section className={surface}>
-                <DistribucionEntidadOperativo
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                />
-              </section>
+              <DistribucionEntidadOperativo
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+              />
 
-              <section className={surface}>
-                <PriorizacionGestiones
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                  onSelectGestion={(gestion) => {
-                    if (gestion?.entidadId) {
-                      setEntidadSeleccionada(String(gestion.entidadId));
-                    }
-                  }}
-                />
-              </section>
+              <PriorizacionGestiones
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+                onSelectGestion={(gestion) => {
+                  if (gestion?.entidadId) {
+                    setEntidadSeleccionada(String(gestion.entidadId));
+                  }
+                }}
+              />
 
-              <section className={surface}>
-                <PriorizacionEntidades
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                  onSelectEntidad={(valor) => setEntidadSeleccionada(String(valor))}
-                />
-              </section>
+              <TopTrabajadoresDeuda empresaRut={empresaSeleccionada} />
 
-              <section className={surface}>
-                <TopTrabajadoresDeuda empresaRut={empresaSeleccionada} />
-              </section>
+              <DistribucionRecuperadoTipo empresaRut={empresaSeleccionada} />
 
-              <section className={surface}>
-                <DistribucionRecuperadoTipo empresaRut={empresaSeleccionada} />
-              </section>
+              <HistoricoOperativo
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+              />
 
-              <section className={surface}>
-                <HistoricoOperativo
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                />
-              </section>
+              <ResumenCasosOperativos
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+              />
 
-              <section className={surface}>
-                <ResumenCasosOperativos
-                  empresaRut={empresaSeleccionada}
-                  entidadId={entidadSeleccionada || undefined}
-                  dateRange={dateRange}
-                />
-              </section>
-
-              <section className={surface}>
-                <ExportarResumenGlobal empresaRut={empresaSeleccionada} />
-              </section>
+              <ExportarResumenGlobal empresaRut={empresaSeleccionada} />
             </div>
           ) : (
-            <section className={`${surface} text-center`}>
+            <section className={surface}>
               <p className="text-sm text-slate-500">
                 Selecciona una empresa para visualizar indicadores operativos.
               </p>

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, Title, Text, Button } from "@tremor/react";
+import { RiDownloadLine, RiFileExcel2Line } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import { downloadExcelFromJson } from "@/utils/exportUtils";
+import { SectionCard } from "../mora-operativo/MoraOperativoUI";
 
 const ExportarResumenGlobal = ({ empresaRut }) => {
   const [data, setData] = useState([]);
@@ -39,17 +40,30 @@ const ExportarResumenGlobal = ({ empresaRut }) => {
   if (!data.length) return null;
 
   return (
-    <Card>
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <Title>📥 Exportación Consolidada</Title>
-          <Text className="text-sm text-gray-500">
-            Descarga un Excel con el resumen por institución.
-          </Text>
+    <SectionCard>
+      <div className="flex flex-col gap-5 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-900">
+            <RiFileExcel2Line className="h-6 w-6" aria-hidden="true" />
+          </span>
+          <div>
+            <h3 className="text-xl font-semibold text-slate-950">Exportación consolidada</h3>
+            <p className="mt-2 text-sm leading-6 text-stone-700">
+              Descarga un Excel con el resumen por institución.
+            </p>
+          </div>
         </div>
-        <Button onClick={handleExport}>Exportar como Excel</Button>
+
+        <button
+          type="button"
+          onClick={handleExport}
+          className="inline-flex w-fit items-center gap-2 rounded-md border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-800 hover:bg-indigo-50"
+        >
+          <RiDownloadLine className="h-4 w-4" aria-hidden="true" />
+          Exportar Excel
+        </button>
       </div>
-    </Card>
+    </SectionCard>
   );
 };
 
