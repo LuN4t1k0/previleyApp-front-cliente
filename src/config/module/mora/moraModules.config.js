@@ -17,6 +17,15 @@ const moraModules = {
     category: "analitica",
     theme: "mora",
   },
+  priorizacion: {
+    name: "Priorización",
+    description: "Orden vigente de focos pendientes priorizados por periodo.",
+    icon: "📌",
+    path: "/servicios/mora-presunta/priorizacion",
+    roles: ["cliente"],
+    category: "operacion",
+    theme: "mora",
+  },
 };
 
 export default moraModules;

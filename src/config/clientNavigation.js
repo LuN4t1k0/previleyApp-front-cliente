@@ -25,6 +25,11 @@ export const clientMenu = [
     href: "/documentos",
   },
   {
+    label: "Notificaciones",
+    description: "Historial de comunicaciones y acciones pendientes.",
+    href: "/notificaciones",
+  },
+  {
     label: "Ayuda",
     description: "Guías y recursos de uso del portal cliente.",
     href: "/documentacion",

@@ -101,7 +101,7 @@ export default function AuthenticatedLayout({ children }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <ClientHeader />
+      <ClientHeader socket={socket} />
       <main className="app-shell flex-1">{children}</main>
 
       {/* 🔥 Global toast feedback */}

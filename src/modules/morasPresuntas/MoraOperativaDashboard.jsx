@@ -9,7 +9,7 @@ import DistribucionEstadoOperativo from "@/components/dashboard/mora-operativo/D
 import DistribucionMotivoOperativo from "@/components/dashboard/mora-operativo/DistribucionMotivoOperativo";
 import DistribucionEntidadOperativo from "@/components/dashboard/mora-operativo/DistribucionEntidadOperativo";
 import PendienteOperativoDetalle from "@/components/dashboard/mora-operativo/PendienteOperativoDetalle";
-import PriorizacionGestiones from "@/components/dashboard/mora-operativo/PriorizacionGestiones";
+import PlanAccionOperativo from "@/components/dashboard/mora-operativo/PlanAccionOperativo";
 import HistoricoOperativo from "@/components/dashboard/mora-operativo/HistoricoOperativo";
 import ResumenCasosOperativos from "@/components/dashboard/mora-operativo/ResumenCasosOperativos";
 import InstitucionesOperativo from "@/components/dashboard/mora-operativo/InstitucionesOperativo";
@@ -330,6 +330,12 @@ const MoraOperativaDashboard = () => {
                 dateRange={dateRange}
               />
 
+              <PlanAccionOperativo
+                empresaRut={empresaSeleccionada}
+                entidadId={entidadSeleccionada || undefined}
+                dateRange={dateRange}
+              />
+
               <DistribucionEstadoOperativo
                 empresaRut={empresaSeleccionada}
                 entidadId={entidadSeleccionada || undefined}
@@ -346,17 +352,6 @@ const MoraOperativaDashboard = () => {
                 empresaRut={empresaSeleccionada}
                 entidadId={entidadSeleccionada || undefined}
                 dateRange={dateRange}
-              />
-
-              <PriorizacionGestiones
-                empresaRut={empresaSeleccionada}
-                entidadId={entidadSeleccionada || undefined}
-                dateRange={dateRange}
-                onSelectGestion={(gestion) => {
-                  if (gestion?.entidadId) {
-                    setEntidadSeleccionada(String(gestion.entidadId));
-                  }
-                }}
               />
 
               <TopTrabajadoresDeuda empresaRut={empresaSeleccionada} />

@@ -149,7 +149,10 @@ const PriorityAndRisk = ({
   estadoPrevired,
   judicial,
   noJudicial,
-}) => (
+}) => {
+  const montoPendiente = Number(judicial || 0) + Number(noJudicial || 0);
+
+  return (
   <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
     <Panel className="p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -191,14 +194,27 @@ const PriorityAndRisk = ({
       <Title className="text-slate-950">Lectura de riesgo</Title>
       <Text className="text-sm text-slate-500">Separación judicial y no judicial del saldo.</Text>
       {estadoPrevired.length ? (
-        <DonutChart
-          className="mt-6 h-56"
-          data={estadoPrevired}
-          category="value"
-          index="name"
-          colors={["rose", "emerald"]}
-          valueFormatter={(value) => formatCurrency(value)}
-        />
+        <div className="relative mt-6 h-56">
+          <DonutChart
+            className="h-full"
+            data={estadoPrevired}
+            category="value"
+            index="name"
+            colors={["rose", "emerald"]}
+            valueFormatter={(value) => formatCurrency(value)}
+            showLabel={false}
+          />
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-lg font-semibold text-slate-700">
+                {formatCurrency(montoPendiente)}
+              </p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Monto pendiente
+              </p>
+            </div>
+          </div>
+        </div>
       ) : (
         <div className="mt-6 rounded-md border border-dashed border-slate-200 p-6 text-sm text-slate-500">
           Sin distribución Previred para mostrar.
@@ -216,7 +232,8 @@ const PriorityAndRisk = ({
       </div>
     </Panel>
   </section>
-);
+  );
+};
 
 const DistributionAndEntities = ({ distribucionEstado, usaMontos, topEntidades }) => (
   <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">

@@ -109,13 +109,12 @@ const moraHubCards = [
     tone: "border-t-blue-500",
   },
   {
-    title: "Planificación",
+    title: "Priorización",
     description:
-      "Organización de prioridades y próximos pasos del servicio.",
-    href: null,
+      "Orden vigente de focos pendientes priorizados por periodo.",
+    href: "/servicios/mora-presunta/priorizacion",
     icon: RiCalendarLine,
-    tone: "border-t-slate-500",
-    status: "Próximamente",
+    tone: "border-t-amber-500",
   },
 ];
 

@@ -8,6 +8,7 @@ import { signOut, useSession } from "next-auth/react";
 import { RiDoorOpenLine, RiMenuLine, RiCloseLine } from "@remixicon/react";
 import { clientMenu } from "@/config/clientNavigation";
 import api from "@/app/api/apiService";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const NAVBAR_LOGO_URL = "https://assets.previley.cl/logos/logo-previley-h.png";
 
@@ -17,7 +18,7 @@ const initialsFromName = (nombre = "", apellido = "") => {
   return `${first}${last}`.toUpperCase() || "CL";
 };
 
-const ClientHeader = () => {
+const ClientHeader = ({ socket = null }) => {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -91,6 +92,7 @@ const ClientHeader = () => {
           </nav>
 
           <div className="hidden shrink-0 items-center gap-3 md:flex">
+            <NotificationBell socket={socket} />
             <div className="flex items-center gap-2 rounded-full border border-white/60 bg-white/40 px-3 py-1.5 text-xs font-semibold text-[color:var(--text-secondary)] shadow-sm backdrop-blur">
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--theme-soft)] text-sm font-semibold text-[color:var(--theme-primary)]">
                 {initialsFromName(nombre, apellido)}
@@ -109,19 +111,22 @@ const ClientHeader = () => {
             </button>
           </div>
 
-          <button
-            type="button"
-            className="ml-auto flex items-center justify-center rounded-full border border-white/60 bg-white/40 p-2 text-[color:var(--text-primary)] shadow-sm backdrop-blur md:hidden"
-            onClick={() => setOpen((prev) => !prev)}
-            aria-expanded={open}
-            aria-label="Abrir menú"
-          >
-            {open ? (
-              <RiCloseLine className="h-5 w-5" aria-hidden="true" />
-            ) : (
-              <RiMenuLine className="h-5 w-5" aria-hidden="true" />
-            )}
-          </button>
+          <div className="ml-auto flex items-center gap-2 md:hidden">
+            <NotificationBell socket={socket} />
+            <button
+              type="button"
+              className="flex items-center justify-center rounded-full border border-white/60 bg-white/40 p-2 text-[color:var(--text-primary)] shadow-sm backdrop-blur"
+              onClick={() => setOpen((prev) => !prev)}
+              aria-expanded={open}
+              aria-label="Abrir menú"
+            >
+              {open ? (
+                <RiCloseLine className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <RiMenuLine className="h-5 w-5" aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
