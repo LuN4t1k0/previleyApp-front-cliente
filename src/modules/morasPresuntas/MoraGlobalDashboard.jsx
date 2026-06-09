@@ -43,6 +43,15 @@ const getRate = (part, total) => {
   return (Number(part || 0) / base) * 100;
 };
 
+const getRiskMixLabel = (judicial, noJudicial) => {
+  const judicialValue = Number(judicial || 0);
+  const noJudicialValue = Number(noJudicial || 0);
+  if (judicialValue > 0 && noJudicialValue > 0) return "Mixto";
+  if (judicialValue > 0) return "Judicial";
+  if (noJudicialValue > 0) return "No judicial";
+  return "Sin pendiente";
+};
+
 const normalizeLabel = (value) =>
   String(value || "Sin estado")
     .replaceAll("_", " ")
@@ -53,6 +62,108 @@ const Panel = ({ children, className = "" }) => (
     {children}
   </section>
 );
+
+const RelativeRiskBar = ({ value = 0, maxValue = 0, judicial = 0, noJudicial = 0 }) => {
+  const base = Number(maxValue || 0);
+  const totalWidth = base ? Math.min((Number(value || 0) / base) * 100, 100) : 0;
+  const judicialWidth = base ? Math.min((Number(judicial || 0) / base) * 100, totalWidth) : 0;
+  const noJudicialWidth = base
+    ? Math.min((Number(noJudicial || 0) / base) * 100, Math.max(totalWidth - judicialWidth, 0))
+    : 0;
+
+  return (
+    <div className="relative h-3 overflow-hidden rounded-full bg-slate-100">
+      {totalWidth > 0 && (
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-slate-300"
+          style={{ width: `${totalWidth}%` }}
+        />
+      )}
+      {judicialWidth > 0 && (
+        <div
+          className="absolute inset-y-0 left-0 bg-rose-500"
+          style={{ width: `${judicialWidth}%` }}
+        />
+      )}
+      {noJudicialWidth > 0 && (
+        <div
+          className="absolute inset-y-0 bg-emerald-500"
+          style={{
+            left: `${judicialWidth}%`,
+            width: `${noJudicialWidth}%`,
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+const RiskLegend = () => (
+  <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-slate-500">
+    <span className="inline-flex items-center gap-1.5">
+      <span className="h-2 w-2 rounded-full bg-rose-500" />
+      Judicial
+    </span>
+    <span className="inline-flex items-center gap-1.5">
+      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      No judicial
+    </span>
+  </div>
+);
+
+const RiskBreakdownList = ({ items, usaMontos, valueKey, emptyText }) => {
+  const maxValue = Math.max(...items.map((item) => Number(item[valueKey] || 0)), 0);
+
+  if (!items.length) {
+    return (
+      <div className="mt-6 rounded-md border border-dashed border-slate-200 p-6 text-sm text-slate-500">
+        {emptyText}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 space-y-4">
+      {items.map((item) => {
+        const value = Number(item[valueKey] || 0);
+        const judicial = Number(item.montoJudicial || 0);
+        const noJudicial = Number(item.montoNoJudicial || 0);
+        const mixLabel = getRiskMixLabel(judicial, noJudicial);
+
+        return (
+          <div key={item.name} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold capitalize text-slate-800">
+                  {item.name}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {formatNumber(item.casos || 0)} casos · {mixLabel}
+                </p>
+              </div>
+              <p className="shrink-0 text-sm font-semibold text-slate-950">
+                {usaMontos ? formatCurrency(value) : `${formatNumber(value)} casos`}
+              </p>
+            </div>
+
+            <div className="mt-3">
+              <RelativeRiskBar
+                value={value}
+                maxValue={maxValue}
+                judicial={judicial}
+                noJudicial={noJudicial}
+              />
+            </div>
+            <div className="mt-2 grid gap-2 text-xs font-semibold text-slate-600 sm:grid-cols-2">
+              <span>Judicial: {formatCurrency(judicial)}</span>
+              <span>No judicial: {formatCurrency(noJudicial)}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
 
 const DashboardHeader = ({ scope, totalEmpresas }) => (
   <header className="border-b border-slate-200 bg-white">
@@ -239,28 +350,35 @@ const DistributionAndEntities = ({ distribucionEstado, usaMontos, topEntidades }
   <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
     <Panel className="p-5">
       <Title className="text-slate-950">Distribución por estado</Title>
-      <Text className="text-sm text-slate-500">Lectura acumulada por estado del registro.</Text>
-      <BarList
-        className="mt-6"
-        data={distribucionEstado}
-        valueFormatter={(value) =>
-          usaMontos ? formatCurrency(value) : `${formatNumber(value)} casos`
-        }
+      <Text className="text-sm text-slate-500">
+        Lectura acumulada por estado, separando monto pendiente judicial y no judicial.
+      </Text>
+      <RiskLegend />
+      <RiskBreakdownList
+        items={distribucionEstado}
+        usaMontos={usaMontos}
+        valueKey="value"
+        emptyText="Sin distribución por estado para mostrar."
       />
     </Panel>
 
     <Panel className="p-5">
       <Title className="text-slate-950">Entidades con mayor deuda</Title>
       <Text className="text-sm text-slate-500">
-        Instituciones que explican la mayor parte del saldo observado.
+        Instituciones que explican la mayor parte del saldo observado y su composición pendiente.
       </Text>
-      <BarList
-        className="mt-6"
-        data={topEntidades.map((entidad) => ({
+      <RiskLegend />
+      <RiskBreakdownList
+        items={topEntidades.map((entidad) => ({
           name: entidad.entidadNombre,
-          value: entidad.totalDeuda,
+          value: Number(entidad.totalDeuda || 0),
+          casos: Number(entidad.casos || 0),
+          montoJudicial: Number(entidad.montoJudicial || 0),
+          montoNoJudicial: Number(entidad.montoNoJudicial || 0),
         }))}
-        valueFormatter={(value) => formatCurrency(value)}
+        usaMontos
+        valueKey="value"
+        emptyText="Sin entidades para mostrar."
       />
     </Panel>
   </section>
@@ -385,12 +503,21 @@ const MoraGlobalDashboard = () => {
     name: normalizeLabel(item.estado),
     monto: Number(item.monto || 0),
     casos: Number(item.casos || 0),
+    montoJudicial: Number(item.montoJudicial || 0),
+    montoNoJudicial: Number(item.montoNoJudicial || 0),
+    casosJudiciales: Number(item.casosJudiciales || 0),
+    casosNoJudiciales: Number(item.casosNoJudiciales || 0),
   }));
 
   const usaMontos = distribuccionDatos.some((item) => item.monto > 0);
   const distribucionEstado = distribuccionDatos.map((item) => ({
     name: item.name,
     value: usaMontos ? item.monto : item.casos,
+    casos: item.casos,
+    montoJudicial: item.montoJudicial,
+    montoNoJudicial: item.montoNoJudicial,
+    casosJudiciales: item.casosJudiciales,
+    casosNoJudiciales: item.casosNoJudiciales,
   }));
 
   const estadoPrevired = [
