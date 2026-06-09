@@ -7,16 +7,8 @@ import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
 import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
-const palette = ["indigo", "cyan", "emerald", "amber", "rose", "violet", "slate"];
-
-const formatEstado = (estado) => {
-  if (!estado) return "Sin estado";
-  return estado
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
+const RISK_CATEGORIES = ["Judicial", "No judicial", "Otros"];
+const RISK_COLORS = ["rose", "emerald", "slate"];
 
 const formatter = (number) =>
   new Intl.NumberFormat("es-CL", {
@@ -46,38 +38,61 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
     fetchDistribucionPorEntidad();
   }, [empresaRut, entidadId, dateRange]);
 
-  const { chartData, categorias, totalMonto } = useMemo(() => {
+  const { chartData, categorias, totalMonto, totalJudicial, totalNoJudicial } = useMemo(() => {
     if (!Array.isArray(dataset) || dataset.length === 0) {
-      return { chartData: [], categorias: [], totalMonto: 0 };
+      return {
+        chartData: [],
+        categorias: [],
+        totalMonto: 0,
+        totalJudicial: 0,
+        totalNoJudicial: 0,
+      };
     }
 
     const agrupado = new Map();
-    const totalesPorEstado = new Map();
     let total = 0;
+    let judicialTotal = 0;
+    let noJudicialTotal = 0;
 
     dataset.forEach((registro) => {
       const entidadNombre = registro.entidadNombre || registro.entidad || "Sin entidad";
-      const estado = formatEstado(registro.estado);
       const monto = Number(registro.monto || 0);
+      const montoJudicial = Number(registro.montoJudicial || 0);
+      const montoNoJudicial = Number(registro.montoNoJudicial || 0);
+      const otros = Math.max(0, monto - montoJudicial - montoNoJudicial);
       total += monto;
+      judicialTotal += montoJudicial;
+      noJudicialTotal += montoNoJudicial;
 
       if (!agrupado.has(entidadNombre)) {
-        agrupado.set(entidadNombre, { entidad: entidadNombre });
+        agrupado.set(entidadNombre, {
+          entidad: entidadNombre,
+          Judicial: 0,
+          "No judicial": 0,
+          Otros: 0,
+          total: 0,
+        });
       }
 
       const actual = agrupado.get(entidadNombre);
-      actual[estado] = (actual[estado] || 0) + monto;
-
-      totalesPorEstado.set(estado, (totalesPorEstado.get(estado) || 0) + monto);
+      actual.Judicial += montoJudicial;
+      actual["No judicial"] += montoNoJudicial;
+      actual.Otros += otros;
+      actual.total += monto;
     });
 
-    const categoriasOrdenadas = Array.from(totalesPorEstado.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([estado]) => estado);
+    const data = Array.from(agrupado.values()).sort((a, b) => b.total - a.total);
+    const categoriasVisibles = RISK_CATEGORIES.filter((categoria) =>
+      data.some((item) => Number(item[categoria] || 0) > 0)
+    );
 
-    const data = Array.from(agrupado.values());
-
-    return { chartData: data, categorias: categoriasOrdenadas, totalMonto: total };
+    return {
+      chartData: data,
+      categorias: categoriasVisibles,
+      totalMonto: total,
+      totalJudicial: judicialTotal,
+      totalNoJudicial: noJudicialTotal,
+    };
   }, [dataset]);
 
   if (!chartData.length || !categorias.length) {
@@ -90,7 +105,7 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
     <SectionCard>
       <SectionHeader
         title="Deuda por estado y entidad"
-        description="Identifica qué entidades concentran los montos más altos por estado operativo."
+        description="Compara la deuda total por entidad y su composición judicial y no judicial."
         badge={`${chartData.length} entidades`}
         icon={RiBuilding2Line}
       />
@@ -101,13 +116,13 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
             <p className="text-xs font-semibold uppercase text-stone-600">Monto observado</p>
             <p className="mt-2 text-xl font-bold text-slate-950">{formatter(totalMonto)}</p>
           </div>
-          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
-            <p className="text-xs font-semibold uppercase text-stone-600">Estados</p>
-            <p className="mt-2 text-xl font-bold text-slate-950">{categorias.length}</p>
+          <div className="rounded-lg border border-rose-100 bg-rose-50 p-4">
+            <p className="text-xs font-semibold uppercase text-rose-700">Judicial</p>
+            <p className="mt-2 text-xl font-bold text-rose-950">{formatter(totalJudicial)}</p>
           </div>
-          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
-            <p className="text-xs font-semibold uppercase text-stone-600">Entidades</p>
-            <p className="mt-2 text-xl font-bold text-slate-950">{chartData.length}</p>
+          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
+            <p className="text-xs font-semibold uppercase text-emerald-700">No judicial</p>
+            <p className="mt-2 text-xl font-bold text-emerald-950">{formatter(totalNoJudicial)}</p>
           </div>
         </div>
 
@@ -118,7 +133,9 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
               index="entidad"
               categories={categorias}
               valueFormatter={formatter}
-              colors={categorias.map((_, idx) => palette[idx % palette.length])}
+              colors={categorias.map(
+                (categoria) => RISK_COLORS[RISK_CATEGORIES.indexOf(categoria)] || "slate"
+              )}
               stack
               showLegend
               showXAxis
