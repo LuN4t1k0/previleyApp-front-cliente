@@ -894,6 +894,18 @@ const MoraGestionesDashboard = () => {
                                           Necesitamos que adjuntes este antecedente para continuar con el análisis de la gestión.
                                         </p>
                                       )}
+                                      {solicitud.solicitudArchivoUrl ? (
+                                        <a
+                                          href={solicitud.solicitudArchivoUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50"
+                                        >
+                                          <RiFileDownloadLine className="h-4 w-4" />
+                                          Ver documento enviado por Previley
+                                          <RiExternalLinkLine className="h-4 w-4" />
+                                        </a>
+                                      ) : null}
                                     </div>
 
                                     <button
@@ -971,6 +983,17 @@ const MoraGestionesDashboard = () => {
                                               "Sin mensaje registrado para esta solicitud."
                                             )}
                                           </p>
+                                          {solicitud.solicitudArchivoUrl ? (
+                                            <a
+                                              href={solicitud.solicitudArchivoUrl}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
+                                            >
+                                              Documento de Previley
+                                              <RiExternalLinkLine className="h-3.5 w-3.5" />
+                                            </a>
+                                          ) : null}
                                         </div>
 
                                         <div className="rounded-xl border border-emerald-100 bg-emerald-50/30 px-4 py-3">
@@ -1081,6 +1104,18 @@ const MoraGestionesDashboard = () => {
                   {solicitudActiva.mensaje ||
                     "Necesitamos que adjuntes el documento solicitado y agregues cualquier contexto relevante para revisar la gestión."}
                 </p>
+                {solicitudActiva.solicitudArchivoUrl ? (
+                  <a
+                    href={solicitudActiva.solicitudArchivoUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-100"
+                  >
+                    <RiFileDownloadLine className="h-4 w-4" />
+                    Ver documento enviado por Previley
+                    <RiExternalLinkLine className="h-4 w-4" />
+                  </a>
+                ) : null}
               </div>
 
               <div>
