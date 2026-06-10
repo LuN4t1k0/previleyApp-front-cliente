@@ -21,24 +21,19 @@ const formatEstado = (estado) => {
     .join(" ");
 };
 
-const formatCLP = (valor) =>
-  new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
-    maximumFractionDigits: 0,
-  }).format(valor || 0);
+const currencyFormatter = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
 
-const formatNumber = (valor) =>
-  new Intl.NumberFormat("es-CL", {
-    maximumFractionDigits: 0,
-  }).format(valor || 0);
+const numberFormatter = new Intl.NumberFormat("es-CL", {
+  maximumFractionDigits: 0,
+});
 
-const getEstadoOperativoColor = (estado) => {
-  const normalized = String(estado || "").toLowerCase();
-  if (normalized.includes("regularizado") || normalized.includes("cerrada")) return "emerald";
-  if (normalized.includes("pendiente") || normalized.includes("registrada")) return "amber";
-  return "indigo";
-};
+const formatCLP = (valor) => currencyFormatter.format(valor || 0);
+
+const formatNumber = (valor) => numberFormatter.format(valor || 0);
 
 const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
   const [estados, setEstados] = useState([]);
@@ -61,13 +56,28 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
     fetchDistribucion();
   }, [empresaRut, entidadId, dateRange]);
 
-  const { chartData, rows, totalMonto, totalCasos, totalJudicial, totalPreJudicial, totalNoJudicial, focoOperativo } = useMemo(() => {
+  const {
+    chartData,
+    rows,
+    totalObservado,
+    totalPendiente,
+    totalRegularizado,
+    totalCasos,
+    casosPendientes,
+    totalJudicial,
+    totalPreJudicial,
+    totalNoJudicial,
+    focoOperativo,
+  } = useMemo(() => {
     if (!Array.isArray(estados) || estados.length === 0) {
       return {
         chartData: [],
         rows: [],
-        totalMonto: 0,
+        totalObservado: 0,
+        totalPendiente: 0,
+        totalRegularizado: 0,
         totalCasos: 0,
+        casosPendientes: 0,
         totalJudicial: 0,
         totalPreJudicial: 0,
         totalNoJudicial: 0,
@@ -76,7 +86,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
     }
 
     const ordenados = [...estados].sort((a, b) => (b.monto || 0) - (a.monto || 0));
-    const totalMontoCalc = ordenados.reduce((acc, item) => acc + Number(item.monto || 0), 0);
+    const totalObservadoCalc = ordenados.reduce((acc, item) => acc + Number(item.monto || 0), 0);
     const totalCasosCalc = ordenados.reduce((acc, item) => acc + Number(item.casos || item.cantidad || 0), 0);
     const totalJudicialCalc = ordenados.reduce(
       (acc, item) => acc + Number(item.montoJudicial || 0),
@@ -90,45 +100,68 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
       (acc, item) => acc + Number(item.montoNoJudicial || 0),
       0
     );
+    const totalPendienteCalc = totalJudicialCalc + totalPreJudicialCalc + totalNoJudicialCalc;
+    const regularizadoExplicito = ordenados.reduce((acc, item) => {
+      const label = formatEstado(item.estado).toLowerCase();
+      if (label.includes("regularizado") || label.includes("cerrada")) {
+        return acc + Number(item.monto || 0);
+      }
+      return acc;
+    }, 0);
+    const totalRegularizadoCalc = regularizadoExplicito || Math.max(totalObservadoCalc - totalPendienteCalc, 0);
+    const casosPendientesCalc = ordenados.reduce((acc, item) => {
+      const label = formatEstado(item.estado).toLowerCase();
+      const tieneRiesgo =
+        Number(item.montoJudicial || 0) + Number(item.montoPreJudicial || 0) + Number(item.montoNoJudicial || 0) > 0;
+      return tieneRiesgo || label.includes("pendiente") ? acc + Number(item.casos || item.cantidad || 0) : acc;
+    }, 0);
 
-    const rowData = ordenados.map((item) => {
-      const casos = Number(item.casos || item.cantidad || 0);
-      const monto = Number(item.monto || 0);
-      const montoJudicial = Number(item.montoJudicial || 0);
-      const montoPreJudicial = Number(item.montoPreJudicial || 0);
-      const montoNoJudicial = Number(item.montoNoJudicial || 0);
+    const riskRows = [
+      {
+        key: "judicial",
+        label: "Judicial",
+        monto: totalJudicialCalc,
+        casos: ordenados.reduce((acc, item) => acc + Number(item.casosJudiciales || 0), 0),
+        textClass: "text-red-700",
+      },
+      {
+        key: "preJudicial",
+        label: "Pre judicial",
+        monto: totalPreJudicialCalc,
+        casos: ordenados.reduce((acc, item) => acc + Number(item.casosPreJudiciales || 0), 0),
+        textClass: "text-orange-700",
+      },
+      {
+        key: "noJudicial",
+        label: "No judicial",
+        monto: totalNoJudicialCalc,
+        casos: ordenados.reduce((acc, item) => acc + Number(item.casosNoJudiciales || 0), 0),
+        textClass: "text-blue-700",
+      },
+    ].filter((item) => item.monto > 0);
 
-      return {
-        estado: item.estado,
-        label: formatEstado(item.estado),
-        casos,
-        monto,
-        montoJudicial,
-        montoPreJudicial,
-        montoNoJudicial,
-        porcentaje: totalMontoCalc > 0 ? (monto / totalMontoCalc) * 100 : 0,
-        porcentajeJudicial: monto > 0 ? (montoJudicial / monto) * 100 : 0,
-        porcentajePreJudicial: monto > 0 ? (montoPreJudicial / monto) * 100 : 0,
-        porcentajeNoJudicial: monto > 0 ? (montoNoJudicial / monto) * 100 : 0,
-      };
-    });
-
-    const data = ordenados.map((item) => ({
-      name: formatEstado(item.estado),
-      value: Number(item.monto || 0),
+    const data = riskRows.map((item) => ({
+      name: item.label,
+      value: item.monto,
     }));
 
-    const foco = [...rowData].sort((a, b) => {
-      const prioridadA = a.montoJudicial || a.montoPreJudicial || a.monto;
-      const prioridadB = b.montoJudicial || b.montoPreJudicial || b.monto;
-      return prioridadB - prioridadA;
-    })[0] || null;
+    const rowsWithPercent = riskRows.map((item) => ({
+      ...item,
+      porcentaje: totalPendienteCalc > 0 ? (item.monto / totalPendienteCalc) * 100 : 0,
+    }));
+    const foco = rowsWithPercent.reduce(
+      (mayor, item) => (!mayor || item.monto > mayor.monto ? item : mayor),
+      null
+    );
 
     return {
       chartData: data,
-      rows: rowData,
-      totalMonto: totalMontoCalc,
+      rows: rowsWithPercent,
+      totalObservado: totalObservadoCalc,
+      totalPendiente: totalPendienteCalc,
+      totalRegularizado: totalRegularizadoCalc,
       totalCasos: totalCasosCalc,
+      casosPendientes: casosPendientesCalc,
       totalJudicial: totalJudicialCalc,
       totalPreJudicial: totalPreJudicialCalc,
       totalNoJudicial: totalNoJudicialCalc,
@@ -143,13 +176,17 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
   return (
     <SectionCard>
       <SectionHeader
-        title="Distribución de deuda por estado operativo"
-        description={`Casos totales: ${totalCasos.toLocaleString("es-CL")}. Monto pendiente: ${formatCLP(totalMonto)}.`}
-        badge={`${chartData.length} estados`}
+        title="Distribución del pendiente operativo"
+        description={`Pendiente: ${formatCLP(totalPendiente)} en ${formatNumber(casosPendientes)} casos. Total observado: ${formatCLP(totalObservado)}.`}
+        badge={`${chartData.length} riesgos`}
         icon={RiPieChartLine}
       />
 
-      <div className="grid gap-4 border-t border-indigo-100 px-5 pt-5 md:grid-cols-4">
+      <div className="grid gap-4 border-t border-indigo-100 px-5 pt-5 md:grid-cols-3 xl:grid-cols-5">
+        <div className="rounded-lg border border-amber-100 bg-amber-50 p-3">
+          <p className="text-xs font-semibold uppercase text-amber-700">Pendiente</p>
+          <p className="mt-1 text-sm font-semibold text-amber-950">{formatCLP(totalPendiente)}</p>
+        </div>
         <div className="rounded-lg border border-red-100 bg-red-50 p-3">
           <p className="text-xs font-semibold uppercase text-red-700">Judicial</p>
           <p className="mt-1 text-sm font-semibold text-red-950">{formatCLP(totalJudicial)}</p>
@@ -162,13 +199,29 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
           <p className="text-xs font-semibold uppercase text-blue-700">No judicial</p>
           <p className="mt-1 text-sm font-semibold text-blue-950">{formatCLP(totalNoJudicial)}</p>
         </div>
-        <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3">
-          <p className="text-xs font-semibold uppercase text-indigo-700">Mayor foco</p>
-          <p className="mt-1 text-sm font-semibold text-indigo-950">
-            {focoOperativo ? `${focoOperativo.label} · ${formatCLP(focoOperativo.montoJudicial || focoOperativo.montoPreJudicial || focoOperativo.monto)}` : "Sin foco"}
-          </p>
+        <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
+          <p className="text-xs font-semibold uppercase text-emerald-700">Regularizado</p>
+          <p className="mt-1 text-sm font-semibold text-emerald-950">{formatCLP(totalRegularizado)}</p>
         </div>
       </div>
+
+      {focoOperativo ? (
+        <div className="px-5 pt-4">
+          <div className="flex flex-col gap-3 rounded-lg border border-orange-200 bg-orange-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase text-orange-800">
+                Mayor foco pendiente
+              </p>
+              <p className="mt-1 text-lg font-semibold text-orange-950">
+                {focoOperativo.label} · {formatCLP(focoOperativo.monto)}
+              </p>
+            </div>
+            <div className="rounded-md bg-white/70 px-3 py-2 text-sm font-semibold text-orange-900">
+              {focoOperativo.porcentaje.toFixed(1)}% del pendiente
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 px-5 py-5 lg:grid-cols-[0.68fr_1.32fr]">
         <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 lg:max-w-[420px]">
@@ -177,7 +230,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
             category="value"
             index="name"
             valueFormatter={(valor) => formatCLP(valor)}
-            colors={chartData.map((item) => getEstadoOperativoColor(item.name))}
+            colors={["red", "orange", "blue"]}
             showLegend
           />
         </div>
@@ -186,40 +239,30 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
           <table className="min-w-[780px] text-left text-sm xl:min-w-full">
             <thead className="bg-slate-50 font-semibold text-stone-700">
               <tr>
-                <th className="px-4 py-3">Estado</th>
+                <th className="px-4 py-3">Riesgo pendiente</th>
                 <th className="px-4 py-3 text-right">Casos</th>
                 <th className="px-4 py-3 text-right">Monto</th>
-                <th className="px-4 py-3 text-right">Judicial</th>
-                <th className="px-4 py-3 text-right">Pre judicial</th>
-                <th className="px-4 py-3 text-right">No judicial</th>
-                <th className="px-4 py-3 text-right">Porcentaje</th>
+                <th className="px-4 py-3 text-right">Participación del pendiente</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-indigo-100">
             {rows.map((item) => {
               return (
-                <tr key={item.estado}>
-                  <td className="px-4 py-4 font-semibold text-slate-950">{item.label}</td>
+                <tr key={item.key}>
+                  <td className={`px-4 py-4 font-semibold ${item.textClass}`}>{item.label}</td>
                   <td className="px-4 py-4 text-right">{formatNumber(item.casos)}</td>
-                  <td className="px-4 py-4 text-right font-semibold text-indigo-800">{formatCLP(item.monto)}</td>
-                  <td className="px-4 py-4 text-right">
-                    <div className="font-semibold text-red-700">{formatCLP(item.montoJudicial)}</div>
-                    <div className="text-xs text-slate-500">{item.porcentajeJudicial.toFixed(1)}%</div>
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <div className="font-semibold text-orange-700">{formatCLP(item.montoPreJudicial)}</div>
-                    <div className="text-xs text-slate-500">{item.porcentajePreJudicial.toFixed(1)}%</div>
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <div className="font-semibold text-blue-700">{formatCLP(item.montoNoJudicial)}</div>
-                    <div className="text-xs text-slate-500">{item.porcentajeNoJudicial.toFixed(1)}%</div>
-                  </td>
+                  <td className={`px-4 py-4 text-right font-semibold ${item.textClass}`}>{formatCLP(item.monto)}</td>
                   <td className="px-4 py-4 text-right">{item.porcentaje.toFixed(1)}%</td>
                 </tr>
               );
             })}
             </tbody>
           </table>
+          <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            Total observado: <span className="font-semibold text-slate-950">{formatCLP(totalObservado)}</span>{" "}
+            = pendiente <span className="font-semibold text-amber-800">{formatCLP(totalPendiente)}</span>{" "}
+            + regularizado <span className="font-semibold text-emerald-700">{formatCLP(totalRegularizado)}</span>.
+          </div>
         </div>
       </div>
     </SectionCard>
