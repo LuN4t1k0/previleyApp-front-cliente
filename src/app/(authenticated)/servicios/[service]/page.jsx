@@ -379,7 +379,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                       label="Deuda total"
                       value={formatCurrency(dashboardData?.summary?.totalDeuda || 0)}
                       helperText="Monto total en seguimiento"
-                      tone="warning"
+                      tone="neutral"
                       icon="💼"
                     />
                     <MetricCard

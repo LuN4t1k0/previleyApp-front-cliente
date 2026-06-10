@@ -59,7 +59,7 @@ const IndicadoresOperativos = ({ empresaRut, entidadId, dateRange }) => {
       value: formatoCLP(resumen.totalDeuda),
       description: "Monto detectado en el periodo seleccionado.",
       icon: RiFundsLine,
-      tone: "border-slate-200 bg-slate-50 text-slate-700",
+      tone: "border-slate-300 bg-slate-100 text-slate-800",
     },
     {
       label: "Regularizado",

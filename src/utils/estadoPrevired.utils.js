@@ -24,9 +24,9 @@
 export const ESTADOS_ORDENADOS = ["Judicial", "Pre Judicial", "No Judicial"];
 
 export const COLOR_MAP_ESTADO_PREVIRED = {
-  Judicial: "rose",
-  "Pre Judicial": "amber",
-  "No Judicial": "yellow",
+  Judicial: "red",
+  "Pre Judicial": "orange",
+  "No Judicial": "blue",
 };
 
 const NORMALIZADOR_ESTADOS = {

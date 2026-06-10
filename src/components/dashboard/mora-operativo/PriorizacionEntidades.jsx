@@ -94,10 +94,10 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
                 <td className="px-6 py-5 text-right font-semibold text-slate-800">
                   {formatCLP(item.totalDeuda)}
                 </td>
-                <td className="px-6 py-5 text-right font-bold text-indigo-800">
+                <td className="px-6 py-5 text-right font-bold text-amber-800">
                   {formatCLP(item.deudaPendiente)}
                 </td>
-                <td className="px-6 py-5 text-right text-slate-700">
+                <td className="px-6 py-5 text-right font-semibold text-emerald-700">
                   {formatCLP(item.deudaResuelta)}
                 </td>
                 <td className="px-6 py-5 text-right">

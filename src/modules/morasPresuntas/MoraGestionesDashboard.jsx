@@ -644,7 +644,7 @@ const MoraGestionesDashboard = () => {
                 const montoResumenLabel = gestionCerrada ? "Regularizado" : "Pendiente";
                 const montoResumenIconTone = gestionCerrada
                   ? "bg-emerald-600 text-white shadow-emerald-600/20"
-                  : "bg-blue-600 text-white shadow-blue-600/20";
+                  : "bg-amber-600 text-white shadow-amber-600/20";
 
                 return (
                   <article
@@ -742,17 +742,17 @@ const MoraGestionesDashboard = () => {
                           </span>
                         </div>
                         <div className="mt-4 grid gap-2 text-xs text-slate-600">
-                          <div className="rounded-xl border border-blue-100 bg-white px-3 py-2.5">
+                          <div className="rounded-xl border border-red-100 bg-white px-3 py-2.5">
                             <div className="flex items-center justify-between gap-3">
                               <span className="inline-flex items-center gap-2 font-black uppercase tracking-wide text-slate-500">
-                                <RiScales3Line className="h-4 w-4 text-blue-600" />
+                                <RiScales3Line className="h-4 w-4 text-red-600" />
                                 Casos judiciales
                               </span>
-                              <span className="font-black text-[#06164b]">
+                              <span className="font-black text-red-950">
                                 {Number(gestion?.casosJudiciales || 0).toLocaleString("es-CL")}
                               </span>
                             </div>
-                            <p className="mt-1 font-bold text-slate-500 xl:text-right">
+                            <p className="mt-1 font-bold text-red-700 xl:text-right">
                               {formatCurrency(gestion?.montoJudicial || 0)}
                             </p>
                           </div>
@@ -762,25 +762,25 @@ const MoraGestionesDashboard = () => {
                                 <RiAlarmWarningLine className="h-4 w-4 text-orange-600" />
                                 Casos pre judiciales
                               </span>
-                              <span className="font-black text-[#06164b]">
+                              <span className="font-black text-orange-950">
                                 {Number(gestion?.casosPreJudiciales || 0).toLocaleString("es-CL")}
                               </span>
                             </div>
-                            <p className="mt-1 font-bold text-slate-500 xl:text-right">
+                            <p className="mt-1 font-bold text-orange-700 xl:text-right">
                               {formatCurrency(gestion?.montoPreJudicial || 0)}
                             </p>
                           </div>
-                          <div className="rounded-xl border border-emerald-100 bg-white px-3 py-2.5">
+                          <div className="rounded-xl border border-blue-100 bg-white px-3 py-2.5">
                             <div className="flex items-center justify-between gap-3">
                               <span className="inline-flex items-center gap-2 font-black uppercase tracking-wide text-slate-500">
-                                <RiShieldCheckLine className="h-4 w-4 text-emerald-600" />
+                                <RiShieldCheckLine className="h-4 w-4 text-blue-600" />
                                 Casos no judiciales
                               </span>
-                              <span className="font-black text-[#06164b]">
+                              <span className="font-black text-blue-950">
                                 {Number(gestion?.casosNoJudiciales || 0).toLocaleString("es-CL")}
                               </span>
                             </div>
-                            <p className="mt-1 font-bold text-slate-500 xl:text-right">
+                            <p className="mt-1 font-bold text-blue-700 xl:text-right">
                               {formatCurrency(gestion?.montoNoJudicial || 0)}
                             </p>
                           </div>

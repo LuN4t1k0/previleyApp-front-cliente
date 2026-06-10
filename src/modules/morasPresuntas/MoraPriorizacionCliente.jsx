@@ -191,11 +191,11 @@ const MoraPriorizacionCliente = () => {
               </p>
             </article>
             <article className="rounded-lg border border-indigo-200 bg-white p-5 shadow-sm">
-              <RiMoneyDollarCircleLine className="h-5 w-5 text-emerald-700" aria-hidden="true" />
+              <RiMoneyDollarCircleLine className="h-5 w-5 text-amber-700" aria-hidden="true" />
               <p className="mt-4 text-[11px] font-semibold uppercase text-slate-500">
                 Pendiente priorizado
               </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">
+              <p className="mt-2 text-2xl font-semibold text-amber-900">
                 {formatCLP(resumen.totalPendiente)}
               </p>
             </article>
@@ -279,7 +279,7 @@ const MoraPriorizacionCliente = () => {
                         <td className="px-5 py-4 font-medium text-slate-700">
                           {item.entidadNombre || "Entidad sin nombre"}
                         </td>
-                        <td className="px-5 py-4 text-right font-semibold text-slate-950">
+                        <td className="px-5 py-4 text-right font-semibold text-amber-800">
                           {formatCLP(item.deudaPendiente)}
                         </td>
                         <td className="px-5 py-4 text-right">

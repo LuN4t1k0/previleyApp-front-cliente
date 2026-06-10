@@ -102,7 +102,7 @@ const PriorizacionGestiones = ({ empresaRut, entidadId, dateRange, onSelectGesti
                   </div>
                 </td>
                 <td className="px-6 py-5 font-semibold text-slate-800">{fila.entidadNombre}</td>
-                <td className="px-6 py-5 text-right font-semibold text-indigo-800">
+                <td className="px-6 py-5 text-right font-semibold text-amber-800">
                   {formatCLP(fila.deudaPendiente)}
                 </td>
                 <td className="px-6 py-5 text-right">
@@ -119,8 +119,8 @@ const PriorizacionGestiones = ({ empresaRut, entidadId, dateRange, onSelectGesti
                 </td>
                 <td className="px-6 py-5 text-right">
                   <div className="flex flex-col items-end">
-                    <span className="font-semibold text-slate-950">{fila.casosNoJudiciales}</span>
-                    <span className="text-xs text-slate-500">{formatCLP(fila.montoNoJudicial)}</span>
+                    <span className="font-semibold text-blue-950">{fila.casosNoJudiciales}</span>
+                    <span className="text-xs text-blue-700">{formatCLP(fila.montoNoJudicial)}</span>
                   </div>
                 </td>
                 <td className="px-6 py-5 text-right">

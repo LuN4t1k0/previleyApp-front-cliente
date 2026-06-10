@@ -95,8 +95,8 @@ export const statusDefinitions = {
   },
   pendiente: {
     text: "Pendiente",
-    bgColor: "bg-yellow-500",
-    borderColor: "bg-yellow-400",
+    bgColor: "bg-amber-500",
+    borderColor: "bg-amber-400",
   },
   cancelado: {
     text: "Cancelado",
@@ -188,13 +188,13 @@ export const statusDefinitions = {
   // Otros estados
   "no judicial": {
     text: "No Judicial",
-    bgColor: "bg-yellow-500",
-    borderColor: "bg-yellow-400",
+    bgColor: "bg-blue-500",
+    borderColor: "bg-blue-400",
   },
   no_judicial: {
     text: "No Judicial",
-    bgColor: "bg-yellow-500",
-    borderColor: "bg-yellow-400",
+    bgColor: "bg-blue-500",
+    borderColor: "bg-blue-400",
   },
   "pre judicial": {
     text: "Pre Judicial",
@@ -213,8 +213,8 @@ export const statusDefinitions = {
   },
   previred: {
     text: "Previred",
-    bgColor: "bg-yellow-500",
-    borderColor: "bg-yellow-400",
+    bgColor: "bg-blue-500",
+    borderColor: "bg-blue-400",
   },
   prejudicial: {
     text: "Pre Judicial",

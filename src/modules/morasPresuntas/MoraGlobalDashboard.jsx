@@ -87,13 +87,13 @@ const RelativeRiskBar = ({ value = 0, maxValue = 0, judicial = 0, preJudicial = 
       )}
       {judicialWidth > 0 && (
         <div
-          className="absolute inset-y-0 left-0 bg-rose-500"
+          className="absolute inset-y-0 left-0 bg-red-500"
           style={{ width: `${judicialWidth}%` }}
         />
       )}
       {noJudicialWidth > 0 && (
         <div
-          className="absolute inset-y-0 bg-emerald-500"
+          className="absolute inset-y-0 bg-blue-500"
           style={{
             left: `${judicialWidth + preJudicialWidth}%`,
             width: `${noJudicialWidth}%`,
@@ -116,7 +116,7 @@ const RelativeRiskBar = ({ value = 0, maxValue = 0, judicial = 0, preJudicial = 
 const RiskLegend = () => (
   <div className="mt-4 flex flex-wrap gap-3 text-xs font-semibold text-slate-500">
     <span className="inline-flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-full bg-rose-500" />
+      <span className="h-2 w-2 rounded-full bg-red-500" />
       Judicial
     </span>
     <span className="inline-flex items-center gap-1.5">
@@ -124,7 +124,7 @@ const RiskLegend = () => (
       Pre judicial
     </span>
     <span className="inline-flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      <span className="h-2 w-2 rounded-full bg-blue-500" />
       No judicial
     </span>
   </div>
@@ -248,7 +248,7 @@ const KpiGrid = ({ totalDeuda, totalRegularizado, totalPagado, totalPendiente, t
         value={formatCurrency(totalDeuda)}
         detail={`${formatNumber(totalCasos)} casos consolidados`}
         icon={RiFundsLine}
-        accent="bg-slate-900"
+        accent="bg-slate-800"
       />
       <MetricTile
         label="Regularizado"
@@ -262,7 +262,7 @@ const KpiGrid = ({ totalDeuda, totalRegularizado, totalPagado, totalPendiente, t
         value={formatCurrency(totalPendiente)}
         detail={`${formatPercent(tasaPendiente)} aun en cartera`}
         icon={RiTimeLine}
-        accent="bg-red-600"
+        accent="bg-amber-600"
       />
       <MetricTile
         label="Pagado confirmado"
@@ -334,7 +334,7 @@ const PriorityAndRisk = ({
             data={estadoPrevired}
             category="value"
             index="name"
-            colors={["rose", "orange", "emerald"]}
+            colors={["red", "orange", "blue"]}
             valueFormatter={(value) => formatCurrency(value)}
             showLabel={false}
           />
@@ -363,9 +363,9 @@ const PriorityAndRisk = ({
           <p className="text-xs font-semibold uppercase text-orange-700">Pre judicial</p>
           <p className="mt-1 text-sm font-semibold text-orange-950">{formatCurrency(preJudicial)}</p>
         </div>
-        <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-          <p className="text-xs font-semibold uppercase text-emerald-700">No judicial</p>
-          <p className="mt-1 text-sm font-semibold text-emerald-950">{formatCurrency(noJudicial)}</p>
+        <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
+          <p className="text-xs font-semibold uppercase text-blue-700">No judicial</p>
+          <p className="mt-1 text-sm font-semibold text-blue-950">{formatCurrency(noJudicial)}</p>
         </div>
       </div>
     </Panel>
@@ -452,7 +452,7 @@ const SummaryAndTrend = ({ totalDeuda, totalRegularizado, totalPagado, totalPend
         data={tendencia}
         index="periodo"
         categories={["deudaInicialMes", "deudaActual"]}
-        colors={["rose", "amber"]}
+        colors={["indigo", "amber"]}
         valueFormatter={(value) => formatCurrency(value)}
       />
       <LineChart

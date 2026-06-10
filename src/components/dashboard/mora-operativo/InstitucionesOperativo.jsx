@@ -68,7 +68,7 @@ const InstitucionesOperativo = ({ empresaRut, entidadId, dateRange }) => {
             data={dataChart}
             index="entidad"
             categories={["Deuda total", "Pendiente", "Regularizado"]}
-            colors={["rose", "amber", "emerald"]}
+            colors={["slate", "amber", "emerald"]}
             showLegend
             tickGap={0}
             rotateLabelX={{ angle: 0, verticalShift: 12, xAxisHeight: 80 }}

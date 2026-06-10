@@ -33,6 +33,13 @@ const formatNumber = (valor) =>
     maximumFractionDigits: 0,
   }).format(valor || 0);
 
+const getEstadoOperativoColor = (estado) => {
+  const normalized = String(estado || "").toLowerCase();
+  if (normalized.includes("regularizado") || normalized.includes("cerrada")) return "emerald";
+  if (normalized.includes("pendiente") || normalized.includes("registrada")) return "amber";
+  return "indigo";
+};
+
 const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
   const [estados, setEstados] = useState([]);
 
@@ -143,17 +150,17 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
       />
 
       <div className="grid gap-4 border-t border-indigo-100 px-5 pt-5 md:grid-cols-4">
-        <div className="rounded-lg border border-rose-100 bg-rose-50 p-3">
-          <p className="text-xs font-semibold uppercase text-rose-700">Judicial</p>
-          <p className="mt-1 text-sm font-semibold text-rose-950">{formatCLP(totalJudicial)}</p>
+        <div className="rounded-lg border border-red-100 bg-red-50 p-3">
+          <p className="text-xs font-semibold uppercase text-red-700">Judicial</p>
+          <p className="mt-1 text-sm font-semibold text-red-950">{formatCLP(totalJudicial)}</p>
         </div>
         <div className="rounded-lg border border-orange-100 bg-orange-50 p-3">
           <p className="text-xs font-semibold uppercase text-orange-700">Pre judicial</p>
           <p className="mt-1 text-sm font-semibold text-orange-950">{formatCLP(totalPreJudicial)}</p>
         </div>
-        <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
-          <p className="text-xs font-semibold uppercase text-emerald-700">No judicial</p>
-          <p className="mt-1 text-sm font-semibold text-emerald-950">{formatCLP(totalNoJudicial)}</p>
+        <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
+          <p className="text-xs font-semibold uppercase text-blue-700">No judicial</p>
+          <p className="mt-1 text-sm font-semibold text-blue-950">{formatCLP(totalNoJudicial)}</p>
         </div>
         <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3">
           <p className="text-xs font-semibold uppercase text-indigo-700">Mayor foco</p>
@@ -170,7 +177,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
             category="value"
             index="name"
             valueFormatter={(valor) => formatCLP(valor)}
-            colors={["emerald", "amber", "violet", "slate", "indigo", "cyan", "emerald"]}
+            colors={chartData.map((item) => getEstadoOperativoColor(item.name))}
             showLegend
           />
         </div>
@@ -196,7 +203,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
                   <td className="px-4 py-4 text-right">{formatNumber(item.casos)}</td>
                   <td className="px-4 py-4 text-right font-semibold text-indigo-800">{formatCLP(item.monto)}</td>
                   <td className="px-4 py-4 text-right">
-                    <div className="font-semibold text-rose-700">{formatCLP(item.montoJudicial)}</div>
+                    <div className="font-semibold text-red-700">{formatCLP(item.montoJudicial)}</div>
                     <div className="text-xs text-slate-500">{item.porcentajeJudicial.toFixed(1)}%</div>
                   </td>
                   <td className="px-4 py-4 text-right">
@@ -204,7 +211,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
                     <div className="text-xs text-slate-500">{item.porcentajePreJudicial.toFixed(1)}%</div>
                   </td>
                   <td className="px-4 py-4 text-right">
-                    <div className="font-semibold text-emerald-700">{formatCLP(item.montoNoJudicial)}</div>
+                    <div className="font-semibold text-blue-700">{formatCLP(item.montoNoJudicial)}</div>
                     <div className="text-xs text-slate-500">{item.porcentajeNoJudicial.toFixed(1)}%</div>
                   </td>
                   <td className="px-4 py-4 text-right">{item.porcentaje.toFixed(1)}%</td>

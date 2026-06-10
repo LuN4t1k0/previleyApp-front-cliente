@@ -8,7 +8,7 @@ import buildMoraDashboardParams from "@/utils/moraDashboardParams";
 import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const RISK_CATEGORIES = ["Judicial", "Pre judicial", "No judicial"];
-const RISK_COLORS = ["rose", "orange", "emerald"];
+const RISK_COLORS = ["red", "orange", "blue"];
 
 const formatter = (number) =>
   new Intl.NumberFormat("es-CL", {
@@ -123,17 +123,17 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
             <p className="text-xs font-semibold uppercase text-stone-600">Monto pendiente</p>
             <p className="mt-2 text-xl font-bold text-slate-950">{formatter(totalMonto)}</p>
           </div>
-          <div className="rounded-lg border border-rose-100 bg-rose-50 p-4">
-            <p className="text-xs font-semibold uppercase text-rose-700">Judicial</p>
-            <p className="mt-2 text-xl font-bold text-rose-950">{formatter(totalJudicial)}</p>
+          <div className="rounded-lg border border-red-100 bg-red-50 p-4">
+            <p className="text-xs font-semibold uppercase text-red-700">Judicial</p>
+            <p className="mt-2 text-xl font-bold text-red-950">{formatter(totalJudicial)}</p>
           </div>
           <div className="rounded-lg border border-orange-100 bg-orange-50 p-4">
             <p className="text-xs font-semibold uppercase text-orange-700">Pre judicial</p>
             <p className="mt-2 text-xl font-bold text-orange-950">{formatter(totalPreJudicial)}</p>
           </div>
-          <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
-            <p className="text-xs font-semibold uppercase text-emerald-700">No judicial</p>
-            <p className="mt-2 text-xl font-bold text-emerald-950">{formatter(totalNoJudicial)}</p>
+          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+            <p className="text-xs font-semibold uppercase text-blue-700">No judicial</p>
+            <p className="mt-2 text-xl font-bold text-blue-950">{formatter(totalNoJudicial)}</p>
           </div>
         </div>
 

@@ -62,7 +62,7 @@ const DistribucionRecuperadoTipo = ({ empresaRut }) => {
           data={chartData}
           index="tipo"
           categories={["Regularizado", "Pagado"]}
-          colors={["indigo", "emerald"]}
+          colors={["emerald", "blue"]}
           valueFormatter={formatter}
           showLegend
         />

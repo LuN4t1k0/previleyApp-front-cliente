@@ -65,7 +65,7 @@ const HistoricoOperativo = ({ empresaRut, entidadId, dateRange }) => {
           data={dataChart}
           index="periodo"
           categories={["Deuda inicial acumulada", "Regularizado acumulado", "Deuda actual"]}
-          colors={["rose", "emerald", "orange"]}
+          colors={["indigo", "emerald", "amber"]}
           valueFormatter={formatter}
           showLegend
           yAxisWidth={80}
@@ -88,7 +88,7 @@ const HistoricoOperativo = ({ empresaRut, entidadId, dateRange }) => {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase text-stone-600">Saldo</p>
-            <p className="mt-1 text-lg font-bold text-indigo-800">
+            <p className="mt-1 text-lg font-bold text-amber-800">
               {formatter(ultimoRegistro.deudaActual)}
             </p>
           </div>
