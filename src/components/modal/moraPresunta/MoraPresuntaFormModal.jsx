@@ -209,6 +209,7 @@ const MoraPresuntaFormModal = ({
       >
         <SelectItem value="registrada">Registrada</SelectItem>
         <SelectItem value="analisis">Análisis</SelectItem>
+        <SelectItem value="espera entidad">En espera de respuesta de entidad</SelectItem>
         <SelectItem value="solicitud cliente">Solicitud cliente</SelectItem>
         <SelectItem value="respuesta cliente">Respuesta cliente</SelectItem>
         <SelectItem value="cerrada">Cerrada</SelectItem>

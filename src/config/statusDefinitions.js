@@ -26,6 +26,11 @@ export const statusDefinitions = {
     bgColor: "bg-yellow-500",
     borderColor: "bg-yellow-400",
   },
+  "espera entidad": {
+    text: "En espera de respuesta de entidad",
+    bgColor: "bg-violet-500",
+    borderColor: "bg-violet-400",
+  },
   regularizacion: {
     text: "Regularización",
     bgColor: "bg-blue-500",

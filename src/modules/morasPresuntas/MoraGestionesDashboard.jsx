@@ -33,25 +33,31 @@ import {
 
 const formatEstado = (estado) => {
   if (!estado) return "Sin estado";
+  if (String(estado).trim().toLowerCase() === "espera entidad") {
+    return "En espera de respuesta de entidad";
+  }
   return String(estado)
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
 };
 
-const estadoTone = {
-  cerrada: "border-slate-200 bg-slate-100 text-slate-700",
-  cerrado: "border-slate-200 bg-slate-100 text-slate-700",
-  pendiente: "border-amber-200 bg-amber-50 text-amber-700",
-  analisis: "border-sky-200 bg-sky-50 text-sky-700",
-  "solicitud cliente": "border-amber-200 bg-amber-50 text-amber-700",
-  "respuesta cliente": "border-indigo-200 bg-indigo-50 text-indigo-700",
-  pagado: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  regularizado: "border-emerald-200 bg-emerald-50 text-emerald-700",
+const estadoBadgeStyles = {
+  registrada: "border-blue-200 bg-blue-50 text-blue-700 ring-blue-100",
+  pendiente: "border-slate-200 bg-slate-50 text-slate-700 ring-slate-100",
+  analisis: "border-amber-200 bg-amber-50 text-amber-800 ring-amber-100",
+  "solicitud cliente": "border-orange-200 bg-orange-50 text-orange-700 ring-orange-100",
+  "respuesta cliente": "border-indigo-200 bg-indigo-50 text-indigo-700 ring-indigo-100",
+  "espera entidad": "border-violet-200 bg-violet-50 text-violet-700 ring-violet-100",
+  cerrada: "border-emerald-200 bg-emerald-50 text-emerald-700 ring-emerald-100",
+  cerrado: "border-emerald-200 bg-emerald-50 text-emerald-700 ring-emerald-100",
+  rechazada: "border-rose-200 bg-rose-50 text-rose-700 ring-rose-100",
+  pagado: "border-emerald-200 bg-emerald-50 text-emerald-700 ring-emerald-100",
+  regularizado: "border-teal-200 bg-teal-50 text-teal-700 ring-teal-100",
 };
 
 const getEstadoTone = (estado) =>
-  estadoTone[String(estado || "").toLowerCase()] ||
-  "border-slate-200 bg-slate-50 text-slate-700";
+  estadoBadgeStyles[String(estado || "").trim().toLowerCase()] ||
+  "border-slate-200 bg-slate-50 text-slate-700 ring-slate-100";
 
 const compactText = (value, fallback = "Sin información registrada.", maxLength = 150) => {
   const text = String(value || "").replace(/\s+/g, " ").trim();
@@ -642,9 +648,6 @@ const MoraGestionesDashboard = () => {
                     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-3">
-                          <span className={`rounded-full border px-3 py-1.5 text-[11px] font-black uppercase tracking-wide ${getEstadoTone(gestion.estado)}`}>
-                            {estado}
-                          </span>
                           <div className="flex min-w-0 flex-wrap items-baseline gap-2">
                             <h2 className="text-2xl font-black leading-tight tracking-normal text-[#06164b]">
                               Gestión #{gestion.id}
@@ -657,6 +660,11 @@ const MoraGestionesDashboard = () => {
                                 </span>
                               </>
                             ) : null}
+                            <span
+                              className={`inline-flex max-w-full items-center rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wide shadow-sm ring-1 ${getEstadoTone(gestion.estado)}`}
+                            >
+                              {estado}
+                            </span>
                           </div>
                         </div>
 

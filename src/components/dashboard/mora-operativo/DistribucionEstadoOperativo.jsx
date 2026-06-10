@@ -11,6 +11,9 @@ import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const formatEstado = (estado) => {
   if (!estado) return "Sin estado";
+  if (String(estado).trim().toLowerCase() === "espera entidad") {
+    return "En espera de respuesta de entidad";
+  }
   return estado
     .replace(/_/g, " ")
     .split(" ")

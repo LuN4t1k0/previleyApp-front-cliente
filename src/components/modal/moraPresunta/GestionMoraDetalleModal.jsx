@@ -45,7 +45,12 @@ const estadoOptions = ["pendiente", "completado", "rechazado"];
 
 const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
   const { role } = useRole();
-  const isLocked = estadoGestion === "cerrada";
+  const estadoGestionNormalizado = String(estadoGestion || "").trim().toLowerCase();
+  const isLocked = ["cerrada", "espera entidad"].includes(estadoGestionNormalizado);
+  const lockedMessage =
+    estadoGestionNormalizado === "espera entidad"
+      ? "La gestión está en espera de respuesta de entidad."
+      : "La gestión está cerrada.";
   const canEdit = ["admin", "supervisor", "editor", "trabajador"].includes(role);
   const canManage = canEdit && !isLocked;
   const totalColumns = canManage ? 11 : 9;
@@ -455,7 +460,7 @@ const GestionMoraDetalleModal = ({ gestionId, estadoGestion, onClose }) => {
     if (!selectedNonComplement.length || isLocked) {
       setPrepareManualError(
         isLocked
-          ? "La gestión está cerrada."
+          ? lockedMessage
           : "Selecciona al menos un registro para preparar."
       );
       return;

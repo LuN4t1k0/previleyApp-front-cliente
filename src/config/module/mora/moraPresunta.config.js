@@ -264,6 +264,7 @@ const MoraPresuntaConfig = {
         registrada: "neutral",
         resuelto: "success",
         analisis: "warning",
+        "espera entidad": "info",
         "solicitud cliente": "warning",
         "respuesta cliente": "info",
         rechazada: "error",
