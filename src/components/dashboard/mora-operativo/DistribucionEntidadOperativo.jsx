@@ -7,8 +7,8 @@ import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
 import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
-const RISK_CATEGORIES = ["Judicial", "Pre judicial", "No judicial", "Otros"];
-const RISK_COLORS = ["rose", "orange", "emerald", "slate"];
+const RISK_CATEGORIES = ["Judicial", "Pre judicial", "No judicial"];
+const RISK_COLORS = ["rose", "orange", "emerald"];
 
 const formatter = (number) =>
   new Intl.NumberFormat("es-CL", {
@@ -62,8 +62,10 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
       const montoJudicial = Number(registro.montoJudicial || 0);
       const montoPreJudicial = Number(registro.montoPreJudicial || 0);
       const montoNoJudicial = Number(registro.montoNoJudicial || 0);
-      const otros = Math.max(0, monto - montoJudicial - montoPreJudicial - montoNoJudicial);
-      total += monto;
+      const pendienteRiesgo = montoJudicial + montoPreJudicial + montoNoJudicial;
+      if (pendienteRiesgo <= 0) return;
+
+      total += pendienteRiesgo;
       judicialTotal += montoJudicial;
       preJudicialTotal += montoPreJudicial;
       noJudicialTotal += montoNoJudicial;
@@ -74,7 +76,6 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
           Judicial: 0,
           "Pre judicial": 0,
           "No judicial": 0,
-          Otros: 0,
           total: 0,
         });
       }
@@ -83,8 +84,7 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
       actual.Judicial += montoJudicial;
       actual["Pre judicial"] += montoPreJudicial;
       actual["No judicial"] += montoNoJudicial;
-      actual.Otros += otros;
-      actual.total += monto;
+      actual.total += pendienteRiesgo;
     });
 
     const data = Array.from(agrupado.values()).sort((a, b) => b.total - a.total);
@@ -111,8 +111,8 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
   return (
     <SectionCard>
       <SectionHeader
-        title="Deuda por estado y entidad"
-        description="Compara la deuda total por entidad y su composición judicial, pre judicial y no judicial."
+        title="Deuda pendiente por entidad y riesgo"
+        description="Compara solo deuda pendiente por entidad, separada en judicial, pre judicial y no judicial."
         badge={`${chartData.length} entidades`}
         icon={RiBuilding2Line}
       />
@@ -120,7 +120,7 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
       <div className="border-t border-indigo-100 px-5 py-5">
         <div className="mb-5 grid gap-3 sm:grid-cols-4">
           <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
-            <p className="text-xs font-semibold uppercase text-stone-600">Monto observado</p>
+            <p className="text-xs font-semibold uppercase text-stone-600">Monto pendiente</p>
             <p className="mt-2 text-xl font-bold text-slate-950">{formatter(totalMonto)}</p>
           </div>
           <div className="rounded-lg border border-rose-100 bg-rose-50 p-4">

@@ -163,8 +163,8 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
         </div>
       </div>
 
-      <div className="grid gap-6 px-5 py-5 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+      <div className="grid gap-6 px-5 py-5 lg:grid-cols-[0.68fr_1.32fr]">
+        <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4 lg:max-w-[420px]">
           <DonutChart
             data={chartData}
             category="value"
@@ -175,8 +175,8 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
           />
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
+        <div className="min-w-0 overflow-x-auto">
+          <table className="min-w-[780px] text-left text-sm xl:min-w-full">
             <thead className="bg-slate-50 font-semibold text-stone-700">
               <tr>
                 <th className="px-4 py-3">Estado</th>
