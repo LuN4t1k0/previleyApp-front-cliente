@@ -59,6 +59,9 @@ const getEstadoTone = (estado) =>
   estadoBadgeStyles[String(estado || "").trim().toLowerCase()] ||
   "border-slate-200 bg-slate-50 text-slate-700 ring-slate-100";
 
+const isGestionCerrada = (estado) =>
+  ["cerrada", "cerrado"].includes(String(estado || "").trim().toLowerCase());
+
 const compactText = (value, fallback = "Sin información registrada.", maxLength = 150) => {
   const text = String(value || "").replace(/\s+/g, " ").trim();
   if (!text) return fallback;
@@ -637,6 +640,11 @@ const MoraGestionesDashboard = () => {
               {gestionesEnriquecidas.map((item) => {
                 const { gestion, solicitudesGestion, solicitudesAccionables } = item;
                 const estado = formatEstado(gestion.estado);
+                const gestionCerrada = isGestionCerrada(gestion.estado);
+                const montoResumenLabel = gestionCerrada ? "Regularizado" : "Pendiente";
+                const montoResumenIconTone = gestionCerrada
+                  ? "bg-emerald-600 text-white shadow-emerald-600/20"
+                  : "bg-blue-600 text-white shadow-blue-600/20";
 
                 return (
                   <article
@@ -720,14 +728,16 @@ const MoraGestionesDashboard = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
-                              Pendiente
+                              {montoResumenLabel}
                             </p>
                             <p className="mt-1 text-4xl font-black leading-none text-[#06164b]">
                               {formatCurrency(item.montoTotal)}
                             </p>
                             <p className="mt-1 text-xs font-semibold text-slate-500">CLP</p>
                           </div>
-                          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20">
+                          <span
+                            className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-lg ${montoResumenIconTone}`}
+                          >
                             <RiMoneyDollarCircleLine className="h-6 w-6" />
                           </span>
                         </div>
