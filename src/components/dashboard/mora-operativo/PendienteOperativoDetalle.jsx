@@ -155,97 +155,109 @@ const PendienteOperativoDetalle = ({ empresaRut, entidadId, dateRange, onSelectE
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-4">
-          <div className="rounded-lg border border-amber-300 bg-amber-50 px-5 py-4">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-amber-500 text-white">
-                  <RiAlertLine className="h-6 w-6" aria-hidden="true" />
-                </span>
-                <div>
-                  <h2 className="text-lg font-semibold text-amber-800">
-                    Pendiente en gestión
-                  </h2>
-                  <p className="mt-1 text-sm font-medium text-amber-700">
-                    Doble click del saldo pendiente: composición judicial, pre judicial, no judicial y entidades.
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-left sm:text-right">
-                <p className="text-[11px] font-semibold uppercase text-amber-700">Ultima actualización</p>
-                <p className="mt-1 text-sm font-semibold text-amber-900">{lastUpdatedText}</p>
-              </div>
+      <div className="rounded-lg border border-amber-300 bg-amber-50 px-5 py-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-amber-500 text-white">
+              <RiAlertLine className="h-6 w-6" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="text-lg font-semibold text-amber-800">
+                Pendiente en gestión
+              </h2>
+              <p className="mt-1 text-sm font-medium text-amber-700">
+                Doble click del saldo pendiente: composición judicial, pre judicial, no judicial y entidades.
+              </p>
             </div>
           </div>
 
-          <div className="relative min-h-[225px] overflow-hidden rounded-lg border border-indigo-200 bg-white p-7 shadow-sm">
-            <div className="relative z-10 flex h-full flex-col justify-center">
+          <div className="text-left sm:text-right">
+            <p className="text-[11px] font-semibold uppercase text-amber-700">Ultima actualización</p>
+            <p className="mt-1 text-sm font-semibold text-amber-900">{lastUpdatedText}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="relative overflow-hidden rounded-lg border border-indigo-200 bg-white p-6 shadow-sm">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-stretch">
+          <div className="relative min-h-[280px] overflow-hidden rounded-lg bg-white lg:min-h-[320px]">
+            <div className="relative z-10 flex h-full flex-col justify-center px-1 lg:px-3">
               <p className="text-[11px] font-semibold uppercase text-amber-800">
                 Saldo total pendiente
               </p>
-              <p className="mt-4 text-6xl font-bold leading-none text-slate-950 md:text-7xl">
+              <p className="mt-4 text-6xl font-bold leading-none text-slate-950 md:text-7xl xl:text-8xl">
                 {formatCLP(detalle.totalPendiente)}
               </p>
-              <div className="mt-7 inline-flex w-fit items-center gap-2 rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-950">
+              <div className="mt-6 inline-flex w-fit items-center gap-2 rounded-md border border-indigo-100 bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-950">
                 <RiInformationLine className="h-4 w-4 text-amber-500" aria-hidden="true" />
                 <span>Monto aún abierto para gestión y priorización.</span>
               </div>
             </div>
             <RiWallet3Line
-              className="absolute -right-8 bottom-3 h-44 w-44 text-slate-100"
+              className="absolute bottom-4 right-4 h-32 w-32 text-slate-100 opacity-70 lg:h-40 lg:w-40"
               aria-hidden="true"
             />
           </div>
-        </div>
 
-        <div className="grid gap-4">
-          <div className="rounded-lg border border-red-200 bg-red-100 p-6 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <p className="text-[11px] font-semibold uppercase text-red-900">Judicial</p>
-              <span className="rounded-full bg-red-700 px-3 py-1.5 text-[11px] font-semibold text-white">
-                {formatNumber(detalle.judicial.casos)} casos
-              </span>
-            </div>
-            <p className="mt-5 text-4xl font-bold text-red-950">
-              {formatCLP(detalle.judicial.monto)}
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Composición del pendiente
             </p>
-            <div className="mt-4 flex items-center gap-2 text-sm font-medium text-red-950">
-              <RiScalesLine className="h-4 w-4" aria-hidden="true" />
-              <span>En litigio</span>
-            </div>
-          </div>
 
-          <div className="rounded-lg border border-orange-200 bg-orange-100 p-6 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <p className="text-[11px] font-semibold uppercase text-orange-900">Pre judicial</p>
-              <span className="rounded-full bg-orange-700 px-3 py-1.5 text-[11px] font-semibold text-white">
-                {formatNumber(detalle.preJudicial.casos)} casos
-              </span>
-            </div>
-            <p className="mt-5 text-4xl font-bold text-orange-950">
-              {formatCLP(detalle.preJudicial.monto)}
-            </p>
-            <div className="mt-4 flex items-center gap-2 text-sm font-medium text-orange-950">
-              <RiAlertLine className="h-4 w-4" aria-hidden="true" />
-              <span>Riesgo preventivo</span>
-            </div>
-          </div>
+            <div className="mt-4 grid gap-3">
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase text-red-900">Judicial</p>
+                    <p className="mt-2 text-2xl font-bold text-red-950">
+                      {formatCLP(detalle.judicial.monto)}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-red-700 px-3 py-1.5 text-[11px] font-semibold text-white">
+                    {formatNumber(detalle.judicial.casos)} casos
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-sm font-medium text-red-950">
+                  <RiScalesLine className="h-4 w-4" aria-hidden="true" />
+                  <span>En litigio</span>
+                </div>
+              </div>
 
-          <div className="rounded-lg border border-blue-200 bg-blue-100 p-6 shadow-sm">
-            <div className="flex items-start justify-between gap-4">
-              <p className="text-[11px] font-semibold uppercase text-slate-800">No judicial</p>
-              <span className="rounded-full bg-slate-700 px-3 py-1.5 text-[11px] font-semibold text-white">
-                {formatNumber(detalle.noJudicial.casos)} casos
-              </span>
-            </div>
-            <p className="mt-5 text-4xl font-bold text-slate-950">
-              {formatCLP(detalle.noJudicial.monto)}
-            </p>
-            <div className="mt-4 flex items-center gap-2 text-sm font-medium text-blue-950">
-              <RiFileList3Line className="h-4 w-4" aria-hidden="true" />
-              <span>Gestión Administrativa</span>
+              <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase text-orange-900">Pre judicial</p>
+                    <p className="mt-2 text-2xl font-bold text-orange-950">
+                      {formatCLP(detalle.preJudicial.monto)}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-orange-700 px-3 py-1.5 text-[11px] font-semibold text-white">
+                    {formatNumber(detalle.preJudicial.casos)} casos
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-sm font-medium text-orange-950">
+                  <RiAlertLine className="h-4 w-4" aria-hidden="true" />
+                  <span>Riesgo preventivo</span>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase text-slate-800">No judicial</p>
+                    <p className="mt-2 text-2xl font-bold text-slate-950">
+                      {formatCLP(detalle.noJudicial.monto)}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-slate-700 px-3 py-1.5 text-[11px] font-semibold text-white">
+                    {formatNumber(detalle.noJudicial.casos)} casos
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center gap-2 text-sm font-medium text-blue-950">
+                  <RiFileList3Line className="h-4 w-4" aria-hidden="true" />
+                  <span>Gestión administrativa</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
