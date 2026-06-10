@@ -121,7 +121,7 @@ const MoraPriorizacionCliente = () => {
               </span>
             </div>
             <h1 className="text-3xl font-semibold text-slate-950 md:text-4xl">
-              Priorización de gestiones
+                Plan de trabajo
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
               Consulta el orden vigente de focos pendientes definido para el periodo.
@@ -214,7 +214,7 @@ const MoraPriorizacionCliente = () => {
 
           <SectionCard>
             <SectionHeader
-              title="Detalle de priorización"
+              title="Detalle del plan de trabajo"
               description="Vista solo lectura del orden vigente de gestiones priorizadas."
               badge={`${formatNumber(prioridades.length)} gestiones`}
               icon={RiFileList3Line}

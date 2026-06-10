@@ -5,8 +5,8 @@ const MoraPriorizacionCliente = dynamic(() =>
 );
 
 export const metadata = {
-  title: "Priorización de mora presunta",
-  description: "Seguimiento cliente de prioridades de mora presunta.",
+  title: "Plan de trabajo de mora presunta",
+  description: "Seguimiento cliente del plan de trabajo de mora presunta.",
 };
 
 const MoraPresuntaPriorizacionPage = () => <MoraPriorizacionCliente />;

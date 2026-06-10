@@ -117,7 +117,7 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
         tone: "border-indigo-200 bg-indigo-50 text-indigo-950",
       },
       {
-        label: "Priorización interna",
+        label: "Plan interno",
         value: origenManual > 0 ? `${formatNumber(origenManual)} manuales` : "Sugerida",
         detail:
           origenManual > 0
@@ -195,7 +195,7 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
               href="/servicios/mora-presunta/priorizacion"
               className="inline-flex w-fit items-center rounded-md border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-800 hover:border-indigo-500 hover:bg-indigo-50"
             >
-              Ver priorización completa
+              Ver plan de trabajo completo
             </Link>
           </div>
 

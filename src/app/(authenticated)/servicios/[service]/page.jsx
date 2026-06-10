@@ -109,7 +109,7 @@ const moraHubCards = [
     tone: "border-t-blue-500",
   },
   {
-    title: "Priorización",
+    title: "Plan de trabajo",
     description:
       "Orden vigente de focos pendientes priorizados por periodo.",
     href: "/servicios/mora-presunta/priorizacion",

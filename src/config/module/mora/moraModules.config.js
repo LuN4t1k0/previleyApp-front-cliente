@@ -18,7 +18,7 @@ const moraModules = {
     theme: "mora",
   },
   priorizacion: {
-    name: "Priorización",
+    name: "Plan de trabajo",
     description: "Orden vigente de focos pendientes priorizados por periodo.",
     icon: "📌",
     path: "/servicios/mora-presunta/priorizacion",
