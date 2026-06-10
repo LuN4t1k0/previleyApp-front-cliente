@@ -106,6 +106,17 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
       ? [...motivos].sort((a, b) => Number(b?.monto || 0) - Number(a?.monto || 0))[0]
       : null;
 
+    const planInterno = {
+      label: "Plan interno",
+      value: origenManual > 0 ? `${formatNumber(origenManual)} manuales` : "Sugerida",
+      detail:
+        origenManual > 0
+          ? "Orden definido desde la mesa interna."
+          : "Orden calculado por deuda, riesgo y estado.",
+      icon: RiFileList3Line,
+      tone: "border-slate-200 bg-slate-50 text-slate-950",
+    };
+
     const cards = [
       {
         label: "Mayor concentración",
@@ -117,16 +128,6 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
           : "No hay deuda pendiente para revisar.",
         icon: RiCrosshair2Line,
         tone: "border-indigo-200 bg-indigo-50 text-indigo-950",
-      },
-      {
-        label: "Plan interno",
-        value: origenManual > 0 ? `${formatNumber(origenManual)} manuales` : "Sugerida",
-        detail:
-          origenManual > 0
-            ? "Orden definido desde la mesa interna."
-            : "Orden calculado por deuda, riesgo y estado.",
-        icon: RiFileList3Line,
-        tone: "border-slate-200 bg-slate-50 text-slate-950",
       },
       {
         label: "Judicial pendiente",
@@ -155,6 +156,7 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
 
     return {
       cards,
+      planInterno,
       gestiones: filas.slice(0, 3),
       totalPendiente,
       totalCasos,
@@ -164,6 +166,8 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
   if (!plan.gestiones.length && plan.totalPendiente === 0) {
     return null;
   }
+
+  const PlanInternoIcon = plan.planInterno?.icon;
 
   return (
     <SectionCard>
@@ -191,6 +195,23 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
             </article>
           ))}
         </div>
+
+        {plan.planInterno ? (
+          <article className={`mt-4 rounded-lg border p-4 ${plan.planInterno.tone}`}>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase">{plan.planInterno.label}</p>
+                <p className="mt-2 text-xl font-semibold">{plan.planInterno.value}</p>
+                <p className="mt-2 text-sm leading-5 opacity-80">{plan.planInterno.detail}</p>
+              </div>
+              {PlanInternoIcon ? (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/70">
+                  <PlanInternoIcon className="h-5 w-5" aria-hidden="true" />
+                </span>
+              ) : null}
+            </div>
+          </article>
+        ) : null}
 
         <div className="mt-5 rounded-lg border border-indigo-100 bg-slate-50">
           <div className="flex flex-col gap-2 border-b border-indigo-100 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
