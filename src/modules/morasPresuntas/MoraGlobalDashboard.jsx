@@ -43,11 +43,14 @@ const getRate = (part, total) => {
   return (Number(part || 0) / base) * 100;
 };
 
-const getRiskMixLabel = (judicial, noJudicial) => {
+const getRiskMixLabel = (judicial, preJudicial, noJudicial) => {
   const judicialValue = Number(judicial || 0);
+  const preJudicialValue = Number(preJudicial || 0);
   const noJudicialValue = Number(noJudicial || 0);
-  if (judicialValue > 0 && noJudicialValue > 0) return "Mixto";
+  const active = [judicialValue, preJudicialValue, noJudicialValue].filter((value) => value > 0).length;
+  if (active > 1) return "Mixto";
   if (judicialValue > 0) return "Judicial";
+  if (preJudicialValue > 0) return "Pre judicial";
   if (noJudicialValue > 0) return "No judicial";
   return "Sin pendiente";
 };
@@ -63,12 +66,15 @@ const Panel = ({ children, className = "" }) => (
   </section>
 );
 
-const RelativeRiskBar = ({ value = 0, maxValue = 0, judicial = 0, noJudicial = 0 }) => {
+const RelativeRiskBar = ({ value = 0, maxValue = 0, judicial = 0, preJudicial = 0, noJudicial = 0 }) => {
   const base = Number(maxValue || 0);
   const totalWidth = base ? Math.min((Number(value || 0) / base) * 100, 100) : 0;
   const judicialWidth = base ? Math.min((Number(judicial || 0) / base) * 100, totalWidth) : 0;
+  const preJudicialWidth = base
+    ? Math.min((Number(preJudicial || 0) / base) * 100, Math.max(totalWidth - judicialWidth, 0))
+    : 0;
   const noJudicialWidth = base
-    ? Math.min((Number(noJudicial || 0) / base) * 100, Math.max(totalWidth - judicialWidth, 0))
+    ? Math.min((Number(noJudicial || 0) / base) * 100, Math.max(totalWidth - judicialWidth - preJudicialWidth, 0))
     : 0;
 
   return (
@@ -89,8 +95,17 @@ const RelativeRiskBar = ({ value = 0, maxValue = 0, judicial = 0, noJudicial = 0
         <div
           className="absolute inset-y-0 bg-emerald-500"
           style={{
-            left: `${judicialWidth}%`,
+            left: `${judicialWidth + preJudicialWidth}%`,
             width: `${noJudicialWidth}%`,
+          }}
+        />
+      )}
+      {preJudicialWidth > 0 && (
+        <div
+          className="absolute inset-y-0 bg-orange-500"
+          style={{
+            left: `${judicialWidth}%`,
+            width: `${preJudicialWidth}%`,
           }}
         />
       )}
@@ -103,6 +118,10 @@ const RiskLegend = () => (
     <span className="inline-flex items-center gap-1.5">
       <span className="h-2 w-2 rounded-full bg-rose-500" />
       Judicial
+    </span>
+    <span className="inline-flex items-center gap-1.5">
+      <span className="h-2 w-2 rounded-full bg-orange-500" />
+      Pre judicial
     </span>
     <span className="inline-flex items-center gap-1.5">
       <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -127,8 +146,9 @@ const RiskBreakdownList = ({ items, usaMontos, valueKey, emptyText }) => {
       {items.map((item) => {
         const value = Number(item[valueKey] || 0);
         const judicial = Number(item.montoJudicial || 0);
+        const preJudicial = Number(item.montoPreJudicial || 0);
         const noJudicial = Number(item.montoNoJudicial || 0);
-        const mixLabel = getRiskMixLabel(judicial, noJudicial);
+        const mixLabel = getRiskMixLabel(judicial, preJudicial, noJudicial);
 
         return (
           <div key={item.name} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
@@ -151,11 +171,13 @@ const RiskBreakdownList = ({ items, usaMontos, valueKey, emptyText }) => {
                 value={value}
                 maxValue={maxValue}
                 judicial={judicial}
+                preJudicial={preJudicial}
                 noJudicial={noJudicial}
               />
             </div>
-            <div className="mt-2 grid gap-2 text-xs font-semibold text-slate-600 sm:grid-cols-2">
+            <div className="mt-2 grid gap-2 text-xs font-semibold text-slate-600 sm:grid-cols-3">
               <span>Judicial: {formatCurrency(judicial)}</span>
+              <span>Pre judicial: {formatCurrency(preJudicial)}</span>
               <span>No judicial: {formatCurrency(noJudicial)}</span>
             </div>
           </div>
@@ -259,9 +281,10 @@ const PriorityAndRisk = ({
   onCompanyClick,
   estadoPrevired,
   judicial,
+  preJudicial,
   noJudicial,
 }) => {
-  const montoPendiente = Number(judicial || 0) + Number(noJudicial || 0);
+  const montoPendiente = Number(judicial || 0) + Number(preJudicial || 0) + Number(noJudicial || 0);
 
   return (
   <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
@@ -303,7 +326,7 @@ const PriorityAndRisk = ({
 
     <Panel className="p-5">
       <Title className="text-slate-950">Lectura de riesgo</Title>
-      <Text className="text-sm text-slate-500">Separación judicial y no judicial del saldo.</Text>
+      <Text className="text-sm text-slate-500">Separación judicial, pre judicial y no judicial del saldo.</Text>
       {estadoPrevired.length ? (
         <div className="relative mt-6 h-56">
           <DonutChart
@@ -311,7 +334,7 @@ const PriorityAndRisk = ({
             data={estadoPrevired}
             category="value"
             index="name"
-            colors={["rose", "emerald"]}
+            colors={["rose", "orange", "emerald"]}
             valueFormatter={(value) => formatCurrency(value)}
             showLabel={false}
           />
@@ -331,10 +354,14 @@ const PriorityAndRisk = ({
           Sin distribución Previred para mostrar.
         </div>
       )}
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-red-100 bg-red-50 p-3">
           <p className="text-xs font-semibold uppercase text-red-700">Judicial</p>
           <p className="mt-1 text-sm font-semibold text-red-950">{formatCurrency(judicial)}</p>
+        </div>
+        <div className="rounded-lg border border-orange-100 bg-orange-50 p-3">
+          <p className="text-xs font-semibold uppercase text-orange-700">Pre judicial</p>
+          <p className="mt-1 text-sm font-semibold text-orange-950">{formatCurrency(preJudicial)}</p>
         </div>
         <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
           <p className="text-xs font-semibold uppercase text-emerald-700">No judicial</p>
@@ -351,7 +378,7 @@ const DistributionAndEntities = ({ distribucionEstado, usaMontos, topEntidades }
     <Panel className="p-5">
       <Title className="text-slate-950">Distribución por estado</Title>
       <Text className="text-sm text-slate-500">
-        Lectura acumulada por estado, separando monto pendiente judicial y no judicial.
+        Lectura acumulada por estado, separando monto pendiente judicial, pre judicial y no judicial.
       </Text>
       <RiskLegend />
       <RiskBreakdownList
@@ -374,6 +401,7 @@ const DistributionAndEntities = ({ distribucionEstado, usaMontos, topEntidades }
           value: Number(entidad.totalDeuda || 0),
           casos: Number(entidad.casos || 0),
           montoJudicial: Number(entidad.montoJudicial || 0),
+          montoPreJudicial: Number(entidad.montoPreJudicial || 0),
           montoNoJudicial: Number(entidad.montoNoJudicial || 0),
         }))}
         usaMontos
@@ -491,6 +519,7 @@ const MoraGlobalDashboard = () => {
   const totalPendiente = Number(data.kpis?.totalPendiente || 0);
   const totalCasos = Number(data.kpis?.totalCasos || 0);
   const judicial = Number(data.kpis?.estadoPrevired?.judicial?.monto || 0);
+  const preJudicial = Number(data.kpis?.estadoPrevired?.preJudicial?.monto || 0);
   const noJudicial = Number(data.kpis?.estadoPrevired?.noJudicial?.monto || 0);
 
   const ranking = (data.rankingEmpresas || []).map((empresa) => ({
@@ -504,8 +533,10 @@ const MoraGlobalDashboard = () => {
     monto: Number(item.monto || 0),
     casos: Number(item.casos || 0),
     montoJudicial: Number(item.montoJudicial || 0),
+    montoPreJudicial: Number(item.montoPreJudicial || 0),
     montoNoJudicial: Number(item.montoNoJudicial || 0),
     casosJudiciales: Number(item.casosJudiciales || 0),
+    casosPreJudiciales: Number(item.casosPreJudiciales || 0),
     casosNoJudiciales: Number(item.casosNoJudiciales || 0),
   }));
 
@@ -515,13 +546,16 @@ const MoraGlobalDashboard = () => {
     value: usaMontos ? item.monto : item.casos,
     casos: item.casos,
     montoJudicial: item.montoJudicial,
+    montoPreJudicial: item.montoPreJudicial,
     montoNoJudicial: item.montoNoJudicial,
     casosJudiciales: item.casosJudiciales,
+    casosPreJudiciales: item.casosPreJudiciales,
     casosNoJudiciales: item.casosNoJudiciales,
   }));
 
   const estadoPrevired = [
     { name: "Judicial", value: judicial },
+    { name: "Pre judicial", value: preJudicial },
     { name: "No judicial", value: noJudicial },
   ].filter((item) => item.value > 0);
 
@@ -553,6 +587,7 @@ const MoraGlobalDashboard = () => {
             onCompanyClick={handleIrEmpresa}
             estadoPrevired={estadoPrevired}
             judicial={judicial}
+            preJudicial={preJudicial}
             noJudicial={noJudicial}
           />
           <DistributionAndEntities

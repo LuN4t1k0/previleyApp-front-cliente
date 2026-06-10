@@ -54,7 +54,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
     fetchDistribucion();
   }, [empresaRut, entidadId, dateRange]);
 
-  const { chartData, rows, totalMonto, totalCasos, totalJudicial, totalNoJudicial, focoOperativo } = useMemo(() => {
+  const { chartData, rows, totalMonto, totalCasos, totalJudicial, totalPreJudicial, totalNoJudicial, focoOperativo } = useMemo(() => {
     if (!Array.isArray(estados) || estados.length === 0) {
       return {
         chartData: [],
@@ -62,6 +62,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
         totalMonto: 0,
         totalCasos: 0,
         totalJudicial: 0,
+        totalPreJudicial: 0,
         totalNoJudicial: 0,
         focoOperativo: null,
       };
@@ -74,6 +75,10 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
       (acc, item) => acc + Number(item.montoJudicial || 0),
       0
     );
+    const totalPreJudicialCalc = ordenados.reduce(
+      (acc, item) => acc + Number(item.montoPreJudicial || 0),
+      0
+    );
     const totalNoJudicialCalc = ordenados.reduce(
       (acc, item) => acc + Number(item.montoNoJudicial || 0),
       0
@@ -83,6 +88,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
       const casos = Number(item.casos || item.cantidad || 0);
       const monto = Number(item.monto || 0);
       const montoJudicial = Number(item.montoJudicial || 0);
+      const montoPreJudicial = Number(item.montoPreJudicial || 0);
       const montoNoJudicial = Number(item.montoNoJudicial || 0);
 
       return {
@@ -91,9 +97,11 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
         casos,
         monto,
         montoJudicial,
+        montoPreJudicial,
         montoNoJudicial,
         porcentaje: totalMontoCalc > 0 ? (monto / totalMontoCalc) * 100 : 0,
         porcentajeJudicial: monto > 0 ? (montoJudicial / monto) * 100 : 0,
+        porcentajePreJudicial: monto > 0 ? (montoPreJudicial / monto) * 100 : 0,
         porcentajeNoJudicial: monto > 0 ? (montoNoJudicial / monto) * 100 : 0,
       };
     });
@@ -104,8 +112,8 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
     }));
 
     const foco = [...rowData].sort((a, b) => {
-      const prioridadA = a.montoJudicial || a.monto;
-      const prioridadB = b.montoJudicial || b.monto;
+      const prioridadA = a.montoJudicial || a.montoPreJudicial || a.monto;
+      const prioridadB = b.montoJudicial || b.montoPreJudicial || b.monto;
       return prioridadB - prioridadA;
     })[0] || null;
 
@@ -115,6 +123,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
       totalMonto: totalMontoCalc,
       totalCasos: totalCasosCalc,
       totalJudicial: totalJudicialCalc,
+      totalPreJudicial: totalPreJudicialCalc,
       totalNoJudicial: totalNoJudicialCalc,
       focoOperativo: foco,
     };
@@ -133,10 +142,14 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
         icon={RiPieChartLine}
       />
 
-      <div className="grid gap-4 border-t border-indigo-100 px-5 pt-5 md:grid-cols-3">
+      <div className="grid gap-4 border-t border-indigo-100 px-5 pt-5 md:grid-cols-4">
         <div className="rounded-lg border border-rose-100 bg-rose-50 p-3">
           <p className="text-xs font-semibold uppercase text-rose-700">Judicial</p>
           <p className="mt-1 text-sm font-semibold text-rose-950">{formatCLP(totalJudicial)}</p>
+        </div>
+        <div className="rounded-lg border border-orange-100 bg-orange-50 p-3">
+          <p className="text-xs font-semibold uppercase text-orange-700">Pre judicial</p>
+          <p className="mt-1 text-sm font-semibold text-orange-950">{formatCLP(totalPreJudicial)}</p>
         </div>
         <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-3">
           <p className="text-xs font-semibold uppercase text-emerald-700">No judicial</p>
@@ -145,7 +158,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
         <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3">
           <p className="text-xs font-semibold uppercase text-indigo-700">Mayor foco</p>
           <p className="mt-1 text-sm font-semibold text-indigo-950">
-            {focoOperativo ? `${focoOperativo.label} · ${formatCLP(focoOperativo.montoJudicial || focoOperativo.monto)}` : "Sin foco"}
+            {focoOperativo ? `${focoOperativo.label} · ${formatCLP(focoOperativo.montoJudicial || focoOperativo.montoPreJudicial || focoOperativo.monto)}` : "Sin foco"}
           </p>
         </div>
       </div>
@@ -170,6 +183,7 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
                 <th className="px-4 py-3 text-right">Casos</th>
                 <th className="px-4 py-3 text-right">Monto</th>
                 <th className="px-4 py-3 text-right">Judicial</th>
+                <th className="px-4 py-3 text-right">Pre judicial</th>
                 <th className="px-4 py-3 text-right">No judicial</th>
                 <th className="px-4 py-3 text-right">Porcentaje</th>
               </tr>
@@ -184,6 +198,10 @@ const DistribucionEstadoOperativo = ({ empresaRut, entidadId, dateRange }) => {
                   <td className="px-4 py-4 text-right">
                     <div className="font-semibold text-rose-700">{formatCLP(item.montoJudicial)}</div>
                     <div className="text-xs text-slate-500">{item.porcentajeJudicial.toFixed(1)}%</div>
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <div className="font-semibold text-orange-700">{formatCLP(item.montoPreJudicial)}</div>
+                    <div className="text-xs text-slate-500">{item.porcentajePreJudicial.toFixed(1)}%</div>
                   </td>
                   <td className="px-4 py-4 text-right">
                     <div className="font-semibold text-emerald-700">{formatCLP(item.montoNoJudicial)}</div>

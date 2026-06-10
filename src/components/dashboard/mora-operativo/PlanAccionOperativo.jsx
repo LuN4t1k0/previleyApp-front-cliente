@@ -96,6 +96,8 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
     const totalCasos = filas.reduce((acc, gestion) => acc + Number(gestion.casosPendientes || 0), 0);
     const judiciales = filas.reduce((acc, gestion) => acc + Number(gestion.casosJudiciales || 0), 0);
     const montoJudicial = filas.reduce((acc, gestion) => acc + Number(gestion.montoJudicial || 0), 0);
+    const preJudiciales = filas.reduce((acc, gestion) => acc + Number(gestion.casosPreJudiciales || 0), 0);
+    const montoPreJudicial = filas.reduce((acc, gestion) => acc + Number(gestion.montoPreJudicial || 0), 0);
     const gestionPrincipal = filas[0] || null;
     const origenManual = filas.filter(
       (gestion) => String(gestion?.origenPrioridad || "").toLowerCase() === "manual"
@@ -132,6 +134,13 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
         detail: `${formatCLP(montoJudicial)} pendiente judicial.`,
         icon: RiScales3Line,
         tone: judiciales > 0 ? "border-red-200 bg-red-50 text-red-950" : "border-emerald-200 bg-emerald-50 text-emerald-950",
+      },
+      {
+        label: "Pre judicial pendiente",
+        value: `${formatNumber(preJudiciales)} casos`,
+        detail: `${formatCLP(montoPreJudicial)} pendiente pre judicial.`,
+        icon: RiScales3Line,
+        tone: preJudiciales > 0 ? "border-orange-200 bg-orange-50 text-orange-950" : "border-emerald-200 bg-emerald-50 text-emerald-950",
       },
       {
         label: "Motivo dominante",
@@ -229,6 +238,11 @@ const PlanAccionOperativo = ({ empresaRut, entidadId, dateRange }) => {
                     {Number(gestion.casosJudiciales || 0) > 0 ? (
                       <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-950">
                         {formatNumber(gestion.casosJudiciales)} judicial
+                      </span>
+                    ) : null}
+                    {Number(gestion.casosPreJudiciales || 0) > 0 ? (
+                      <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-950">
+                        {formatNumber(gestion.casosPreJudiciales)} pre judicial
                       </span>
                     ) : null}
                   </div>

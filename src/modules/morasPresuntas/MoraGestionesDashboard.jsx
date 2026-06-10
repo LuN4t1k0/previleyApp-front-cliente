@@ -756,6 +756,20 @@ const MoraGestionesDashboard = () => {
                               {formatCurrency(gestion?.montoJudicial || 0)}
                             </p>
                           </div>
+                          <div className="rounded-xl border border-orange-100 bg-white px-3 py-2.5">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="inline-flex items-center gap-2 font-black uppercase tracking-wide text-slate-500">
+                                <RiAlarmWarningLine className="h-4 w-4 text-orange-600" />
+                                Casos pre judiciales
+                              </span>
+                              <span className="font-black text-[#06164b]">
+                                {Number(gestion?.casosPreJudiciales || 0).toLocaleString("es-CL")}
+                              </span>
+                            </div>
+                            <p className="mt-1 font-bold text-slate-500 xl:text-right">
+                              {formatCurrency(gestion?.montoPreJudicial || 0)}
+                            </p>
+                          </div>
                           <div className="rounded-xl border border-emerald-100 bg-white px-3 py-2.5">
                             <div className="flex items-center justify-between gap-3">
                               <span className="inline-flex items-center gap-2 font-black uppercase tracking-wide text-slate-500">

@@ -67,7 +67,7 @@ const PriorizacionGestiones = ({ empresaRut, entidadId, dateRange, onSelectGesti
     <SectionCard>
       <SectionHeader
         title="Gestiones priorizadas"
-        description="Ranking dinámico según deuda pendiente, riesgo judicial y casos críticos."
+        description="Ranking dinámico según deuda pendiente, riesgo judicial, pre judicial y casos críticos."
         badge={`${filas.length} gestiones`}
         icon={RiFileList3Line}
       />
@@ -81,6 +81,7 @@ const PriorizacionGestiones = ({ empresaRut, entidadId, dateRange, onSelectGesti
               <th className="px-6 py-4">Entidad</th>
               <th className="px-6 py-4 text-right">Deuda pendiente</th>
               <th className="px-6 py-4 text-right">Judicial</th>
+              <th className="px-6 py-4 text-right">Pre judicial</th>
               <th className="px-6 py-4 text-right">No judicial</th>
               <th className="px-6 py-4 text-right">Prioridad</th>
               <th className="px-6 py-4 text-right">Acción</th>
@@ -108,6 +109,12 @@ const PriorizacionGestiones = ({ empresaRut, entidadId, dateRange, onSelectGesti
                   <div className="flex flex-col items-end">
                     <span className="font-semibold text-red-950">{fila.casosJudiciales}</span>
                     <span className="text-xs text-red-700">{formatCLP(fila.montoJudicial)}</span>
+                  </div>
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <div className="flex flex-col items-end">
+                    <span className="font-semibold text-orange-950">{fila.casosPreJudiciales || 0}</span>
+                    <span className="text-xs text-orange-700">{formatCLP(fila.montoPreJudicial)}</span>
                   </div>
                 </td>
                 <td className="px-6 py-5 text-right">

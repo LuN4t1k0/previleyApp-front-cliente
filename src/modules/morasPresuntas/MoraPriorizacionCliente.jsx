@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  RiAlarmWarningLine,
   RiBuildingLine,
   RiCalendarLine,
   RiFileList3Line,
@@ -92,8 +93,16 @@ const MoraPriorizacionCliente = () => {
       (acc, item) => acc + Number(item.montoJudicial || 0),
       0
     );
+    const totalPreJudicial = prioridades.reduce(
+      (acc, item) => acc + Number(item.montoPreJudicial || 0),
+      0
+    );
     const casosJudiciales = prioridades.reduce(
       (acc, item) => acc + Number(item.casosJudiciales || 0),
+      0
+    );
+    const casosPreJudiciales = prioridades.reduce(
+      (acc, item) => acc + Number(item.casosPreJudiciales || 0),
       0
     );
     const manuales = prioridades.filter(
@@ -103,7 +112,9 @@ const MoraPriorizacionCliente = () => {
     return {
       totalPendiente,
       totalJudicial,
+      totalPreJudicial,
       casosJudiciales,
+      casosPreJudiciales,
       manuales,
       sugeridas: Math.max(0, prioridades.length - manuales),
     };
@@ -198,6 +209,16 @@ const MoraPriorizacionCliente = () => {
               </p>
               <p className="mt-2 text-sm text-red-900">{formatCLP(resumen.totalJudicial)}</p>
             </article>
+            <article className="rounded-lg border border-orange-200 bg-orange-50 p-5 shadow-sm">
+              <RiAlarmWarningLine className="h-5 w-5 text-orange-800" aria-hidden="true" />
+              <p className="mt-4 text-[11px] font-semibold uppercase text-orange-900">
+                Pre judicial pendiente
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-orange-950">
+                {formatNumber(resumen.casosPreJudiciales)} casos
+              </p>
+              <p className="mt-2 text-sm text-orange-900">{formatCLP(resumen.totalPreJudicial)}</p>
+            </article>
             <article className="rounded-lg border border-indigo-200 bg-white p-5 shadow-sm">
               <RiFileList3Line className="h-5 w-5 text-slate-700" aria-hidden="true" />
               <p className="mt-4 text-[11px] font-semibold uppercase text-slate-500">
@@ -238,6 +259,7 @@ const MoraPriorizacionCliente = () => {
                       <th className="px-5 py-4">Entidad</th>
                       <th className="px-5 py-4 text-right">Pendiente</th>
                       <th className="px-5 py-4 text-right">Judicial</th>
+                      <th className="px-5 py-4 text-right">Pre judicial</th>
                       <th className="px-5 py-4">Riesgo</th>
                       <th className="px-5 py-4">Origen</th>
                     </tr>
@@ -265,6 +287,12 @@ const MoraPriorizacionCliente = () => {
                             {formatNumber(item.casosJudiciales)} casos
                           </p>
                           <p className="mt-1 text-xs text-red-700">{formatCLP(item.montoJudicial)}</p>
+                        </td>
+                        <td className="px-5 py-4 text-right">
+                          <p className="font-semibold text-orange-950">
+                            {formatNumber(item.casosPreJudiciales)} casos
+                          </p>
+                          <p className="mt-1 text-xs text-orange-700">{formatCLP(item.montoPreJudicial)}</p>
                         </td>
                         <td className="px-5 py-4">
                           <RiskPill level={item.nivelRiesgo} />

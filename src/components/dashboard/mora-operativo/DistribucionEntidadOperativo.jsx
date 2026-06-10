@@ -7,8 +7,8 @@ import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
 import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
-const RISK_CATEGORIES = ["Judicial", "No judicial", "Otros"];
-const RISK_COLORS = ["rose", "emerald", "slate"];
+const RISK_CATEGORIES = ["Judicial", "Pre judicial", "No judicial", "Otros"];
+const RISK_COLORS = ["rose", "orange", "emerald", "slate"];
 
 const formatter = (number) =>
   new Intl.NumberFormat("es-CL", {
@@ -38,13 +38,14 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
     fetchDistribucionPorEntidad();
   }, [empresaRut, entidadId, dateRange]);
 
-  const { chartData, categorias, totalMonto, totalJudicial, totalNoJudicial } = useMemo(() => {
+  const { chartData, categorias, totalMonto, totalJudicial, totalPreJudicial, totalNoJudicial } = useMemo(() => {
     if (!Array.isArray(dataset) || dataset.length === 0) {
       return {
         chartData: [],
         categorias: [],
         totalMonto: 0,
         totalJudicial: 0,
+        totalPreJudicial: 0,
         totalNoJudicial: 0,
       };
     }
@@ -52,22 +53,26 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
     const agrupado = new Map();
     let total = 0;
     let judicialTotal = 0;
+    let preJudicialTotal = 0;
     let noJudicialTotal = 0;
 
     dataset.forEach((registro) => {
       const entidadNombre = registro.entidadNombre || registro.entidad || "Sin entidad";
       const monto = Number(registro.monto || 0);
       const montoJudicial = Number(registro.montoJudicial || 0);
+      const montoPreJudicial = Number(registro.montoPreJudicial || 0);
       const montoNoJudicial = Number(registro.montoNoJudicial || 0);
-      const otros = Math.max(0, monto - montoJudicial - montoNoJudicial);
+      const otros = Math.max(0, monto - montoJudicial - montoPreJudicial - montoNoJudicial);
       total += monto;
       judicialTotal += montoJudicial;
+      preJudicialTotal += montoPreJudicial;
       noJudicialTotal += montoNoJudicial;
 
       if (!agrupado.has(entidadNombre)) {
         agrupado.set(entidadNombre, {
           entidad: entidadNombre,
           Judicial: 0,
+          "Pre judicial": 0,
           "No judicial": 0,
           Otros: 0,
           total: 0,
@@ -76,6 +81,7 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
 
       const actual = agrupado.get(entidadNombre);
       actual.Judicial += montoJudicial;
+      actual["Pre judicial"] += montoPreJudicial;
       actual["No judicial"] += montoNoJudicial;
       actual.Otros += otros;
       actual.total += monto;
@@ -91,6 +97,7 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
       categorias: categoriasVisibles,
       totalMonto: total,
       totalJudicial: judicialTotal,
+      totalPreJudicial: preJudicialTotal,
       totalNoJudicial: noJudicialTotal,
     };
   }, [dataset]);
@@ -105,13 +112,13 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
     <SectionCard>
       <SectionHeader
         title="Deuda por estado y entidad"
-        description="Compara la deuda total por entidad y su composición judicial y no judicial."
+        description="Compara la deuda total por entidad y su composición judicial, pre judicial y no judicial."
         badge={`${chartData.length} entidades`}
         icon={RiBuilding2Line}
       />
 
       <div className="border-t border-indigo-100 px-5 py-5">
-        <div className="mb-5 grid gap-3 sm:grid-cols-3">
+        <div className="mb-5 grid gap-3 sm:grid-cols-4">
           <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
             <p className="text-xs font-semibold uppercase text-stone-600">Monto observado</p>
             <p className="mt-2 text-xl font-bold text-slate-950">{formatter(totalMonto)}</p>
@@ -119,6 +126,10 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
           <div className="rounded-lg border border-rose-100 bg-rose-50 p-4">
             <p className="text-xs font-semibold uppercase text-rose-700">Judicial</p>
             <p className="mt-2 text-xl font-bold text-rose-950">{formatter(totalJudicial)}</p>
+          </div>
+          <div className="rounded-lg border border-orange-100 bg-orange-50 p-4">
+            <p className="text-xs font-semibold uppercase text-orange-700">Pre judicial</p>
+            <p className="mt-2 text-xl font-bold text-orange-950">{formatter(totalPreJudicial)}</p>
           </div>
           <div className="rounded-lg border border-emerald-100 bg-emerald-50 p-4">
             <p className="text-xs font-semibold uppercase text-emerald-700">No judicial</p>

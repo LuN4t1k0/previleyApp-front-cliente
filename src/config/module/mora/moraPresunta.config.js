@@ -88,6 +88,8 @@ const MoraPresuntaConfig = {
     "deudaPendiente",
     "casosJudiciales",
     "montoJudicial",
+    "casosPreJudiciales",
+    "montoPreJudicial",
     "casosNoJudiciales",
     "montoNoJudicial",
     "certificadoInicial",
@@ -107,6 +109,7 @@ const MoraPresuntaConfig = {
     "montoRegularizado",
     "deudaPendiente",
     "montoJudicial",
+    "montoPreJudicial",
     "montoNoJudicial",
   ],
 
@@ -138,6 +141,16 @@ const MoraPresuntaConfig = {
     {
       header: "Monto judicial",
       accessorKey: "montoJudicial",
+      meta: { align: "text-right" },
+    },
+    {
+      header: "Casos pre judiciales",
+      accessorKey: "casosPreJudiciales",
+      meta: { align: "text-right" },
+    },
+    {
+      header: "Monto pre judicial",
+      accessorKey: "montoPreJudicial",
       meta: { align: "text-right" },
     },
     {

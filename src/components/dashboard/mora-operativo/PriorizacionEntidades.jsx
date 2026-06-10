@@ -39,6 +39,8 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
     return [...priorizacion].sort((a, b) => {
       const casosA = Number(a?.casosJudiciales || 0);
       const casosB = Number(b?.casosJudiciales || 0);
+      const preJudicialA = Number(a?.casosPreJudiciales || 0);
+      const preJudicialB = Number(b?.casosPreJudiciales || 0);
       const tieneJudicialA = casosA > 0 ? 1 : 0;
       const tieneJudicialB = casosB > 0 ? 1 : 0;
 
@@ -47,6 +49,9 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
       }
       if (casosA !== casosB) {
         return casosB - casosA;
+      }
+      if (preJudicialA !== preJudicialB) {
+        return preJudicialB - preJudicialA;
       }
 
       const pendienteA = Number(a?.deudaPendiente || 0);
@@ -63,7 +68,7 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
     <SectionCard>
       <SectionHeader
         title="Priorización de entidades"
-        description="Ordena la gestión iniciando por las entidades con casos judiciales y deuda pendiente."
+        description="Ordena la gestión iniciando por las entidades con casos judiciales, pre judiciales y deuda pendiente."
         badge={`${filas.length} entidades`}
         icon={RiFocus3Line}
       />
@@ -78,6 +83,7 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
               <th className="px-6 py-4 text-right">Regularizado</th>
               <th className="px-6 py-4 text-right">Riesgo</th>
               <th className="px-6 py-4 text-right">Casos judiciales</th>
+              <th className="px-6 py-4 text-right">Casos pre judiciales</th>
               <th className="px-6 py-4 text-right">Acción</th>
             </tr>
           </thead>
@@ -100,6 +106,11 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
                 <td className="px-6 py-5 text-right">
                   <span className="inline-flex min-w-10 justify-center rounded-full bg-red-100 px-3 py-1 font-bold text-red-950">
                     {(item.casosJudiciales || 0).toLocaleString("es-CL")}
+                  </span>
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <span className="inline-flex min-w-10 justify-center rounded-full bg-orange-100 px-3 py-1 font-bold text-orange-950">
+                    {(item.casosPreJudiciales || 0).toLocaleString("es-CL")}
                   </span>
                 </td>
                 <td className="px-6 py-5 text-right">

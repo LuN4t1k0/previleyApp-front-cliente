@@ -65,26 +65,33 @@ const PendienteOperativoDetalle = ({ empresaRut, entidadId, dateRange, onSelectE
 
   const detalle = useMemo(() => {
     const judicialMetric = data.metrics?.estadoPrevired?.judicial || {};
+    const preJudicialMetric = data.metrics?.estadoPrevired?.preJudicial || {};
     const noJudicialMetric = data.metrics?.estadoPrevired?.noJudicial || {};
 
     const entidadesMap = new Map();
     let judicialCasosAgregado = 0;
     let judicialMontoAgregado = 0;
+    let preJudicialCasosAgregado = 0;
+    let preJudicialMontoAgregado = 0;
     let noJudicialCasosAgregado = 0;
     let noJudicialMontoAgregado = 0;
 
     data.gestiones.forEach((gestion) => {
       const casosJudiciales = Number(gestion?.casosJudiciales || 0);
       const montoJudicial = Number(gestion?.montoJudicial || 0);
+      const casosPreJudiciales = Number(gestion?.casosPreJudiciales || 0);
+      const montoPreJudicial = Number(gestion?.montoPreJudicial || 0);
       const casosNoJudiciales = Number(gestion?.casosNoJudiciales || 0);
       const montoNoJudicial = Number(gestion?.montoNoJudicial || 0);
 
       judicialCasosAgregado += casosJudiciales;
       judicialMontoAgregado += montoJudicial;
+      preJudicialCasosAgregado += casosPreJudiciales;
+      preJudicialMontoAgregado += montoPreJudicial;
       noJudicialCasosAgregado += casosNoJudiciales;
       noJudicialMontoAgregado += montoNoJudicial;
 
-      if (!casosJudiciales && !montoJudicial) return;
+      if (!casosJudiciales && !montoJudicial && !casosPreJudiciales && !montoPreJudicial) return;
 
       const key = String(gestion?.entidadId || gestion?.entidadNombre || "sin-entidad");
       const current = entidadesMap.get(key) || {
@@ -92,12 +99,16 @@ const PendienteOperativoDetalle = ({ empresaRut, entidadId, dateRange, onSelectE
         entidadNombre: gestion?.entidadNombre || "Entidad sin nombre",
         casosJudiciales: 0,
         montoJudicial: 0,
+        casosPreJudiciales: 0,
+        montoPreJudicial: 0,
         deudaPendiente: 0,
         gestiones: 0,
       };
 
       current.casosJudiciales += casosJudiciales;
       current.montoJudicial += montoJudicial;
+      current.casosPreJudiciales += casosPreJudiciales;
+      current.montoPreJudicial += montoPreJudicial;
       current.deudaPendiente += Number(gestion?.deudaPendiente || 0);
       current.gestiones += 1;
       entidadesMap.set(key, current);
@@ -107,6 +118,9 @@ const PendienteOperativoDetalle = ({ empresaRut, entidadId, dateRange, onSelectE
       if (b.casosJudiciales !== a.casosJudiciales) {
         return b.casosJudiciales - a.casosJudiciales;
       }
+      if (b.casosPreJudiciales !== a.casosPreJudiciales) {
+        return b.casosPreJudiciales - a.casosPreJudiciales;
+      }
       return b.montoJudicial - a.montoJudicial;
     });
 
@@ -115,6 +129,10 @@ const PendienteOperativoDetalle = ({ empresaRut, entidadId, dateRange, onSelectE
       judicial: {
         casos: Number(judicialMetric.casos ?? judicialCasosAgregado),
         monto: Number(judicialMetric.monto ?? judicialMontoAgregado),
+      },
+      preJudicial: {
+        casos: Number(preJudicialMetric.casos ?? preJudicialCasosAgregado),
+        monto: Number(preJudicialMetric.monto ?? preJudicialMontoAgregado),
       },
       noJudicial: {
         casos: Number(noJudicialMetric.casos ?? noJudicialCasosAgregado),
@@ -150,7 +168,7 @@ const PendienteOperativoDetalle = ({ empresaRut, entidadId, dateRange, onSelectE
                     Pendiente en gestión
                   </h2>
                   <p className="mt-1 text-sm font-medium text-amber-700">
-                    Doble click del saldo pendiente: composición judicial, no judicial y entidades.
+                    Doble click del saldo pendiente: composición judicial, pre judicial, no judicial y entidades.
                   </p>
                 </div>
               </div>
@@ -196,6 +214,22 @@ const PendienteOperativoDetalle = ({ empresaRut, entidadId, dateRange, onSelectE
             <div className="mt-4 flex items-center gap-2 text-sm font-medium text-red-950">
               <RiScalesLine className="h-4 w-4" aria-hidden="true" />
               <span>En litigio</span>
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-orange-200 bg-orange-100 p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <p className="text-[11px] font-semibold uppercase text-orange-900">Pre judicial</p>
+              <span className="rounded-full bg-orange-700 px-3 py-1.5 text-[11px] font-semibold text-white">
+                {formatNumber(detalle.preJudicial.casos)} casos
+              </span>
+            </div>
+            <p className="mt-5 text-4xl font-bold text-orange-950">
+              {formatCLP(detalle.preJudicial.monto)}
+            </p>
+            <div className="mt-4 flex items-center gap-2 text-sm font-medium text-orange-950">
+              <RiAlertLine className="h-4 w-4" aria-hidden="true" />
+              <span>Riesgo preventivo</span>
             </div>
           </div>
 
@@ -252,6 +286,8 @@ const PendienteOperativoDetalle = ({ empresaRut, entidadId, dateRange, onSelectE
                   <th className="px-5 py-4">Entidad</th>
                   <th className="px-5 py-4 text-center">Casos judiciales</th>
                   <th className="px-5 py-4 text-right">Monto judicial</th>
+                  <th className="px-5 py-4 text-center">Casos pre judiciales</th>
+                  <th className="px-5 py-4 text-right">Monto pre judicial</th>
                   <th className="px-5 py-4 text-right">Pendiente total</th>
                   <th className="px-5 py-4 text-right">Acción</th>
                 </tr>
@@ -276,6 +312,14 @@ const PendienteOperativoDetalle = ({ empresaRut, entidadId, dateRange, onSelectE
                     </td>
                     <td className="px-5 py-4 text-right text-sm font-semibold text-red-700">
                       {formatCLP(entidad.montoJudicial)}
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <span className="inline-flex min-w-10 justify-center rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-700">
+                        {formatNumber(entidad.casosPreJudiciales)}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-right text-sm font-semibold text-orange-700">
+                      {formatCLP(entidad.montoPreJudicial)}
                     </td>
                     <td className="px-5 py-4 text-right text-sm font-semibold text-slate-950">
                       {formatCLP(entidad.deudaPendiente)}
