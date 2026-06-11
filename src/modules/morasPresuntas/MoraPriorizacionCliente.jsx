@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   RiAlarmWarningLine,
+  RiArrowRightLine,
   RiBuildingLine,
   RiCalendarLine,
   RiFileList3Line,
@@ -29,7 +31,7 @@ const getCurrentPeriodo = () => {
 };
 
 const ordenarPrioridades = (items) =>
-  [...items].sort((a, b) => {
+  items.toSorted((a, b) => {
     const ordenA = Number(a?.ordenActual || a?.ordenManual || 0);
     const ordenB = Number(b?.ordenActual || b?.ordenManual || 0);
     if (ordenA && ordenB) return ordenA - ordenB;
@@ -37,6 +39,43 @@ const ordenarPrioridades = (items) =>
     if (ordenB) return 1;
     return Number(b?.deudaPendiente || 0) - Number(a?.deudaPendiente || 0);
   });
+
+const normalizarEstado = (estado) => String(estado || "").trim().toLowerCase();
+
+const getMotivoOrden = (item) => {
+  const casosJudiciales = Number(item?.casosJudiciales || 0);
+  const casosPreJudiciales = Number(item?.casosPreJudiciales || 0);
+  const deudaPendiente = Number(item?.deudaPendiente || 0);
+
+  if (casosJudiciales > 0) {
+    return `${formatNumber(casosJudiciales)} casos judiciales pendientes`;
+  }
+  if (casosPreJudiciales > 0) {
+    return `${formatNumber(casosPreJudiciales)} casos pre judiciales pendientes`;
+  }
+  if (deudaPendiente > 0) {
+    return `Saldo pendiente de ${formatCLP(deudaPendiente)}`;
+  }
+  return "Seguimiento administrativo";
+};
+
+const getProximaAccion = (item) => {
+  const estado = normalizarEstado(item?.estadoGestion);
+  if (estado === "registrada") return "Activar análisis interno";
+  if (estado === "analisis") return "Completar análisis y definir curso";
+  if (estado === "solicitud cliente") return "Responder antecedentes solicitados";
+  if (estado === "respuesta cliente") return "Revisar respuesta del cliente";
+  if (estado === "espera entidad") return "Esperar respuesta de entidad previsional";
+  return "Revisar avance de la gestión";
+};
+
+const buildGestionHref = ({ empresaRut, gestionId }) => {
+  const params = new URLSearchParams();
+  if (empresaRut) params.set("empresaRut", empresaRut);
+  if (gestionId) params.set("gestionId", String(gestionId));
+  const query = params.toString();
+  return `/servicios/mora-presunta/gestiones${query ? `?${query}` : ""}`;
+};
 
 const MoraPriorizacionCliente = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
@@ -180,56 +219,68 @@ const MoraPriorizacionCliente = () => {
             </div>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <article className="rounded-lg border border-indigo-200 bg-white p-5 shadow-sm">
-              <RiListOrdered className="h-5 w-5 text-indigo-700" aria-hidden="true" />
-              <p className="mt-4 text-[11px] font-semibold uppercase text-slate-500">
-                Prioridades
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">
-                {formatNumber(prioridades.length)}
-              </p>
-            </article>
-            <article className="rounded-lg border border-indigo-200 bg-white p-5 shadow-sm">
-              <RiMoneyDollarCircleLine className="h-5 w-5 text-amber-700" aria-hidden="true" />
-              <p className="mt-4 text-[11px] font-semibold uppercase text-slate-500">
-                Pendiente priorizado
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-amber-900">
-                {formatCLP(resumen.totalPendiente)}
-              </p>
-            </article>
-            <article className="rounded-lg border border-red-200 bg-red-50 p-5 shadow-sm">
-              <RiScales3Line className="h-5 w-5 text-red-800" aria-hidden="true" />
-              <p className="mt-4 text-[11px] font-semibold uppercase text-red-900">
-                Judicial pendiente
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-red-950">
-                {formatNumber(resumen.casosJudiciales)} casos
-              </p>
-              <p className="mt-2 text-sm text-red-900">{formatCLP(resumen.totalJudicial)}</p>
-            </article>
-            <article className="rounded-lg border border-orange-200 bg-orange-50 p-5 shadow-sm">
-              <RiAlarmWarningLine className="h-5 w-5 text-orange-800" aria-hidden="true" />
-              <p className="mt-4 text-[11px] font-semibold uppercase text-orange-900">
-                Pre judicial pendiente
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-orange-950">
-                {formatNumber(resumen.casosPreJudiciales)} casos
-              </p>
-              <p className="mt-2 text-sm text-orange-900">{formatCLP(resumen.totalPreJudicial)}</p>
-            </article>
-            <article className="rounded-lg border border-indigo-200 bg-white p-5 shadow-sm">
-              <RiFileList3Line className="h-5 w-5 text-slate-700" aria-hidden="true" />
-              <p className="mt-4 text-[11px] font-semibold uppercase text-slate-500">
-                Origen del orden
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">
-                {resumen.manuales ? `${formatNumber(resumen.manuales)} manuales` : "Sugerido"}
-              </p>
-              <p className="mt-2 text-sm text-slate-500">
-                {formatNumber(resumen.sugeridas)} mantienen orden automático.
-              </p>
+          <section className="flex flex-col gap-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <article className="rounded-lg border border-indigo-200 bg-white p-5 shadow-sm">
+                <RiListOrdered className="h-5 w-5 text-indigo-700" aria-hidden="true" />
+                <p className="mt-4 text-[11px] font-semibold uppercase text-slate-500">
+                  Prioridades
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-slate-950">
+                  {formatNumber(prioridades.length)}
+                </p>
+              </article>
+              <article className="rounded-lg border border-indigo-200 bg-white p-5 shadow-sm">
+                <RiMoneyDollarCircleLine className="h-5 w-5 text-amber-700" aria-hidden="true" />
+                <p className="mt-4 text-[11px] font-semibold uppercase text-slate-500">
+                  Pendiente priorizado
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-amber-900">
+                  {formatCLP(resumen.totalPendiente)}
+                </p>
+              </article>
+              <article className="rounded-lg border border-red-200 bg-red-50 p-5 shadow-sm">
+                <RiScales3Line className="h-5 w-5 text-red-800" aria-hidden="true" />
+                <p className="mt-4 text-[11px] font-semibold uppercase text-red-900">
+                  Judicial pendiente
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-red-950">
+                  {formatNumber(resumen.casosJudiciales)} casos
+                </p>
+                <p className="mt-2 text-sm text-red-900">{formatCLP(resumen.totalJudicial)}</p>
+              </article>
+              <article className="rounded-lg border border-orange-200 bg-orange-50 p-5 shadow-sm">
+                <RiAlarmWarningLine className="h-5 w-5 text-orange-800" aria-hidden="true" />
+                <p className="mt-4 text-[11px] font-semibold uppercase text-orange-900">
+                  Pre judicial pendiente
+                </p>
+                <p className="mt-2 text-2xl font-semibold text-orange-950">
+                  {formatNumber(resumen.casosPreJudiciales)} casos
+                </p>
+                <p className="mt-2 text-sm text-orange-900">{formatCLP(resumen.totalPreJudicial)}</p>
+              </article>
+            </div>
+
+            <article className="flex flex-col gap-4 rounded-lg border border-indigo-200 bg-indigo-50 px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-indigo-200 bg-white text-indigo-700">
+                  <RiFileList3Line className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase text-indigo-700">
+                    Origen del orden
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-slate-950">
+                    {resumen.manuales ? `${formatNumber(resumen.manuales)} prioridades manuales` : "Orden sugerido"}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    El plan convierte los focos del dashboard en una cola de trabajo con motivo y próxima acción por gestión.
+                  </p>
+                </div>
+              </div>
+              <div className="rounded-md bg-white/80 px-3 py-2 text-sm font-semibold text-indigo-900">
+                {formatNumber(resumen.sugeridas)} mantienen orden automático
+              </div>
             </article>
           </section>
 
@@ -260,8 +311,8 @@ const MoraPriorizacionCliente = () => {
                       <th className="px-5 py-4 text-right">Pendiente</th>
                       <th className="px-5 py-4 text-right">Judicial</th>
                       <th className="px-5 py-4 text-right">Pre judicial</th>
-                      <th className="px-5 py-4">Riesgo</th>
-                      <th className="px-5 py-4">Origen</th>
+                      <th className="px-5 py-4">Motivo del orden</th>
+                      <th className="px-5 py-4">Próxima acción</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-indigo-100">
@@ -274,6 +325,11 @@ const MoraPriorizacionCliente = () => {
                           </p>
                           <p className="mt-1 text-xs font-semibold uppercase text-slate-400">
                             {item.estadoGestion || "sin estado"}
+                          </p>
+                          <p className="mt-2">
+                            <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold uppercase text-indigo-800">
+                              {item.origenPrioridad || "sugerida"}
+                            </span>
                           </p>
                         </td>
                         <td className="px-5 py-4 font-medium text-slate-700">
@@ -295,12 +351,31 @@ const MoraPriorizacionCliente = () => {
                           <p className="mt-1 text-xs text-orange-700">{formatCLP(item.montoPreJudicial)}</p>
                         </td>
                         <td className="px-5 py-4">
-                          <RiskPill level={item.nivelRiesgo} />
+                          <div className="flex max-w-[220px] flex-wrap items-center gap-1.5">
+                            <span className="scale-90 origin-left">
+                              <RiskPill level={item.nivelRiesgo} />
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold leading-4 text-slate-600">
+                              {getMotivoOrden(item)}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-5 py-4">
-                          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase text-indigo-800">
-                            {item.origenPrioridad || "sugerida"}
-                          </span>
+                          <div className="flex min-w-[180px] flex-col gap-2">
+                            <span className="text-sm font-semibold text-slate-700">
+                              {getProximaAccion(item)}
+                            </span>
+                            <Link
+                              href={buildGestionHref({
+                                empresaRut: empresaRutActiva,
+                                gestionId: item.gestionMoraId,
+                              })}
+                              className="inline-flex w-fit items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 transition hover:border-indigo-300 hover:bg-indigo-100"
+                            >
+                              Ver gestión
+                              <RiArrowRightLine className="h-3.5 w-3.5" aria-hidden="true" />
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))}

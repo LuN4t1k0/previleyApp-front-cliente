@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DateRangePicker } from "@tremor/react";
 import { useSession } from "next-auth/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
@@ -89,11 +90,33 @@ const tipoSolicitudLabels = {
   otro_respaldo: "Otro respaldo",
 };
 
+const getLinkedNavigationParams = () => {
+  if (typeof window === "undefined") {
+    return { gestionId: null, empresaRut: "" };
+  }
+  const params = new URLSearchParams(window.location.search);
+  return {
+    gestionId: params.get("gestionId"),
+    empresaRut: params.get("empresaRut") || "",
+  };
+};
+
 const MoraGestionesDashboard = () => {
+  const router = useRouter();
   const { data: session } = useSession();
   const { socket } = useSocket(session?.accessToken);
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
-  const [empresaSeleccionada, setEmpresaSeleccionada] = useState("");
+  const linkedNavigationRef = useRef(null);
+  if (linkedNavigationRef.current === null) {
+    linkedNavigationRef.current = getLinkedNavigationParams();
+  }
+  const [focusedGestionId, setFocusedGestionId] = useState(
+    () => linkedNavigationRef.current.gestionId
+  );
+  const linkedGestionId = focusedGestionId;
+  const [empresaSeleccionada, setEmpresaSeleccionada] = useState(
+    () => linkedNavigationRef.current.empresaRut || ""
+  );
   const [empresaInput, setEmpresaInput] = useState("");
   const lastEmpresaLabel = useRef("");
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
@@ -150,6 +173,14 @@ const MoraGestionesDashboard = () => {
 
   useEffect(() => {
     if (empresaOptions.length > 0 && !empresaSeleccionada) {
+      setEmpresaSeleccionada(empresaOptions[0].rut);
+      return;
+    }
+    if (
+      empresaOptions.length > 0 &&
+      empresaSeleccionada &&
+      !empresaOptions.some((option) => option.rut === empresaSeleccionada)
+    ) {
       setEmpresaSeleccionada(empresaOptions[0].rut);
     }
   }, [empresaOptions, empresaSeleccionada]);
@@ -388,27 +419,48 @@ const MoraGestionesDashboard = () => {
     [gestiones, handleDownloadDetalle, solicitudesPorGestion]
   );
 
+  const gestionesVisibles = useMemo(() => {
+    if (!linkedGestionId) return gestionesEnriquecidas;
+    return gestionesEnriquecidas.filter(
+      (item) => Number(item.gestion.id) === Number(linkedGestionId)
+    );
+  }, [gestionesEnriquecidas, linkedGestionId]);
+
   const resumenBandeja = useMemo(() => {
-    const pendientesCliente = gestionesEnriquecidas.reduce(
+    const pendientesCliente = gestionesVisibles.reduce(
       (total, item) => total + item.solicitudesAccionables.length,
       0
     );
-    const montoTotal = gestionesEnriquecidas.reduce(
+    const montoTotal = gestionesVisibles.reduce(
       (total, item) => total + item.montoTotal,
       0
     );
 
     return {
-      gestiones: gestionesEnriquecidas.length,
+      gestiones: gestionesVisibles.length,
       pendientesCliente,
       montoTotal,
     };
-  }, [gestionesEnriquecidas]);
+  }, [gestionesVisibles]);
 
   const handleRefresh = useCallback(() => {
     fetchGestiones();
     fetchSolicitudes();
   }, [fetchGestiones, fetchSolicitudes]);
+
+  const handleShowAllGestiones = useCallback(() => {
+    setFocusedGestionId(null);
+    router.replace("/servicios/mora-presunta/gestiones", { scroll: false });
+  }, [router]);
+
+  useEffect(() => {
+    if (!linkedGestionId || loadingGestiones || !gestionesVisibles.length) return;
+    const element = document.getElementById(`gestion-mora-${linkedGestionId}`);
+    if (!element) return;
+    window.setTimeout(() => {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 150);
+  }, [gestionesVisibles.length, linkedGestionId, loadingGestiones]);
 
   const openResponderSolicitud = useCallback((solicitud) => {
     setSolicitudActiva(solicitud);
@@ -614,6 +666,26 @@ const MoraGestionesDashboard = () => {
             </div>
           </section>
 
+          {linkedGestionId ? (
+            <section className="flex flex-col gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-4 text-sm text-indigo-950 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-semibold uppercase tracking-wide text-indigo-800">
+                  Vista desde plan de trabajo
+                </p>
+                <p className="mt-1 text-indigo-900">
+                  Mostrando solo la gestión #{linkedGestionId} seleccionada desde el plan.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleShowAllGestiones}
+                className="inline-flex w-fit items-center justify-center rounded-xl border border-indigo-200 bg-white px-4 py-2 text-xs font-semibold uppercase text-indigo-800 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-100"
+              >
+                Mostrar todas las gestiones
+              </button>
+            </section>
+          ) : null}
+
           {!empresaSeleccionada ? (
             <section className="rounded-[2rem] border border-slate-200 bg-white p-8 text-center">
               <p className="text-sm text-slate-600">
@@ -628,19 +700,25 @@ const MoraGestionesDashboard = () => {
             <section className="rounded-[2rem] border border-rose-100 bg-rose-50 p-6 text-sm font-medium text-rose-700">
               {errorGestiones}
             </section>
-          ) : gestionesEnriquecidas.length === 0 ? (
+          ) : gestionesVisibles.length === 0 ? (
             <section className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-white/70 py-16 text-center">
-              <p className="text-lg font-semibold text-slate-700">Sin gestiones</p>
+              <p className="text-lg font-semibold text-slate-700">
+                {linkedGestionId ? "Gestión no encontrada" : "Sin gestiones"}
+              </p>
               <p className="text-sm text-slate-500">
-                No hay gestiones registradas para los filtros seleccionados.
+                {linkedGestionId
+                  ? "No encontramos esa gestión para la empresa seleccionada."
+                  : "No hay gestiones registradas para los filtros seleccionados."}
               </p>
             </section>
           ) : (
             <section className="space-y-5">
-              {gestionesEnriquecidas.map((item) => {
+              {gestionesVisibles.map((item) => {
                 const { gestion, solicitudesGestion, solicitudesAccionables } = item;
                 const estado = formatEstado(gestion.estado);
                 const gestionCerrada = isGestionCerrada(gestion.estado);
+                const isLinkedGestion =
+                  linkedGestionId && Number(linkedGestionId) === Number(gestion.id);
                 const montoResumenLabel = gestionCerrada ? "Regularizado" : "Pendiente";
                 const montoResumenIconTone = gestionCerrada
                   ? "bg-emerald-600 text-white shadow-emerald-600/20"
@@ -649,15 +727,25 @@ const MoraGestionesDashboard = () => {
                 return (
                   <article
                     key={gestion.id}
-                    className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)] md:p-5"
+                    id={`gestion-mora-${gestion.id}`}
+                    className={`relative scroll-mt-6 overflow-hidden rounded-2xl border bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition md:p-5 ${
+                      isLinkedGestion
+                        ? "border-indigo-300 ring-4 ring-indigo-100"
+                        : "border-slate-200"
+                    }`}
                   >
                     <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-sky-400 to-emerald-400" />
+                    {isLinkedGestion ? (
+                      <div className="mb-4 inline-flex rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-800">
+                        Gestión seleccionada desde el plan de trabajo
+                      </div>
+                    ) : null}
 
                     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-3">
                           <div className="flex min-w-0 flex-wrap items-baseline gap-2">
-                            <h2 className="text-2xl font-black leading-tight tracking-normal text-[#06164b]">
+                            <h2 className="text-2xl font-bold leading-tight tracking-normal text-[#06164b]">
                               Gestión #{gestion.id}
                             </h2>
                             {gestion.folio ? (
@@ -669,7 +757,7 @@ const MoraGestionesDashboard = () => {
                               </>
                             ) : null}
                             <span
-                              className={`inline-flex max-w-full items-center rounded-full border px-3 py-1 text-[11px] font-black uppercase tracking-wide shadow-sm ring-1 ${getEstadoTone(gestion.estado)}`}
+                              className={`inline-flex max-w-full items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide shadow-sm ring-1 ${getEstadoTone(gestion.estado)}`}
                             >
                               {estado}
                             </span>
@@ -682,8 +770,8 @@ const MoraGestionesDashboard = () => {
                               <RiBuildingLine className="h-5 w-5" />
                             </span>
                             <div className="min-w-0">
-                              <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">Empresa</p>
-                              <p className="mt-1 truncate text-base font-bold text-slate-950">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Empresa</p>
+                              <p className="mt-1 truncate text-base font-medium text-slate-950">
                                 {gestion.empresa || gestion.empresaRut}
                               </p>
                             </div>
@@ -693,8 +781,8 @@ const MoraGestionesDashboard = () => {
                               <RiBankLine className="h-5 w-5" />
                             </span>
                             <div className="min-w-0">
-                              <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">Entidad</p>
-                              <p className="mt-1 truncate text-base font-bold text-slate-950">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Entidad</p>
+                              <p className="mt-1 truncate text-base font-medium text-slate-950">
                                 {gestion.entidad || "Sin entidad"}
                               </p>
                             </div>
@@ -704,7 +792,7 @@ const MoraGestionesDashboard = () => {
                               <RiUserLine className="h-5 w-5" />
                             </span>
                             <div className="min-w-0">
-                              <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">Analista</p>
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Analista</p>
                               <p className="mt-1 truncate text-base text-slate-950">
                                 {gestion.analista || "Sin analista"}
                               </p>
@@ -715,7 +803,7 @@ const MoraGestionesDashboard = () => {
                               <RiCalendarLine className="h-5 w-5" />
                             </span>
                             <div className="min-w-0">
-                              <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">Fecha inicio</p>
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Fecha inicio</p>
                               <p className="mt-1 text-base text-slate-950">
                                 {gestion.fechaGestion ? formatDate(gestion.fechaGestion) : "Sin fecha"}
                               </p>
@@ -727,10 +815,10 @@ const MoraGestionesDashboard = () => {
                       <aside className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-blue-50/40 p-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_12px_28px_rgba(15,23,42,0.06)]">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
                               {montoResumenLabel}
                             </p>
-                            <p className="mt-1 text-4xl font-black leading-none text-[#06164b]">
+                            <p className="mt-1 text-4xl font-bold leading-none text-[#06164b]">
                               {formatCurrency(item.montoTotal)}
                             </p>
                             <p className="mt-1 text-xs font-semibold text-slate-500">CLP</p>
@@ -744,43 +832,43 @@ const MoraGestionesDashboard = () => {
                         <div className="mt-4 grid gap-2 text-xs text-slate-600">
                           <div className="rounded-xl border border-red-100 bg-white px-3 py-2.5">
                             <div className="flex items-center justify-between gap-3">
-                              <span className="inline-flex items-center gap-2 font-black uppercase tracking-wide text-slate-500">
+                              <span className="inline-flex items-center gap-2 font-semibold uppercase tracking-wide text-slate-500">
                                 <RiScales3Line className="h-4 w-4 text-red-600" />
                                 Casos judiciales
                               </span>
-                              <span className="font-black text-red-950">
+                              <span className="font-semibold text-red-950">
                                 {Number(gestion?.casosJudiciales || 0).toLocaleString("es-CL")}
                               </span>
                             </div>
-                            <p className="mt-1 font-bold text-red-700 xl:text-right">
+                            <p className="mt-1 font-semibold text-red-700 xl:text-right">
                               {formatCurrency(gestion?.montoJudicial || 0)}
                             </p>
                           </div>
                           <div className="rounded-xl border border-orange-100 bg-white px-3 py-2.5">
                             <div className="flex items-center justify-between gap-3">
-                              <span className="inline-flex items-center gap-2 font-black uppercase tracking-wide text-slate-500">
+                              <span className="inline-flex items-center gap-2 font-semibold uppercase tracking-wide text-slate-500">
                                 <RiAlarmWarningLine className="h-4 w-4 text-orange-600" />
                                 Casos pre judiciales
                               </span>
-                              <span className="font-black text-orange-950">
+                              <span className="font-semibold text-orange-950">
                                 {Number(gestion?.casosPreJudiciales || 0).toLocaleString("es-CL")}
                               </span>
                             </div>
-                            <p className="mt-1 font-bold text-orange-700 xl:text-right">
+                            <p className="mt-1 font-semibold text-orange-700 xl:text-right">
                               {formatCurrency(gestion?.montoPreJudicial || 0)}
                             </p>
                           </div>
                           <div className="rounded-xl border border-blue-100 bg-white px-3 py-2.5">
                             <div className="flex items-center justify-between gap-3">
-                              <span className="inline-flex items-center gap-2 font-black uppercase tracking-wide text-slate-500">
+                              <span className="inline-flex items-center gap-2 font-semibold uppercase tracking-wide text-slate-500">
                                 <RiShieldCheckLine className="h-4 w-4 text-blue-600" />
                                 Casos no judiciales
                               </span>
-                              <span className="font-black text-blue-950">
+                              <span className="font-semibold text-blue-950">
                                 {Number(gestion?.casosNoJudiciales || 0).toLocaleString("es-CL")}
                               </span>
                             </div>
-                            <p className="mt-1 font-bold text-blue-700 xl:text-right">
+                            <p className="mt-1 font-semibold text-blue-700 xl:text-right">
                               {formatCurrency(gestion?.montoNoJudicial || 0)}
                             </p>
                           </div>
@@ -791,7 +879,7 @@ const MoraGestionesDashboard = () => {
                     <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
                       <div className="mb-3 flex items-center gap-2 px-1">
                         <RiHistoryLine className="h-4 w-4 text-slate-500" />
-                        <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                           Ciclo de gestión
                         </p>
                       </div>
@@ -801,10 +889,10 @@ const MoraGestionesDashboard = () => {
                             <RiCalendarLine className="h-5 w-5" />
                           </span>
                           <div className="min-w-0">
-                            <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                               Registrada
                             </p>
-                            <p className="mt-1 text-sm font-bold text-slate-950">
+                            <p className="mt-1 text-sm font-medium text-slate-950">
                               {gestion.fechaRegistro || gestion.createdAt
                                 ? formatDate(gestion.fechaRegistro || gestion.createdAt)
                                 : "Sin fecha"}
@@ -816,10 +904,10 @@ const MoraGestionesDashboard = () => {
                             <RiTimeLine className="h-5 w-5" />
                           </span>
                           <div className="min-w-0">
-                            <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                               Pasó a análisis
                             </p>
-                            <p className="mt-1 text-sm font-bold text-slate-950">
+                            <p className="mt-1 text-sm font-medium text-slate-950">
                               {gestion.fechaAnalisis ? formatDate(gestion.fechaAnalisis) : "Pendiente"}
                             </p>
                           </div>
@@ -829,10 +917,10 @@ const MoraGestionesDashboard = () => {
                             <RiRefreshLine className="h-5 w-5" />
                           </span>
                           <div className="min-w-0">
-                            <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                               Tiempo de resolución
                             </p>
-                            <p className="mt-1 text-sm font-bold text-[#06164b]">
+                            <p className="mt-1 text-sm font-medium text-[#06164b]">
                               {gestion.fechaCierre
                                 ? formatDurationHours(gestion.horasResolucionTotal)
                                 : "En curso"}
@@ -854,11 +942,11 @@ const MoraGestionesDashboard = () => {
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           {solicitudesAccionables.length > 0 ? (
-                            <span className="rounded-full border border-amber-200 bg-amber-100 px-4 py-1 text-xs font-bold uppercase text-amber-800">
+                            <span className="rounded-full border border-amber-200 bg-amber-100 px-4 py-1 text-xs font-semibold uppercase text-amber-800">
                               {solicitudesAccionables.length} requiere respuesta
                             </span>
                           ) : null}
-                          <span className="rounded-full bg-slate-200 px-4 py-1 text-xs font-bold uppercase text-slate-700">
+                          <span className="rounded-full bg-slate-200 px-4 py-1 text-xs font-semibold uppercase text-slate-700">
                             {solicitudesGestion.length} documento
                             {solicitudesGestion.length === 1 ? "" : "s"}
                           </span>
@@ -871,7 +959,7 @@ const MoraGestionesDashboard = () => {
                             <RiAlarmWarningLine className="h-5 w-5" />
                           </span>
                           <div>
-                            <p className="text-sm font-bold text-amber-900">
+                            <p className="text-sm font-semibold text-amber-900">
                               Acción requerida del cliente
                             </p>
                             <p className="mt-1 text-sm leading-5 text-amber-800">
@@ -907,14 +995,14 @@ const MoraGestionesDashboard = () => {
                                   <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_200px] lg:items-center">
                                     <div>
                                       <div className="flex flex-wrap items-center gap-3">
-                                        <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-800">
+                                        <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800">
                                           Pendiente de respuesta
                                         </span>
-                                        <span className={`rounded-full border px-3 py-1 text-[11px] font-bold uppercase ${getEstadoTone(solicitud.estado)}`}>
+                                        <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${getEstadoTone(solicitud.estado)}`}>
                                           {formatEstado(solicitud.estado)}
                                         </span>
                                       </div>
-                                      <h4 className="mt-3 text-lg font-bold text-[#06164b]">
+                                      <h4 className="mt-3 text-lg font-semibold text-[#06164b]">
                                         Adjuntar {solicitudLabel}
                                       </h4>
                                       {solicitud.mensaje ? (
@@ -931,7 +1019,7 @@ const MoraGestionesDashboard = () => {
                                           href={solicitud.solicitudArchivoUrl}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50"
+                                          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-3 py-2 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50"
                                         >
                                           <RiFileDownloadLine className="h-4 w-4" />
                                           Ver documento enviado por Previley
@@ -943,7 +1031,7 @@ const MoraGestionesDashboard = () => {
                                     <button
                                       type="button"
                                       onClick={() => openResponderSolicitud(solicitud)}
-                                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-500"
+                                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-500"
                                     >
                                       <RiFileUploadLine className="h-5 w-5" />
                                       Adjuntar respuesta
@@ -958,7 +1046,7 @@ const MoraGestionesDashboard = () => {
                                         </span>
                                         <div className="min-w-0">
                                           <div className="flex flex-wrap items-center gap-2">
-                                            <p className="text-base font-bold text-slate-950">
+                                            <p className="text-base font-semibold text-slate-950">
                                               {solicitudLabel}
                                             </p>
                                             {solicitud.respuestaArchivoUrl ? (
@@ -966,13 +1054,13 @@ const MoraGestionesDashboard = () => {
                                                 href={solicitud.respuestaArchivoUrl}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
+                                                className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
                                               >
                                                 Adjunto
                                                 <RiExternalLinkLine className="h-3.5 w-3.5" />
                                               </a>
                                             ) : solicitud.respuestaArchivo ? (
-                                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                                                 Adjunto recibido
                                               </span>
                                             ) : null}
@@ -984,14 +1072,14 @@ const MoraGestionesDashboard = () => {
                                       </div>
                                       <div className="flex flex-wrap items-center gap-3">
                                         {solicitud.fechaRespuesta ? (
-                                          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600">
+                                          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
                                             {formatDate(solicitud.fechaRespuesta)}
                                           </span>
                                         ) : null}
                                         <button
                                           type="button"
                                           onClick={() => toggleSolicitudDetalle(solicitud.id)}
-                                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-black text-[#06164b] shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+                                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-[#06164b] shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
                                           aria-expanded={isExpanded}
                                         >
                                           {isExpanded ? "Ocultar detalle" : "Ver detalle"}
@@ -1005,7 +1093,7 @@ const MoraGestionesDashboard = () => {
                                     {isExpanded ? (
                                       <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 lg:grid-cols-2">
                                         <div className="rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-                                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                             <RiQuestionAnswerLine className="h-4 w-4 text-blue-600" />
                                             Previley solicitó
                                           </div>
@@ -1020,7 +1108,7 @@ const MoraGestionesDashboard = () => {
                                               href={solicitud.solicitudArchivoUrl}
                                               target="_blank"
                                               rel="noreferrer"
-                                              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
+                                              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
                                             >
                                               Documento de Previley
                                               <RiExternalLinkLine className="h-3.5 w-3.5" />
@@ -1029,7 +1117,7 @@ const MoraGestionesDashboard = () => {
                                         </div>
 
                                         <div className="rounded-xl border border-emerald-100 bg-emerald-50/30 px-4 py-3">
-                                          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                                          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                                             <RiFileList3Line className="h-4 w-4 text-emerald-600" />
                                             Cliente respondió
                                           </div>
@@ -1066,7 +1154,7 @@ const MoraGestionesDashboard = () => {
                                 key={documento.key}
                                 type="button"
                                 onClick={documento.onClick}
-                                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-black transition ${buttonClass}`}
+                                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${buttonClass}`}
                               >
                                 <RiFileDownloadLine className="h-5 w-5" />
                                 {documento.label}
@@ -1080,7 +1168,7 @@ const MoraGestionesDashboard = () => {
                                 key={documento.key}
                                 type="button"
                                 disabled
-                                className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-black text-slate-400"
+                                className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-400"
                               >
                                 <RiFileDownloadLine className="h-5 w-5" />
                                 {documento.label}
@@ -1094,7 +1182,7 @@ const MoraGestionesDashboard = () => {
                               href={documento.href}
                               target="_blank"
                               rel="noreferrer"
-                              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-black transition ${buttonClass}`}
+                              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${buttonClass}`}
                             >
                               <RiFileDownloadLine className="h-5 w-5" />
                               {documento.label}
@@ -1116,10 +1204,10 @@ const MoraGestionesDashboard = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 px-4 py-5 backdrop-blur-sm">
           <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
             <div className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 md:px-6">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-[#06164b]">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#06164b]">
                 Acción requerida
               </p>
-              <h3 className="mt-2 text-[clamp(1.6rem,2vw,2.15rem)] font-black leading-tight tracking-normal text-[#06164b]">
+              <h3 className="mt-2 text-[clamp(1.6rem,2vw,2.15rem)] font-bold leading-tight tracking-normal text-[#06164b]">
                 Adjuntar {tipoSolicitudLabels[solicitudActiva.tipoSolicitud] || solicitudActiva.tipoSolicitud}
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-600 md:text-base">
@@ -1129,7 +1217,7 @@ const MoraGestionesDashboard = () => {
 
             <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 md:px-6">
               <div className="rounded-xl border border-amber-200 bg-white px-4 py-3">
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                   Solicitud de Previley
                 </p>
                 <p className="mt-3 text-sm leading-6 text-slate-700 md:text-base">
@@ -1151,7 +1239,7 @@ const MoraGestionesDashboard = () => {
               </div>
 
               <div>
-                <label htmlFor="respuesta-solicitud-mora" className="text-base font-black text-[#06164b]">
+                <label htmlFor="respuesta-solicitud-mora" className="text-base font-semibold text-[#06164b]">
                   Comentario para Previley
                 </label>
                 <textarea
@@ -1167,7 +1255,7 @@ const MoraGestionesDashboard = () => {
               </div>
 
               <div>
-                <label htmlFor="archivo-solicitud-mora" className="text-base font-black text-[#06164b]">
+                <label htmlFor="archivo-solicitud-mora" className="text-base font-semibold text-[#06164b]">
                   Documento adjunto
                 </label>
                 <label
@@ -1177,7 +1265,7 @@ const MoraGestionesDashboard = () => {
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
                     <RiFileUploadLine className="h-6 w-6" />
                   </span>
-                  <span className="mt-4 max-w-full break-words text-lg font-black text-[#06164b]">
+                  <span className="mt-4 max-w-full break-words text-lg font-semibold text-[#06164b]">
                     {respuestaArchivo ? respuestaArchivo.name : "Seleccionar archivo"}
                   </span>
                   <span className="mt-1 text-sm text-slate-500">
