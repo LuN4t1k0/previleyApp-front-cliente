@@ -1129,6 +1129,23 @@ const MoraGestionesDashboard = () => {
                                                 : "Sin respuesta registrada."
                                             )}
                                           </p>
+                                          {solicitud.respuestaArchivoUrl ? (
+                                            <a
+                                              href={solicitud.respuestaArchivoUrl}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50"
+                                            >
+                                              <RiFileDownloadLine className="h-3.5 w-3.5" />
+                                              Documento del cliente
+                                              <RiExternalLinkLine className="h-3.5 w-3.5" />
+                                            </a>
+                                          ) : solicitud.respuestaArchivo ? (
+                                            <span className="mt-3 inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-xs font-semibold text-emerald-700">
+                                              <RiFileList3Line className="h-3.5 w-3.5" />
+                                              Documento del cliente recibido
+                                            </span>
+                                          ) : null}
                                         </div>
                                       </div>
                                     ) : null}
