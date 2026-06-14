@@ -77,9 +77,29 @@ const buildGestionHref = ({ empresaRut, gestionId }) => {
   return `/servicios/mora-presunta/gestiones${query ? `?${query}` : ""}`;
 };
 
+const buildGrupoOptions = (empresas = []) => {
+  const grupos = new Map();
+  empresas.forEach((empresa) => {
+    const grupoId = empresa?.grupoEmpresarialId || empresa?.grupoEmpresarial?.id;
+    if (!grupoId) return;
+    const key = String(grupoId);
+    const nombre =
+      empresa?.grupoEmpresarial?.nombre ||
+      empresa?.grupoEmpresarialNombre ||
+      `Grupo ${key}`;
+    if (!grupos.has(key)) {
+      grupos.set(key, { id: key, label: nombre, empresas: 0 });
+    }
+    grupos.get(key).empresas += 1;
+  });
+  return Array.from(grupos.values()).sort((a, b) => a.label.localeCompare(b.label, "es"));
+};
+
 const MoraPriorizacionCliente = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
+  const [scopeMode, setScopeMode] = useState("empresa");
   const [empresaRut, setEmpresaRut] = useState("");
+  const [grupoEmpresarialId, setGrupoEmpresarialId] = useState("");
   const [periodo, setPeriodo] = useState(() => getCurrentPeriodo());
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -95,11 +115,23 @@ const MoraPriorizacionCliente = () => {
     [empresas]
   );
 
+  const grupoOptions = useMemo(() => buildGrupoOptions(empresas), [empresas]);
   const empresaRutActiva = empresaRut || empresaOptions[0]?.rut || "";
+  const grupoEmpresarialIdActivo =
+    grupoEmpresarialId || grupoOptions[0]?.id || "";
+  const scopeReady =
+    scopeMode === "grupo" ? Boolean(grupoEmpresarialIdActivo) : Boolean(empresaRutActiva);
+  const requestParams = useMemo(
+    () =>
+      scopeMode === "grupo"
+        ? { grupoEmpresarialId: Number(grupoEmpresarialIdActivo) }
+        : { empresaRut: empresaRutActiva },
+    [empresaRutActiva, grupoEmpresarialIdActivo, scopeMode]
+  );
 
   useEffect(() => {
     const fetchPrioridades = async () => {
-      if (!empresaRutActiva) {
+      if (!scopeReady) {
         setItems([]);
         return;
       }
@@ -107,7 +139,7 @@ const MoraPriorizacionCliente = () => {
       try {
         setLoading(true);
         const res = await apiService.get("/prioridad-gestion-mora", {
-          params: { empresaRut: empresaRutActiva, periodo },
+          params: { ...requestParams, periodo },
         });
         setItems(Array.isArray(res?.data?.data) ? res.data.data : []);
       } catch (error) {
@@ -119,7 +151,7 @@ const MoraPriorizacionCliente = () => {
     };
 
     fetchPrioridades();
-  }, [empresaRutActiva, periodo]);
+  }, [periodo, requestParams, scopeReady]);
 
   const prioridades = useMemo(() => ordenarPrioridades(items), [items]);
 
@@ -183,20 +215,59 @@ const MoraPriorizacionCliente = () => {
       <div className="px-4 py-6 sm:px-6 lg:px-8">
         <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-6">
           <section className="rounded-lg border border-indigo-200 bg-white p-5 shadow-sm">
-            <div className="grid gap-4 lg:grid-cols-[minmax(320px,1fr)_220px]">
+            <div className="grid gap-4 lg:grid-cols-[180px_minmax(320px,1fr)_220px]">
+              <div className="flex flex-col gap-2">
+                <span className="text-[11px] font-semibold uppercase text-slate-500">
+                  Planificar por
+                </span>
+                <div className="grid min-h-[42px] grid-cols-2 rounded-md border border-indigo-200 bg-slate-50 p-1">
+                  {[
+                    ["empresa", "Empresa"],
+                    ["grupo", "Grupo"],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setScopeMode(value)}
+                      disabled={loadingEmpresas || loading}
+                      className={`rounded px-3 text-sm font-semibold transition ${
+                        scopeMode === value
+                          ? "bg-white text-slate-950 shadow-sm"
+                          : "text-slate-500 hover:text-slate-800"
+                      } disabled:cursor-not-allowed disabled:opacity-50`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <label className="flex flex-col gap-2">
-                <span className="text-[11px] font-semibold uppercase text-slate-500">Empresa</span>
+                <span className="text-[11px] font-semibold uppercase text-slate-500">
+                  {scopeMode === "grupo" ? "Grupo empresarial" : "Empresa"}
+                </span>
                 <div className="flex min-h-[42px] items-center gap-3 rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm">
                   <RiBuildingLine className="h-5 w-5 text-slate-500" aria-hidden="true" />
                   <select
                     className="min-w-0 flex-1 bg-transparent text-sm font-medium text-slate-800 outline-none"
-                    value={empresaRutActiva}
-                    disabled={loadingEmpresas || loading || empresaOptions.length === 0}
-                    onChange={(event) => setEmpresaRut(event.target.value)}
+                    value={scopeMode === "grupo" ? grupoEmpresarialIdActivo : empresaRutActiva}
+                    disabled={
+                      loadingEmpresas ||
+                      loading ||
+                      (scopeMode === "grupo" ? grupoOptions.length === 0 : empresaOptions.length === 0)
+                    }
+                    onChange={(event) => {
+                      if (scopeMode === "grupo") {
+                        setGrupoEmpresarialId(event.target.value);
+                      } else {
+                        setEmpresaRut(event.target.value);
+                      }
+                    }}
                   >
-                    {empresaOptions.map((empresa) => (
-                      <option key={empresa.rut} value={empresa.rut}>
-                        {empresa.label}
+                    {(scopeMode === "grupo" ? grupoOptions : empresaOptions).map((option) => (
+                      <option key={option.id || option.rut} value={option.id || option.rut}>
+                        {option.label}
+                        {option.empresas ? ` (${option.empresas} empresas)` : ""}
                       </option>
                     ))}
                   </select>
@@ -326,6 +397,12 @@ const MoraPriorizacionCliente = () => {
                           <p className="mt-1 text-xs font-semibold uppercase text-slate-400">
                             {item.estadoGestion || "sin estado"}
                           </p>
+                          {scopeMode === "grupo" ? (
+                            <p className="mt-1 text-xs font-semibold uppercase text-slate-400">
+                              Empresa {item.empresaNombre || item.empresaRut || "sin nombre"}
+                              {item.empresaNombre && item.empresaRut ? ` (${item.empresaRut})` : ""}
+                            </p>
+                          ) : null}
                           <p className="mt-2">
                             <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-semibold uppercase text-indigo-800">
                               {item.origenPrioridad || "sugerida"}
@@ -367,7 +444,7 @@ const MoraPriorizacionCliente = () => {
                             </span>
                             <Link
                               href={buildGestionHref({
-                                empresaRut: empresaRutActiva,
+                                empresaRut: scopeMode === "grupo" ? item.empresaRut : empresaRutActiva,
                                 gestionId: item.gestionMoraId,
                               })}
                               className="inline-flex w-fit items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-800 transition hover:border-indigo-300 hover:bg-indigo-100"
