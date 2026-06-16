@@ -7,7 +7,9 @@ import {
   RiArrowRightLine,
   RiBuildingLine,
   RiCalendarLine,
+  RiFileExcel2Line,
   RiFileList3Line,
+  RiFilePdf2Line,
   RiListOrdered,
   RiMoneyDollarCircleLine,
   RiScales3Line,
@@ -15,6 +17,12 @@ import {
 import apiService from "@/app/api/apiService";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { RiskPill, SectionCard, SectionHeader } from "@/components/dashboard/mora-operativo/MoraOperativoUI";
+import { showErrorAlert, showSuccessAlert } from "@/utils/alerts";
+import {
+  buildPlanTrabajoRows,
+  exportPlanTrabajoExcel,
+  exportPlanTrabajoPdf,
+} from "./planTrabajoExport";
 
 const clpFormatter = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -103,6 +111,7 @@ const MoraPriorizacionCliente = () => {
   const [periodo, setPeriodo] = useState(() => getCurrentPeriodo());
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(null);
 
   const empresaOptions = useMemo(
     () =>
@@ -119,6 +128,19 @@ const MoraPriorizacionCliente = () => {
   const empresaRutActiva = empresaRut || empresaOptions[0]?.rut || "";
   const grupoEmpresarialIdActivo =
     grupoEmpresarialId || grupoOptions[0]?.id || "";
+  const selectedScopeName = useMemo(() => {
+    if (scopeMode === "grupo") {
+      return (
+        grupoOptions.find((option) => String(option.id) === String(grupoEmpresarialIdActivo))
+          ?.label || "Grupo empresarial"
+      );
+    }
+    return (
+      empresaOptions.find((option) => option.rut === empresaRutActiva)?.label ||
+      empresaRutActiva ||
+      "Empresa"
+    );
+  }, [empresaOptions, empresaRutActiva, grupoEmpresarialIdActivo, grupoOptions, scopeMode]);
   const scopeReady =
     scopeMode === "grupo" ? Boolean(grupoEmpresarialIdActivo) : Boolean(empresaRutActiva);
   const requestParams = useMemo(
@@ -191,6 +213,57 @@ const MoraPriorizacionCliente = () => {
     };
   }, [prioridades]);
 
+  const exportRows = useMemo(
+    () =>
+      buildPlanTrabajoRows({
+        items: prioridades,
+        getMotivoOrden,
+        getProximaAccion,
+      }),
+    [prioridades]
+  );
+
+  const handleExportExcel = () => {
+    if (!exportRows.length) return;
+    try {
+      setExporting("excel");
+      exportPlanTrabajoExcel({
+        rows: exportRows,
+        resumen,
+        periodo,
+        scopeMode,
+        scopeName: selectedScopeName,
+      });
+      showSuccessAlert("Excel generado", "El plan de trabajo fue descargado.");
+    } catch (error) {
+      console.error("Error exportando plan de trabajo a Excel:", error);
+      showErrorAlert("Error", "No se pudo exportar el plan a Excel.");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    if (!exportRows.length) return;
+    try {
+      setExporting("pdf");
+      await exportPlanTrabajoPdf({
+        rows: exportRows,
+        resumen,
+        periodo,
+        scopeMode,
+        scopeName: selectedScopeName,
+        formatCLP,
+      });
+      showSuccessAlert("PDF generado", "El plan de trabajo fue descargado.");
+    } catch (error) {
+      console.error("Error exportando plan de trabajo a PDF:", error);
+      showErrorAlert("Error", "No se pudo exportar el plan a PDF.");
+    } finally {
+      setExporting(null);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#f6f6ff] text-slate-950">
       <header className="border-b border-indigo-100 bg-[#f6f6ff]">
@@ -208,6 +281,26 @@ const MoraPriorizacionCliente = () => {
             <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
               Consulta el orden vigente de focos pendientes definido para el periodo.
             </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              disabled={!prioridades.length || loading || Boolean(exporting)}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RiFileExcel2Line className="h-4 w-4" aria-hidden="true" />
+              {exporting === "excel" ? "Generando..." : "Exportar Excel"}
+            </button>
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={!prioridades.length || loading || Boolean(exporting)}
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-md border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-800 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RiFilePdf2Line className="h-4 w-4" aria-hidden="true" />
+              {exporting === "pdf" ? "Generando..." : "Exportar PDF"}
+            </button>
           </div>
         </div>
       </header>
