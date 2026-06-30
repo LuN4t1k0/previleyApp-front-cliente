@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card, Title, Text, BarChart } from "@tremor/react";
+import { BarChart } from "@tremor/react";
+import { RiBankLine } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
+import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const formatter = (number) =>
   new Intl.NumberFormat("es-CL", {
@@ -53,18 +55,20 @@ const InstitucionesOperativo = ({ empresaRut, entidadId, dateRange }) => {
   const chartMinWidth = Math.max(640, dataChart.length * 80);
 
   return (
-    <Card>
-      <Title>🏦 Consolidado por entidad</Title>
-      <Text className="text-sm text-gray-500 mb-4">
-        Compara la deuda total identificada, lo recuperado y el saldo pendiente por entidad.
-      </Text>
-      <div className="mt-4 overflow-x-auto">
-        <div className="pr-4" style={{ minWidth: chartMinWidth }}>
+    <SectionCard>
+      <SectionHeader
+        title="Consolidado por entidad"
+        description="Compara la deuda total identificada, lo recuperado y el saldo pendiente por entidad."
+        badge={`${dataChart.length} entidades`}
+        icon={RiBankLine}
+      />
+      <div className="overflow-x-auto border-t border-indigo-100 px-5 py-5">
+        <div style={{ minWidth: chartMinWidth }}>
           <BarChart
             data={dataChart}
             index="entidad"
             categories={["Deuda total", "Pendiente", "Regularizado"]}
-            colors={["rose", "amber", "emerald"]}
+            colors={["slate", "amber", "emerald"]}
             showLegend
             tickGap={0}
             rotateLabelX={{ angle: 0, verticalShift: 12, xAxisHeight: 80 }}
@@ -73,7 +77,7 @@ const InstitucionesOperativo = ({ empresaRut, entidadId, dateRange }) => {
           />
         </div>
       </div>
-    </Card>
+    </SectionCard>
   );
 };
 

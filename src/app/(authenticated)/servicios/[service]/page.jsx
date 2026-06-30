@@ -1,10 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { DateRangePicker, Divider } from "@tremor/react";
 import { toast } from "react-hot-toast";
+import {
+  RiArrowRightLine,
+  RiCalendarLine,
+  RiDashboardLine,
+  RiFileList3Line,
+} from "@remixicon/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import { useEmpresasServicios } from "@/hooks/useEmpresasServicios";
 import useEmpresaCompleta from "@/hooks/useEmpresaCompleta";
@@ -77,13 +83,113 @@ const getServiceEntry = (servicesByType, definition, slug) => {
   );
 };
 
-const ServiceDetailPage = () => {
+const moraHubCards = [
+  {
+    title: "Dashboard Analítico",
+    description:
+      "Indicadores ejecutivos, evolución y prioridad de cartera multi-empresa.",
+    href: "/servicios/mora-presunta/dashboard-analitico",
+    icon: RiDashboardLine,
+    tone: "border-t-red-500",
+  },
+  {
+    title: "Dashboard Operativo",
+    description:
+      "Seguimiento por empresa, filtros por entidad y tablero de gestión diaria.",
+    href: "/servicios/mora-presunta/dashboard-operativo",
+    icon: RiDashboardLine,
+    tone: "border-t-emerald-500",
+  },
+  {
+    title: "Gestiones",
+    description:
+      "Seguimiento operativo de casos, avances y estados de regularización.",
+    href: "/servicios/mora-presunta/gestiones",
+    icon: RiFileList3Line,
+    tone: "border-t-blue-500",
+  },
+  {
+    title: "Plan de trabajo",
+    description:
+      "Orden vigente de focos pendientes priorizados por periodo.",
+    href: "/servicios/mora-presunta/priorizacion",
+    icon: RiCalendarLine,
+    tone: "border-t-amber-500",
+  },
+];
+
+const MoraServiceHub = () => (
+  <section className="min-h-screen bg-slate-50 pb-16">
+    <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 pt-10 sm:px-6 lg:px-8">
+      <header className="border-b border-slate-200 bg-white px-6 py-8 shadow-sm md:px-8">
+        <div className="max-w-3xl">
+          <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-600">
+            Servicio contratado
+          </span>
+          <h1 className="mt-4 text-3xl font-bold text-slate-900 sm:text-4xl">
+            Mora Presunta
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-slate-500 sm:text-base">
+            Accede a las áreas principales del servicio desde un solo lugar.
+          </p>
+        </div>
+      </header>
+
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {moraHubCards.map((card) => {
+          const Icon = card.icon;
+          const content = (
+            <article className={`group flex min-h-[260px] flex-col rounded-lg border border-slate-200 border-t-4 ${card.tone} bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md`}>
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
+                <Icon className="h-7 w-7" />
+              </div>
+              <h2 className="mt-6 text-xl font-semibold text-slate-950">
+                {card.title}
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                {card.description}
+              </p>
+              {card.href ? (
+                <div className="mt-auto inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  Ingresar
+                  <RiArrowRightLine className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </div>
+              ) : (
+                <span className="mt-auto inline-flex w-fit rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
+                  {card.status}
+                </span>
+              )}
+            </article>
+          );
+
+          return card.href ? (
+            <Link key={card.title} href={card.href}>
+              {content}
+            </Link>
+          ) : (
+            <div key={card.title} aria-disabled="true">
+              {content}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </section>
+);
+
+const ServiceDetailContent = () => {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params?.service;
+  const tabFromUrl = searchParams?.get("tab");
   const definition = resolveServiceDefinition(slug);
   const inferredKey = definition?.key || resolveServiceKeyFromName(slug);
 
   if (inferredKey === "mora") {
+    if (!tabFromUrl) {
+      return <MoraServiceHub />;
+    }
+
     return <PageShell moduleTitle="Mora Presunta" tabsConfig={moraTabsConfig} />;
   }
 
@@ -273,7 +379,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                       label="Deuda total"
                       value={formatCurrency(dashboardData?.summary?.totalDeuda || 0)}
                       helperText="Monto total en seguimiento"
-                      tone="warning"
+                      tone="neutral"
                       icon="💼"
                     />
                     <MetricCard
@@ -681,5 +787,11 @@ const GenericServiceContent = ({ definition, slug }) => {
     </section>
   );
 };
+
+const ServiceDetailPage = () => (
+  <Suspense fallback={<div className="p-6 text-gray-500 animate-pulse">Cargando servicio...</div>}>
+    <ServiceDetailContent />
+  </Suspense>
+);
 
 export default ServiceDetailPage;

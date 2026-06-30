@@ -3,18 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   BarChart,
-  Card,
-  Title,
-  Text,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
 } from "@tremor/react";
+import { RiMindMap } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
+import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const MAX_CHART_ITEMS = 8;
 
@@ -82,14 +75,15 @@ const DistribucionMotivoOperativo = ({ empresaRut, entidadId, dateRange }) => {
   }
 
   return (
-    <Card>
-      <Title>🧩 Clasificación de casos por motivo</Title>
-      <Text className="text-sm text-gray-500 mb-4">
-        Casos totales: {totalCasos.toLocaleString("es-CL")}. Monto asociado:{" "}
-        {formatCLP(totalMonto)}.
-      </Text>
+    <SectionCard>
+      <SectionHeader
+        title="Clasificación de casos por motivo"
+        description={`Casos totales: ${totalCasos.toLocaleString("es-CL")}. Monto asociado: ${formatCLP(totalMonto)}.`}
+        badge={`${tableData.length} motivos`}
+        icon={RiMindMap}
+      />
 
-      <div className="mt-6 overflow-x-auto">
+      <div className="overflow-x-auto border-t border-indigo-100 px-5 py-5">
         <div className="min-w-[640px]">
           <BarChart
             data={chartData}
@@ -104,36 +98,34 @@ const DistribucionMotivoOperativo = ({ empresaRut, entidadId, dateRange }) => {
         </div>
       </div>
 
-      <Table className="text-sm mt-6">
-        <TableHead>
-          <TableRow>
-            <TableHeaderCell>Motivo</TableHeaderCell>
-            <TableHeaderCell className="text-right">Casos</TableHeaderCell>
-            <TableHeaderCell className="text-right">Monto</TableHeaderCell>
-            <TableHeaderCell className="text-right">Porcentaje</TableHeaderCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {tableData.map((item) => {
-            const casos = Number(item.casos || 0);
-            const monto = Number(item.monto || 0);
-            const porcentaje = totalCasos ? (casos / totalCasos) * 100 : 0;
-            return (
-              <TableRow key={item.motivo || "sin-motivo"}>
-                <TableCell className="font-medium">
-                  {item.motivo || "Sin motivo"}
-                </TableCell>
-                <TableCell className="text-right">
-                  {casos.toLocaleString("es-CL")}
-                </TableCell>
-                <TableCell className="text-right">{formatCLP(monto)}</TableCell>
-                <TableCell className="text-right">{porcentaje.toFixed(1)}%</TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </Card>
+      <div className="overflow-x-auto border-t border-indigo-100">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-slate-50 font-semibold text-stone-700">
+            <tr>
+              <th className="px-6 py-4">Motivo</th>
+              <th className="px-6 py-4 text-right">Casos</th>
+              <th className="px-6 py-4 text-right">Monto</th>
+              <th className="px-6 py-4 text-right">Porcentaje</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-indigo-100">
+            {tableData.map((item) => {
+              const casos = Number(item.casos || 0);
+              const monto = Number(item.monto || 0);
+              const porcentaje = totalCasos ? (casos / totalCasos) * 100 : 0;
+              return (
+                <tr key={item.motivo || "sin-motivo"}>
+                  <td className="px-6 py-4 font-semibold text-slate-950">{item.motivo || "Sin motivo"}</td>
+                  <td className="px-6 py-4 text-right">{casos.toLocaleString("es-CL")}</td>
+                  <td className="px-6 py-4 text-right font-semibold text-indigo-800">{formatCLP(monto)}</td>
+                  <td className="px-6 py-4 text-right">{porcentaje.toFixed(1)}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </SectionCard>
   );
 };
 

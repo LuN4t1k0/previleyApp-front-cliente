@@ -160,22 +160,22 @@ import {
 
 // Íconos visuales para cada estado
 const ICONOS_ESTADO_PREVIRED = {
-  Judicial: <RiAlertLine className="text-rose-600 dark:text-rose-400 size-5" />,
-  "Pre Judicial": <RiFileWarningLine className="text-amber-500 dark:text-amber-400 size-5" />,
-  "No Judicial": <RiShieldCheckLine className="text-yellow-500 dark:text-yellow-400 size-5" />,
+  Judicial: <RiAlertLine className="text-red-600 dark:text-red-400 size-5" />,
+  "Pre Judicial": <RiFileWarningLine className="text-orange-500 dark:text-orange-400 size-5" />,
+  "No Judicial": <RiShieldCheckLine className="text-blue-500 dark:text-blue-400 size-5" />,
 };
 
 // Fondo e iconos por estado
 const FONDO_ESTADO_PREVIRED = {
-  Judicial: "bg-rose-100 dark:bg-rose-400/10",
-  "Pre Judicial": "bg-amber-100 dark:bg-amber-400/10",
-  "No Judicial": "bg-yellow-100 dark:bg-yellow-300/10",
+  Judicial: "bg-red-100 dark:bg-red-400/10",
+  "Pre Judicial": "bg-orange-100 dark:bg-orange-400/10",
+  "No Judicial": "bg-blue-100 dark:bg-blue-300/10",
 };
 
 const TEXTO_ESTADO_PREVIRED = {
-  Judicial: "text-rose-800 dark:text-rose-400",
-  "Pre Judicial": "text-amber-800 dark:text-amber-400",
-  "No Judicial": "text-yellow-800 dark:text-yellow-400",
+  Judicial: "text-red-800 dark:text-red-400",
+  "Pre Judicial": "text-orange-800 dark:text-orange-400",
+  "No Judicial": "text-blue-800 dark:text-blue-400",
 };
 
 const DistribucionEstadoDetalle = ({ empresaRut }) => {

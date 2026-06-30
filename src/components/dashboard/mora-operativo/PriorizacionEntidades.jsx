@@ -1,21 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  Card,
-  Title,
-  Text,
-  Table,
-  TableHead,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  TableCell,
-  BadgeDelta,
-} from "@tremor/react";
-import { RiArrowRightSLine } from "@remixicon/react";
+import { RiFocus3Line } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
+import { ActionButton, RiskPill, SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const formatCLP = (valor) =>
   new Intl.NumberFormat("es-CL", {
@@ -23,21 +12,6 @@ const formatCLP = (valor) =>
     currency: "CLP",
     maximumFractionDigits: 0,
   }).format(valor || 0);
-
-const nivelRiesgoConfig = {
-  alto: {
-    label: "Alto",
-    badge: <BadgeDelta deltaType="moderateDecrease">Alto</BadgeDelta>,
-  },
-  medio: {
-    label: "Medio",
-    badge: <BadgeDelta deltaType="unchanged">Medio</BadgeDelta>,
-  },
-  bajo: {
-    label: "Bajo",
-    badge: <BadgeDelta deltaType="increase">Bajo</BadgeDelta>,
-  },
-};
 
 const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntidad }) => {
   const [priorizacion, setPriorizacion] = useState([]);
@@ -65,6 +39,8 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
     return [...priorizacion].sort((a, b) => {
       const casosA = Number(a?.casosJudiciales || 0);
       const casosB = Number(b?.casosJudiciales || 0);
+      const preJudicialA = Number(a?.casosPreJudiciales || 0);
+      const preJudicialB = Number(b?.casosPreJudiciales || 0);
       const tieneJudicialA = casosA > 0 ? 1 : 0;
       const tieneJudicialB = casosB > 0 ? 1 : 0;
 
@@ -73,6 +49,9 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
       }
       if (casosA !== casosB) {
         return casosB - casosA;
+      }
+      if (preJudicialA !== preJudicialB) {
+        return preJudicialB - preJudicialA;
       }
 
       const pendienteA = Number(a?.deudaPendiente || 0);
@@ -86,57 +65,67 @@ const PriorizacionEntidades = ({ empresaRut, entidadId, dateRange, onSelectEntid
   }
 
   return (
-    <Card>
-      <Title>🎯 Priorización de entidades</Title>
-      <Text className="text-sm text-gray-500 mb-4">
-        Ordena la gestión iniciando por las entidades con casos judiciales y deuda pendiente.
-      </Text>
+    <SectionCard>
+      <SectionHeader
+        title="Priorización de entidades"
+        description="Ordena la gestión iniciando por las entidades con casos judiciales, pre judiciales y deuda pendiente."
+        badge={`${filas.length} entidades`}
+        icon={RiFocus3Line}
+      />
 
-      <Table className="text-sm">
-        <TableHead>
-          <TableRow>
-            <TableHeaderCell>Entidad</TableHeaderCell>
-            <TableHeaderCell className="text-right">Deuda total</TableHeaderCell>
-            <TableHeaderCell className="text-right">Pendiente</TableHeaderCell>
-            <TableHeaderCell className="text-right">Regularizado</TableHeaderCell>
-            <TableHeaderCell className="text-right">Riesgo</TableHeaderCell>
-            <TableHeaderCell className="text-right">Casos judiciales</TableHeaderCell>
-            <TableHeaderCell className="text-right">Acción</TableHeaderCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {filas.map((item) => {
-            const riesgo = nivelRiesgoConfig[item.nivelRiesgo] || nivelRiesgoConfig.bajo;
-            return (
-              <TableRow key={`${item.empresaRut}-${item.entidadId}`} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                <TableCell className="font-medium">{item.entidadNombre}</TableCell>
-                <TableCell className="text-right">{formatCLP(item.totalDeuda)}</TableCell>
-                <TableCell className="text-right">{formatCLP(item.deudaPendiente)}</TableCell>
-                <TableCell className="text-right">{formatCLP(item.deudaResuelta)}</TableCell>
-                <TableCell className="text-right">{riesgo.badge}</TableCell>
-                <TableCell className="text-right">
-                  {(item.casosJudiciales || 0).toLocaleString("es-CL")}
-                </TableCell>
-                <TableCell className="text-right">
+      <div className="overflow-x-auto border-t border-indigo-100">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-slate-50 font-bold text-stone-700">
+            <tr>
+              <th className="px-6 py-4">Entidad</th>
+              <th className="px-6 py-4 text-right">Deuda total</th>
+              <th className="px-6 py-4 text-right">Pendiente</th>
+              <th className="px-6 py-4 text-right">Regularizado</th>
+              <th className="px-6 py-4 text-right">Riesgo</th>
+              <th className="px-6 py-4 text-right">Casos judiciales</th>
+              <th className="px-6 py-4 text-right">Casos pre judiciales</th>
+              <th className="px-6 py-4 text-right">Acción</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-indigo-100">
+            {filas.map((item) => (
+              <tr key={`${item.empresaRut}-${item.entidadId}`} className="bg-white hover:bg-slate-50">
+                <td className="px-6 py-5 font-bold text-slate-950">{item.entidadNombre}</td>
+                <td className="px-6 py-5 text-right font-semibold text-slate-800">
+                  {formatCLP(item.totalDeuda)}
+                </td>
+                <td className="px-6 py-5 text-right font-bold text-amber-800">
+                  {formatCLP(item.deudaPendiente)}
+                </td>
+                <td className="px-6 py-5 text-right font-semibold text-emerald-700">
+                  {formatCLP(item.deudaResuelta)}
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <RiskPill level={item.nivelRiesgo} />
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <span className="inline-flex min-w-10 justify-center rounded-full bg-red-100 px-3 py-1 font-bold text-red-950">
+                    {(item.casosJudiciales || 0).toLocaleString("es-CL")}
+                  </span>
+                </td>
+                <td className="px-6 py-5 text-right">
+                  <span className="inline-flex min-w-10 justify-center rounded-full bg-orange-100 px-3 py-1 font-bold text-orange-950">
+                    {(item.casosPreJudiciales || 0).toLocaleString("es-CL")}
+                  </span>
+                </td>
+                <td className="px-6 py-5 text-right">
                   {typeof onSelectEntidad === "function" ? (
-                    <button
-                      type="button"
-                      onClick={() => onSelectEntidad(item.entidadId)}
-                      className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-500"
-                    >
-                      Focalizar
-                      <RiArrowRightSLine className="size-4" />
-                    </button>
+                    <ActionButton onClick={() => onSelectEntidad(item.entidadId)} />
                   ) : (
-                    <span className="text-xs text-gray-400">Prioridad {item.prioridad}</span>
+                    <span className="text-xs text-slate-400">Prioridad {item.prioridad}</span>
                   )}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </Card>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </SectionCard>
   );
 };
 

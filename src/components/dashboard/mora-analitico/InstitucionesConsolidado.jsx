@@ -89,7 +89,7 @@ const InstitucionesConsolidado = ({ empresaRut }) => {
         data={data}
         index="entidad"
         categories={["deuda", "recuperado"]}
-        colors={["rose", "emerald"]}
+        colors={["slate", "emerald"]}
         showLegend
         valueFormatter={formatter}
         yAxisWidth={70}

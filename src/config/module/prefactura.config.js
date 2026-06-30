@@ -269,6 +269,12 @@ import {
 import CreateFacturaModal from "@/components/modal/factura/CreateFacturaModal";
 import RevertPrefacturaContent from "@/components/modal/prefactura/RevertPrefacturaContent";
 
+const canViewEmailHistory = (rowData) => {
+  if (!rowData?.id) return false;
+  const estado = String(rowData.estado || "").toLowerCase();
+  return ["pendiente", "facturada", "pagada"].includes(estado) || Boolean(rowData.envioEstado);
+};
+
 const PrefacturaConfig = {
   // Rutas de la API
   createPath: "/produccion/crear",
@@ -375,7 +381,7 @@ const PrefacturaConfig = {
           label: "Ver historial",
           iconClass: "text-gray-500",
           rolesAllowed: ["admin"],
-          visibleWhen: () => true,
+          visibleWhen: (rowData) => canViewEmailHistory(rowData),
         },
         {
           id: "sendFacturaReminder",
@@ -492,6 +498,15 @@ const PrefacturaConfig = {
       rolesAllowed: ["admin", "previley"],
       actionType: "exportExcel",
       color: "green",
+      icon: "RiFileExcel2Line",
+    },
+    {
+      id: "exportPrefacturasDetalle",
+      modalName: null,
+      buttonText: "Exportar detalle",
+      rolesAllowed: ["admin", "previley"],
+      actionType: "exportDetalleExcel",
+      color: "emerald",
       icon: "RiFileExcel2Line",
     },
   ],

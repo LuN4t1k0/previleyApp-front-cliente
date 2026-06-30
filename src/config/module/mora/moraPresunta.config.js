@@ -88,6 +88,8 @@ const MoraPresuntaConfig = {
     "deudaPendiente",
     "casosJudiciales",
     "montoJudicial",
+    "casosPreJudiciales",
+    "montoPreJudicial",
     "casosNoJudiciales",
     "montoNoJudicial",
     "certificadoInicial",
@@ -107,6 +109,7 @@ const MoraPresuntaConfig = {
     "montoRegularizado",
     "deudaPendiente",
     "montoJudicial",
+    "montoPreJudicial",
     "montoNoJudicial",
   ],
 
@@ -138,6 +141,16 @@ const MoraPresuntaConfig = {
     {
       header: "Monto judicial",
       accessorKey: "montoJudicial",
+      meta: { align: "text-right" },
+    },
+    {
+      header: "Casos pre judiciales",
+      accessorKey: "casosPreJudiciales",
+      meta: { align: "text-right" },
+    },
+    {
+      header: "Monto pre judicial",
+      accessorKey: "montoPreJudicial",
       meta: { align: "text-right" },
     },
     {
@@ -222,7 +235,7 @@ const MoraPresuntaConfig = {
           iconClass: "text-green-600",
           rolesAllowed: ["admin", "trabajador"],
           visibleWhen: (row) =>
-            row.estado === "analisis" || row.estado === "pendiente",
+            String(row?.estado || "").trim().toLowerCase() === "analisis",
         },
         {
           id: "reabrirGestion",
@@ -261,9 +274,14 @@ const MoraPresuntaConfig = {
     estado: {
       type: "status",
       variants: {
+        registrada: "neutral",
         resuelto: "success",
         analisis: "warning",
+        "espera entidad": "info",
+        "solicitud cliente": "warning",
+        "respuesta cliente": "info",
         rechazada: "error",
+        cerrada: "success",
       },
     },
     prioridadNivel: {

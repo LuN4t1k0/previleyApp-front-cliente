@@ -1,20 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BarChart, Card, Title, Text } from "@tremor/react";
+import { BarChart } from "@tremor/react";
+import { RiBuilding2Line } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
+import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
-const palette = ["indigo", "cyan", "emerald", "amber", "rose", "violet", "slate"];
-
-const formatEstado = (estado) => {
-  if (!estado) return "Sin estado";
-  return estado
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
+const RISK_CATEGORIES = ["Judicial", "Pre judicial", "No judicial"];
+const RISK_COLORS = ["red", "orange", "blue"];
 
 const formatter = (number) =>
   new Intl.NumberFormat("es-CL", {
@@ -44,36 +38,68 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
     fetchDistribucionPorEntidad();
   }, [empresaRut, entidadId, dateRange]);
 
-  const { chartData, categorias } = useMemo(() => {
+  const { chartData, categorias, totalMonto, totalJudicial, totalPreJudicial, totalNoJudicial } = useMemo(() => {
     if (!Array.isArray(dataset) || dataset.length === 0) {
-      return { chartData: [], categorias: [] };
+      return {
+        chartData: [],
+        categorias: [],
+        totalMonto: 0,
+        totalJudicial: 0,
+        totalPreJudicial: 0,
+        totalNoJudicial: 0,
+      };
     }
 
     const agrupado = new Map();
-    const totalesPorEstado = new Map();
+    let total = 0;
+    let judicialTotal = 0;
+    let preJudicialTotal = 0;
+    let noJudicialTotal = 0;
 
     dataset.forEach((registro) => {
       const entidadNombre = registro.entidadNombre || registro.entidad || "Sin entidad";
-      const estado = formatEstado(registro.estado);
       const monto = Number(registro.monto || 0);
+      const montoJudicial = Number(registro.montoJudicial || 0);
+      const montoPreJudicial = Number(registro.montoPreJudicial || 0);
+      const montoNoJudicial = Number(registro.montoNoJudicial || 0);
+      const pendienteRiesgo = montoJudicial + montoPreJudicial + montoNoJudicial;
+      if (pendienteRiesgo <= 0) return;
+
+      total += pendienteRiesgo;
+      judicialTotal += montoJudicial;
+      preJudicialTotal += montoPreJudicial;
+      noJudicialTotal += montoNoJudicial;
 
       if (!agrupado.has(entidadNombre)) {
-        agrupado.set(entidadNombre, { entidad: entidadNombre });
+        agrupado.set(entidadNombre, {
+          entidad: entidadNombre,
+          Judicial: 0,
+          "Pre judicial": 0,
+          "No judicial": 0,
+          total: 0,
+        });
       }
 
       const actual = agrupado.get(entidadNombre);
-      actual[estado] = (actual[estado] || 0) + monto;
-
-      totalesPorEstado.set(estado, (totalesPorEstado.get(estado) || 0) + monto);
+      actual.Judicial += montoJudicial;
+      actual["Pre judicial"] += montoPreJudicial;
+      actual["No judicial"] += montoNoJudicial;
+      actual.total += pendienteRiesgo;
     });
 
-    const categoriasOrdenadas = Array.from(totalesPorEstado.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([estado]) => estado);
+    const data = Array.from(agrupado.values()).sort((a, b) => b.total - a.total);
+    const categoriasVisibles = RISK_CATEGORIES.filter((categoria) =>
+      data.some((item) => Number(item[categoria] || 0) > 0)
+    );
 
-    const data = Array.from(agrupado.values());
-
-    return { chartData: data, categorias: categoriasOrdenadas };
+    return {
+      chartData: data,
+      categorias: categoriasVisibles,
+      totalMonto: total,
+      totalJudicial: judicialTotal,
+      totalPreJudicial: preJudicialTotal,
+      totalNoJudicial: noJudicialTotal,
+    };
   }, [dataset]);
 
   if (!chartData.length || !categorias.length) {
@@ -83,30 +109,56 @@ const DistribucionEntidadOperativo = ({ empresaRut, entidadId, dateRange }) => {
   const chartMinWidth = Math.max(640, chartData.length * 80);
 
   return (
-    <Card>
-      <Title>Distribución de deuda por estado y entidad</Title>
-      <Text className="text-sm text-gray-500 mb-4">
-        Identifica qué entidades concentran los montos más altos por estado operativo.
-      </Text>
-      <div className="mt-6 overflow-x-auto">
-        <div className="pr-4" style={{ minWidth: chartMinWidth }}>
-          <BarChart
-            data={chartData}
-            index="entidad"
-            categories={categorias}
-            valueFormatter={formatter}
-            colors={categorias.map((_, idx) => palette[idx % palette.length])}
-            stack
-            showLegend
-            showXAxis
-            showYAxis
-            tickGap={0}
-            rotateLabelX={{ angle: 0, verticalShift: 12, xAxisHeight: 80 }}
-            yAxisWidth={90}
-          />
+    <SectionCard>
+      <SectionHeader
+        title="Deuda pendiente por entidad y riesgo"
+        description="Compara solo deuda pendiente por entidad, separada en judicial, pre judicial y no judicial."
+        badge={`${chartData.length} entidades`}
+        icon={RiBuilding2Line}
+      />
+
+      <div className="border-t border-indigo-100 px-5 py-5">
+        <div className="mb-5 grid gap-3 sm:grid-cols-4">
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+            <p className="text-xs font-semibold uppercase text-stone-600">Monto pendiente</p>
+            <p className="mt-2 text-xl font-bold text-slate-950">{formatter(totalMonto)}</p>
+          </div>
+          <div className="rounded-lg border border-red-100 bg-red-50 p-4">
+            <p className="text-xs font-semibold uppercase text-red-700">Judicial</p>
+            <p className="mt-2 text-xl font-bold text-red-950">{formatter(totalJudicial)}</p>
+          </div>
+          <div className="rounded-lg border border-orange-100 bg-orange-50 p-4">
+            <p className="text-xs font-semibold uppercase text-orange-700">Pre judicial</p>
+            <p className="mt-2 text-xl font-bold text-orange-950">{formatter(totalPreJudicial)}</p>
+          </div>
+          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+            <p className="text-xs font-semibold uppercase text-blue-700">No judicial</p>
+            <p className="mt-2 text-xl font-bold text-blue-950">{formatter(totalNoJudicial)}</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <div className="pr-4" style={{ minWidth: chartMinWidth }}>
+            <BarChart
+              data={chartData}
+              index="entidad"
+              categories={categorias}
+              valueFormatter={formatter}
+              colors={categorias.map(
+                (categoria) => RISK_COLORS[RISK_CATEGORIES.indexOf(categoria)] || "slate"
+              )}
+              stack
+              showLegend
+              showXAxis
+              showYAxis
+              tickGap={0}
+              rotateLabelX={{ angle: 0, verticalShift: 12, xAxisHeight: 80 }}
+              yAxisWidth={90}
+            />
+          </div>
         </div>
       </div>
-    </Card>
+    </SectionCard>
   );
 };
 

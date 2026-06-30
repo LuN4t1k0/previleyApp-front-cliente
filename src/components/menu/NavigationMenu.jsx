@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -30,24 +30,21 @@ const NAVBAR_LOGO_URL = 'https://assets.previley.cl/logos/logo-previley-h.png';
 const NavigationMenu = () => {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const [userRole, setUserRole] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const signOutUrl =
     typeof window !== "undefined" ? `${window.location.origin}/signin` : "/signin";
 
-  useEffect(() => {
-    if (session?.user?.rol) {
-      setUserRole(session.user.rol);
-    }
-  }, [session]);
-
+  const userRole = session?.user?.rol || null;
   const effectiveRole = userRole === "cliente_admin" ? "cliente" : userRole;
-  const canAccess = (roles = []) =>
-    userRole ? roles.includes(userRole) || roles.includes(effectiveRole) : false;
+  const canAccess = useCallback(
+    (roles = []) =>
+      userRole ? roles.includes(userRole) || roles.includes(effectiveRole) : false,
+    [effectiveRole, userRole]
+  );
 
   const plainMenuItems = useMemo(
     () => menuItems.filter((item) => !item.category && canAccess(item.roles)),
-    [userRole]
+    [canAccess]
   );
 
   const groupedMenus = useMemo(
@@ -59,7 +56,7 @@ const NavigationMenu = () => {
           items: menu.items?.filter((sub) => canAccess(sub.roles)) || [],
         }))
         .filter((menu) => menu.items.length > 0 && menu.category !== 'UserMenu'),
-    [userRole]
+    [canAccess]
   );
 
   const userMenu = useMemo(
@@ -247,6 +244,19 @@ const NavigationMenu = () => {
 
           <div className="mt-6">
             <div className="space-y-2">
+              {plainMenuItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cx(
+                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-50",
+                    isActive(item.href) && "bg-indigo-50 text-indigo-600"
+                  )}
+                >
+                  {item.name}
+                </Link>
+              ))}
               {groupedMenus.map((menu) => (
                 <Disclosure key={menu.category} as="div" className="border-b border-gray-100 pb-2">
                   {({ open }) => (

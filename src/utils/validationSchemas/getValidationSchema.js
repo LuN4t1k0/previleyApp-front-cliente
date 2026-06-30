@@ -14,7 +14,7 @@ export const getGestionMoraValidationSchema = ({
     entidadId: Yup.string().required("La entidad es obligatoria"),
 
     estado: Yup.string()
-      .oneOf(["analisis", "cerrada", "pendiente"], "Estado inválido")
+      .oneOf(["registrada", "analisis", "espera entidad", "solicitud cliente", "respuesta cliente", "cerrada", "pendiente"], "Estado inválido")
       .required("El estado es obligatorio"),
 
     fechaGestion: Yup.date().required("La fecha de gestión es obligatoria"),

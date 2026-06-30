@@ -1,18 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Card,
-  Title,
-  Text,
-  Table,
-  TableHead,
-  TableRow,
-  TableHeaderCell,
-  TableBody,
-  TableCell,
-} from "@tremor/react";
+import { RiUserSearchLine } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
+import { SectionCard, SectionHeader } from "../mora-operativo/MoraOperativoUI";
 
 const TopTrabajadoresDeuda = ({ empresaRut }) => {
   const [data, setData] = useState([]);
@@ -58,36 +49,39 @@ const TopTrabajadoresDeuda = ({ empresaRut }) => {
     }).format(n);
 
   return (
-    <Card>
-      <Title>🏅 Top 10 Trabajadores con Mayor Deuda</Title>
-      <Text className="text-sm text-gray-500 mb-4">
-        Ranking de trabajadores con deuda pendiente más alta en la empresa.
-      </Text>
-      <Table className="text-sm">
-        <TableHead>
-          <TableRow className="border-b border-tremor-border dark:border-dark-tremor-border">
-            <TableHeaderCell className="text-tremor-content-strong">Nombre</TableHeaderCell>
-            <TableHeaderCell className="text-tremor-content-strong">RUT</TableHeaderCell>
-            <TableHeaderCell className="text-right text-tremor-content-strong">Deuda</TableHeaderCell>
-            <TableHeaderCell className="text-right text-tremor-content-strong">Periodos</TableHeaderCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
+    <SectionCard>
+      <SectionHeader
+        title="Top 10 trabajadores con mayor deuda"
+        description="Ranking de trabajadores con deuda pendiente más alta en la empresa."
+        badge={`${data.length} trabajadores`}
+        icon={RiUserSearchLine}
+      />
+
+      <div className="overflow-x-auto border-t border-indigo-100">
+        <table className="min-w-full text-left text-sm">
+          <thead className="bg-slate-50 font-semibold text-stone-700">
+            <tr>
+              <th className="px-6 py-4">Nombre</th>
+              <th className="px-6 py-4">RUT</th>
+              <th className="px-6 py-4 text-right">Deuda</th>
+              <th className="px-6 py-4 text-right">Periodos</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-indigo-100">
           {data.map((item) => (
-            <TableRow key={item.trabajadorRut}>
-              <TableCell className="font-medium text-tremor-content-strong">
-                {item.nombreCompleto}
-              </TableCell>
-              <TableCell>{item.trabajadorRut}</TableCell>
-              <TableCell className="text-right text-gray-800 dark:text-gray-100">
+            <tr key={item.trabajadorRut}>
+              <td className="px-6 py-4 font-semibold text-slate-950">{item.nombreCompleto}</td>
+              <td className="px-6 py-4 text-stone-700">{item.trabajadorRut}</td>
+              <td className="px-6 py-4 text-right font-semibold text-indigo-800">
                 {formatCLP(item.totalDeudaPendiente)}
-              </TableCell>
-              <TableCell className="text-right">{item.periodosPendientes}</TableCell>
-            </TableRow>
+              </td>
+              <td className="px-6 py-4 text-right text-stone-700">{item.periodosPendientes}</td>
+            </tr>
           ))}
-        </TableBody>
-      </Table>
-    </Card>
+          </tbody>
+        </table>
+      </div>
+    </SectionCard>
   );
 };
 

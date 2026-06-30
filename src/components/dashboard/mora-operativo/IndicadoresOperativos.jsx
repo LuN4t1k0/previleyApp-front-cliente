@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Card, Flex, Metric, Text, Grid, BadgeDelta } from "@tremor/react";
+import {
+  RiBankLine,
+  RiCheckboxCircleLine,
+  RiFundsLine,
+} from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
 
@@ -36,27 +40,12 @@ const IndicadoresOperativos = ({ empresaRut, entidadId, dateRange }) => {
 
   const resumen = useMemo(() => {
     if (!metrics) return null;
-    const {
-      totalDeuda = 0,
-      totalRegularizado = 0,
-      totalPagado = 0,
-      totalRecuperado = 0,
-      totalPendiente = 0,
-      totalCasos = 0,
-      estadoPrevired = null,
-    } = metrics;
-
-    const recuperacionPorcentaje = totalDeuda > 0 ? (totalRecuperado / totalDeuda) * 100 : 0;
+    const { totalDeuda = 0, totalRegularizado = 0, totalPagado = 0 } = metrics;
 
     return {
       totalDeuda,
       totalRegularizado,
       totalPagado,
-      totalRecuperado,
-      totalPendiente,
-      totalCasos,
-      estadoPrevired,
-      recuperacionPorcentaje,
     };
   }, [metrics]);
 
@@ -64,74 +53,56 @@ const IndicadoresOperativos = ({ empresaRut, entidadId, dateRange }) => {
     return null;
   }
 
-  const judicialMonto = resumen.estadoPrevired?.judicial?.monto || 0;
-  const judicialCasos = resumen.estadoPrevired?.judicial?.casos || 0;
-  const noJudicialMonto = resumen.estadoPrevired?.noJudicial?.monto || 0;
-  const noJudicialCasos = resumen.estadoPrevired?.noJudicial?.casos || 0;
-
   const cards = [
     {
       label: "Deuda total",
       value: formatoCLP(resumen.totalDeuda),
       description: "Monto detectado en el periodo seleccionado.",
+      icon: RiFundsLine,
+      tone: "border-slate-300 bg-slate-100 text-slate-800",
     },
     {
       label: "Regularizado",
       value: formatoCLP(resumen.totalRegularizado),
       description: "Casos cerrados vía regularización.",
       delta: resumen.totalDeuda > 0 ? (resumen.totalRegularizado / resumen.totalDeuda) * 100 : 0,
+      icon: RiCheckboxCircleLine,
+      tone: "bg-emerald-700 text-white",
     },
     {
       label: "Pagado",
       value: formatoCLP(resumen.totalPagado),
       description: "Pagos confirmados por la entidad.",
       delta: resumen.totalDeuda > 0 ? (resumen.totalPagado / resumen.totalDeuda) * 100 : 0,
-    },
-    {
-      label: "Pendiente",
-      value: formatoCLP(resumen.totalPendiente),
-      description: "Saldo aún en gestión.",
-    },
-    {
-      label: "Regularización",
-      value: `${resumen.recuperacionPorcentaje.toFixed(1)}%`,
-      description: "Porcentaje regularizado vs deuda total.",
-      highlight: true,
-    },
-    {
-      label: "Casos totales",
-      value: resumen.totalCasos.toLocaleString("es-CL"),
-      description: "Número de detalles considerados.",
-    },
-    {
-      label: "Estado Previred · Judicial",
-      value: formatoCLP(judicialMonto),
-      description: `${judicialCasos.toLocaleString("es-CL")} casos en estado judicial`,
-    },
-    {
-      label: "Estado Previred · No Judicial",
-      value: formatoCLP(noJudicialMonto),
-      description: `${noJudicialCasos.toLocaleString("es-CL")} casos fuera de juicio`,
+      icon: RiBankLine,
+      tone: "bg-indigo-800 text-white",
     },
   ];
 
   return (
-    <Grid numItemsSm={2} numItemsLg={3} className="gap-4">
-      {cards.map(({ label, value, description, delta, highlight }) => (
-        <Card key={label} className={highlight ? "border-emerald-200 dark:border-emerald-500/40" : undefined}>
-          <Flex justifyContent="between" alignItems="start">
-            <Text className="text-sm text-gray-500">{label}</Text>
+    <div className="grid gap-5 md:grid-cols-3">
+      {cards.map(({ label, value, description, delta, icon: Icon, tone }) => (
+        <article key={label} className="relative min-h-[160px] overflow-hidden rounded-lg border border-indigo-200 bg-white p-6 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase text-slate-500">{label}</p>
+              <p className="mt-5 text-3xl font-bold text-slate-950">{value}</p>
+            </div>
+            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${tone}`}>
+              <Icon className="h-4 w-4" aria-hidden="true" />
+            </span>
+          </div>
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <p className="text-sm leading-5 text-slate-600">{description}</p>
             {typeof delta === "number" && !Number.isNaN(delta) ? (
-              <BadgeDelta deltaType={delta >= 0 ? "increase" : "decrease"} size="xs" className="rounded">
+              <span className="shrink-0 rounded-md bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-700">
                 {`${delta >= 0 ? "+" : ""}${delta.toFixed(1)}%`}
-              </BadgeDelta>
+              </span>
             ) : null}
-          </Flex>
-          <Metric className="mt-2">{value}</Metric>
-          <Text className="text-xs text-gray-500 mt-2">{description}</Text>
-        </Card>
+          </div>
+        </article>
       ))}
-    </Grid>
+    </div>
   );
 };
 

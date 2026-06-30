@@ -62,6 +62,12 @@ const ProduccionConfig = {
       options: "trabajadores", // backend: trabajadores: [{ value, label }]
     },
     {
+      key: "montoRegularizado",
+      type: "text",
+      field: "montoRegularizado",
+      placeholder: "Buscar monto...",
+    },
+    {
       key: "fechaProduccion",
       type: "dateRange",
       field: "fechaProduccion",
