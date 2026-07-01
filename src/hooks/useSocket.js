@@ -19,6 +19,13 @@ const useSocket = (token) => {
   };
 
   useEffect(() => {
+    if (!token) {
+      setSocket(null);
+      setIsConnected(false);
+      joinedRooms.current.clear();
+      return;
+    }
+
     // Determinar URL del socket: env o mismo origen
     const baseUrl =
       process.env.NEXT_PUBLIC_SOCKET_URL ||
@@ -31,7 +38,10 @@ const useSocket = (token) => {
       // Enviar token tanto por query como por auth para compatibilidad
       query: { token },
       auth: { token },
-      transports: ["polling", "websocket"],
+      transports:
+        process.env.NEXT_PUBLIC_SOCKET_TRANSPORT === "polling"
+          ? ["polling", "websocket"]
+          : ["websocket"],
       upgrade: true,
       // No enviamos credenciales (cookies) para evitar CORS con wildcard
       withCredentials: false,
@@ -65,10 +75,14 @@ const useSocket = (token) => {
     });
 
     setSocket(socketInstance);
+    const roomsForCleanup = joinedRooms.current;
 
     // Limpieza al desmontar el componente
     return () => {
       socketInstance.disconnect();
+      roomsForCleanup.clear();
+      setSocket(null);
+      setIsConnected(false);
     };
   }, [token]);
 
