@@ -29,9 +29,11 @@ export const formatDateChileWithInfo = (dateString) => {
 };
 
 export const formatPeriodo = (periodoString) => {
-  if (!periodoString || periodoString.length !== 6) return "Período inválido";
-  const anio = periodoString.slice(0, 4);
-  const mes = periodoString.slice(4, 6);
+  if (!periodoString) return "Período inválido";
+  const clean = String(periodoString).replace(/[^0-9]/g, "");
+  if (clean.length !== 6) return "Período inválido";
+  const anio = clean.slice(0, 4);
+  const mes = clean.slice(4, 6);
   return `${mes}/${anio}`; // Ej: 202401 → 01/2024
 };
 

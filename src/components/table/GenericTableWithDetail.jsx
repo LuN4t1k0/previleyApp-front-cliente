@@ -511,9 +511,10 @@ const GenericTableWithDetail = ({
                   );
                 } else if (badgeConfig.type === "status") {
                   const variant = badgeConfig.variants?.[value] || "default";
+                  const label = badgeConfig.labels?.[value] || value;
                   cellContent = (
                     <CustomBadge variant={variant} textTransform={textTransform}>
-                      {value}
+                      {label}
                     </CustomBadge>
                   );
                 } else {

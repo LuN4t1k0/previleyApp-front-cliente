@@ -23,6 +23,7 @@ import {
   exportPlanTrabajoExcel,
   exportPlanTrabajoPdf,
 } from "./planTrabajoExport";
+import { formatMoraEstadoLabel } from "@/utils/moraEstado";
 
 const clpFormatter = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -488,7 +489,7 @@ const MoraPriorizacionCliente = () => {
                             {item.folio || `Gestión #${item.gestionMoraId}`}
                           </p>
                           <p className="mt-1 text-xs font-semibold uppercase text-slate-400">
-                            {item.estadoGestion || "sin estado"}
+                            {formatMoraEstadoLabel(item.estadoGestion, "sin estado")}
                           </p>
                           {scopeMode === "grupo" ? (
                             <p className="mt-1 text-xs font-semibold uppercase text-slate-400">

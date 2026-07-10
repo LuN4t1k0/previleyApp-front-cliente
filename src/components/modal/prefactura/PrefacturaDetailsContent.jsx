@@ -22,6 +22,18 @@ const toNumber = (value) => {
   return Number.isFinite(numeric) ? numeric : 0;
 };
 
+const formatPeriodoCobro = (periodo) => {
+  const raw = String(periodo || "").trim();
+  const match = raw.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
+  if (!match) return "—";
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1));
+  return date.toLocaleDateString("es-CL", {
+    year: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  });
+};
+
 const PrefacturaDetailsContent = ({ prefacturaData, onClose }) => {
   const detalles = prefacturaData?.detalles ?? [];
 
@@ -30,6 +42,7 @@ const PrefacturaDetailsContent = ({ prefacturaData, onClose }) => {
     subtotalIva,
     totalCalculado,
     fechaEmision,
+    periodoCobroLabel,
     empresaNombre,
     empresaDireccion,
     empresaRut,
@@ -43,6 +56,7 @@ const PrefacturaDetailsContent = ({ prefacturaData, onClose }) => {
         subtotalIva: 0,
         totalCalculado: 0,
         fechaEmision: "—",
+        periodoCobroLabel: "—",
         empresaNombre: "Cliente",
         empresaDireccion: "—",
         empresaRut: "—",
@@ -75,6 +89,7 @@ const PrefacturaDetailsContent = ({ prefacturaData, onClose }) => {
       subtotalIva: subtotalIvaAcc,
       totalCalculado: total,
       fechaEmision: fecha,
+      periodoCobroLabel: formatPeriodoCobro(prefacturaData.periodoCobro),
       empresaNombre:
         prefacturaData.empresa?.nombre || prefacturaData.empresaRut || "Cliente",
       empresaDireccion: prefacturaData.empresa?.direccion || "—",
@@ -119,6 +134,12 @@ const PrefacturaDetailsContent = ({ prefacturaData, onClose }) => {
                   Fecha de emisión
                 </dt>
                 <dd className="mt-1 text-sm font-medium text-slate-900">{fechaEmision}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Periodo de cobro
+                </dt>
+                <dd className="mt-1 text-sm font-medium text-slate-900">{periodoCobroLabel}</dd>
               </div>
             </dl>
           </header>

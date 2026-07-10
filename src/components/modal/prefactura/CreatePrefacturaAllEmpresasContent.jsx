@@ -64,20 +64,26 @@ import { Input } from "@/components/ui/input/Input";
 import apiService from "@/app/api/apiService";
 import { showErrorAlert, showSuccessAlert } from "@/utils/alerts";
 
+const getCurrentPeriodoCobro = () => {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+};
+
 const CreatePrefacturaAllEmpresasContent = ({ onClose, fetchData }) => {
+  const [periodoCobro, setPeriodoCobro] = useState(getCurrentPeriodoCobro);
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!fechaDesde || !fechaHasta) {
-      showErrorAlert("Las fechas son obligatorias.");
+    if (!periodoCobro || !fechaDesde || !fechaHasta) {
+      showErrorAlert("El periodo de cobro y las fechas son obligatorios.");
       return;
     }
 
     setIsLoading(true);
     try {
-      await apiService.post("/prefacturas/todas", { fechaDesde, fechaHasta });
+      await apiService.post("/prefacturas/todas", { periodoCobro, fechaDesde, fechaHasta });
       showSuccessAlert("Prefacturas creadas para todas las empresas.");
       fetchData();
       onClose();
@@ -93,6 +99,15 @@ const CreatePrefacturaAllEmpresasContent = ({ onClose, fetchData }) => {
       {/* <h2 className="text-lg font-semibold text-gray-800">
         Crear Prefacturas para Todas las Empresas
       </h2> */}
+
+      <div>
+        <p className="text-xs font-medium text-gray-700 mb-1">Periodo de cobro</p>
+        <Input
+          type="month"
+          value={periodoCobro}
+          onChange={(e) => setPeriodoCobro(e.target.value)}
+        />
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
         <div>

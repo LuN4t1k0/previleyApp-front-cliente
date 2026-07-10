@@ -333,12 +333,18 @@ const PrefacturaConfig = {
   monetaryColumns: ["totalFacturado"], // Añade las columnas que necesites
   // Columnas a formatear como fecha
   dateColumns: ["fechaGeneracion"], // Añade las columnas que necesites
+  periodoColumns: ["periodoCobro"],
   // Añadir configuración de las columnas ordenables:
   columnsConfig: [
     {
       header: "total",
       accessorKey: "totalFacturado",
       rolesAllowed: ["admin"], // solo admins
+    },
+    {
+      header: "Periodo cobro",
+      accessorKey: "periodoCobro",
+      rolesAllowed: ["admin"],
     },
     {
       header: "Envío",

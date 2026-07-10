@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { RiFileList3Line } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
+import { formatMoraEstadoLabel } from "@/utils/moraEstado";
 import { ActionButton, RiskPill, SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const formatCLP = (valor) =>
@@ -97,7 +98,7 @@ const PriorizacionGestiones = ({ empresaRut, entidadId, dateRange, onSelectGesti
                       {fila.folio || `Gestión #${fila.gestionMoraId}`}
                     </span>
                     <span className="text-xs font-semibold uppercase text-slate-400">
-                      {fila.estadoGestion}
+                      {formatMoraEstadoLabel(fila.estadoGestion)}
                     </span>
                   </div>
                 </td>

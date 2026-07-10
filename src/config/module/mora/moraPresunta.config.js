@@ -273,6 +273,9 @@ const MoraPresuntaConfig = {
     },
     estado: {
       type: "status",
+      labels: {
+        registrada: "Ingresada",
+      },
       variants: {
         registrada: "neutral",
         resuelto: "success",

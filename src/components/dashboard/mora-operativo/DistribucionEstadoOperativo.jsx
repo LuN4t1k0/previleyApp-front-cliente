@@ -7,18 +7,11 @@ import {
 import { RiPieChartLine } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import buildMoraDashboardParams from "@/utils/moraDashboardParams";
+import { formatMoraEstadoLabel } from "@/utils/moraEstado";
 import { SectionCard, SectionHeader } from "./MoraOperativoUI";
 
 const formatEstado = (estado) => {
-  if (!estado) return "Sin estado";
-  if (String(estado).trim().toLowerCase() === "espera entidad") {
-    return "En espera de respuesta de entidad";
-  }
-  return estado
-    .replace(/_/g, " ")
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  return formatMoraEstadoLabel(estado);
 };
 
 const currencyFormatter = new Intl.NumberFormat("es-CL", {

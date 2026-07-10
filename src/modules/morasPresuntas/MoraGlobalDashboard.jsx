@@ -14,6 +14,7 @@ import {
 } from "@remixicon/react";
 import { getMoraGlobalDashboard } from "@/services/api/globalDashboards";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
+import { formatMoraEstadoLabel } from "@/utils/moraEstado";
 
 const currencyFormatter = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -56,9 +57,7 @@ const getRiskMixLabel = (judicial, preJudicial, noJudicial) => {
 };
 
 const normalizeLabel = (value) =>
-  String(value || "Sin estado")
-    .replaceAll("_", " ")
-    .toLowerCase();
+  formatMoraEstadoLabel(value).toLowerCase();
 
 const Panel = ({ children, className = "" }) => (
   <section className={`rounded-lg border border-slate-200 bg-white shadow-sm ${className}`}>

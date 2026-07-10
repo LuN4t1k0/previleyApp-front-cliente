@@ -93,8 +93,14 @@ import { Input } from "@/components/ui/input/Input";
 import apiService from "@/app/api/apiService";
 import { showErrorAlert, showSuccessAlert } from "@/utils/alerts";
 
+const getCurrentPeriodoCobro = () => {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+};
+
 const CreatePrefacturaEmpresaContent = ({ onClose, fetchData }) => {
   const [empresaRut, setEmpresaRut] = useState("");
+  const [periodoCobro, setPeriodoCobro] = useState(getCurrentPeriodoCobro);
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [empresaOptions, setEmpresaOptions] = useState([]);
@@ -118,7 +124,7 @@ const CreatePrefacturaEmpresaContent = ({ onClose, fetchData }) => {
   }, []);
 
   const handleSubmit = async () => {
-    if (!empresaRut || !fechaDesde || !fechaHasta) {
+    if (!empresaRut || !periodoCobro || !fechaDesde || !fechaHasta) {
       showErrorAlert("Todos los campos son obligatorios.");
       return;
     }
@@ -127,6 +133,7 @@ const CreatePrefacturaEmpresaContent = ({ onClose, fetchData }) => {
     try {
       await apiService.post("/prefacturas/empresa", {
         empresaRut,
+        periodoCobro,
         fechaDesde,
         fechaHasta,
       });
@@ -156,6 +163,15 @@ const CreatePrefacturaEmpresaContent = ({ onClose, fetchData }) => {
             </SelectItem>
           ))}
         </Select>
+      </div>
+
+      <div>
+        <p className="text-xs font-medium text-gray-700 mb-1">Periodo de cobro</p>
+        <Input
+          type="month"
+          value={periodoCobro}
+          onChange={(e) => setPeriodoCobro(e.target.value)}
+        />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">

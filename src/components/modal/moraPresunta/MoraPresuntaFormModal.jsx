@@ -207,7 +207,7 @@ const MoraPresuntaFormModal = ({
         onValueChange={(value) => formik.setFieldValue("estado", value)}
         disabled={formik.isSubmitting}
       >
-        <SelectItem value="registrada">Registrada</SelectItem>
+        <SelectItem value="registrada">Ingresada</SelectItem>
         <SelectItem value="analisis">Análisis</SelectItem>
         <SelectItem value="espera entidad">En espera de respuesta de entidad</SelectItem>
         <SelectItem value="solicitud cliente">Solicitud cliente</SelectItem>

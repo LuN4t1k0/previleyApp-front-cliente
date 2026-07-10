@@ -10,6 +10,7 @@ import useSocket from "@/hooks/useSocket";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
 import apiService from "@/app/api/apiService";
 import { formatCurrency, formatDate } from "@/utils/formatters";
+import { formatMoraEstadoLabel } from "@/utils/moraEstado";
 import {
   RiAlarmWarningLine,
   RiArrowDownSLine,
@@ -33,13 +34,7 @@ import {
 } from "@remixicon/react";
 
 const formatEstado = (estado) => {
-  if (!estado) return "Sin estado";
-  if (String(estado).trim().toLowerCase() === "espera entidad") {
-    return "En espera de respuesta de entidad";
-  }
-  return String(estado)
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+  return formatMoraEstadoLabel(estado);
 };
 
 const estadoBadgeStyles = {
@@ -890,7 +885,7 @@ const MoraGestionesDashboard = () => {
                           </span>
                           <div className="min-w-0">
                             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              Registrada
+                              Ingresada
                             </p>
                             <p className="mt-1 text-sm font-medium text-slate-950">
                               {gestion.fechaRegistro || gestion.createdAt
