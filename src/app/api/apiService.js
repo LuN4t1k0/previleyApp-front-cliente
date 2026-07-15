@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getSession, signOut } from 'next-auth/react';
+import { extractBackendMessage } from '@/helpers/extractBackendMessage';
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -40,8 +41,16 @@ apiService.interceptors.request.use(
 apiService.interceptors.response.use(
   (response) => response,
   async (error) => {
+    const enrichedMessage = extractBackendMessage(error, error?.message || 'No se pudo completar la solicitud.');
+    error.message = enrichedMessage;
+    if (error?.response?.data && typeof error.response.data === 'object') {
+      error.response.data.message = enrichedMessage;
+    }
     const originalRequest = error.config;
-    const message = String(error?.response?.data?.message || '').toLowerCase();
+    const message = String(error?.response?.data?.message || '')
+      .normalize('NFD')
+      .replace(new RegExp('[\u0300-\u036f]', 'g'), '')
+      .toLowerCase();
     const forceSignOut =
       message.includes('revoc') ||
       message.includes('suspend') ||
@@ -151,5 +160,3 @@ apiService.interceptors.response.use(
 );
 
 export default apiService;
-
-

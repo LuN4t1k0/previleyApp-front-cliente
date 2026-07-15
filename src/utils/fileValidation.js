@@ -11,7 +11,7 @@ export function validarArchivo(file) {
   if (!extensionValida) {
     return {
       valido: false,
-      mensaje: "Solo se permiten archivos PDF mágicos ✨",
+      mensaje: "Solo se permiten archivos PDF.",
     };
   }
 
@@ -19,7 +19,7 @@ export function validarArchivo(file) {
   if (tamañoEnMB > MAX_FILE_SIZE_MB) {
     return {
       valido: false,
-      mensaje: "El archivo supera el límite de 10MB. ¡Demasiado poderoso!",
+      mensaje: `El archivo supera el límite de ${MAX_FILE_SIZE_MB} MB.`,
     };
   }
 

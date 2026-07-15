@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import { extractBackendMessage } from '@/helpers/extractBackendMessage';
 
 export const showSuccessAlert = (title, text) => {
   Swal.fire({
@@ -10,9 +11,11 @@ export const showSuccessAlert = (title, text) => {
 };
 
 export const showErrorAlert = (title, text) => {
+  const message = extractBackendMessage(text, typeof text === 'string' ? text : 'No se pudo completar la acción.');
+
   Swal.fire({
     title: title,
-    text: text,
+    text: message,
     icon: 'error',
     confirmButtonText: 'Aceptar'
   });
