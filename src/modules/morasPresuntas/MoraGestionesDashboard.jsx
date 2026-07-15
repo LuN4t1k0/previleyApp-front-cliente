@@ -75,14 +75,20 @@ const formatDurationHours = (hours) => {
 };
 
 const tipoSolicitudLabels = {
-  certificado_deuda_actualizado: "Certificado de deuda actualizado",
-  certificado_pago: "Certificado de pago",
+  certificado_detalle_deuda_actualizado: "Certificado detalle deuda actualizado",
   comprobante_pago: "Comprobante de pago",
-  aclaracion_movimiento_personal: "Aclaracion de movimiento personal",
   documento_respaldo_finiquito: "Documento de respaldo de finiquito",
-  contrato_o_anexo: "Contrato o anexo",
-  certificado_previred: "Certificado Previred",
-  otro_respaldo: "Otro respaldo",
+  contrato_o_anexo: "Contrato o Anexo",
+  fecha_pago: "Fecha de pago",
+  liquidacion_sueldo: "Liquidacion de sueldo",
+  fun_isapre: "FUN Isapre (Formulario Unico de Notificacion)",
+  licencia_medica: "Licencia Medica",
+  constancia_direccion_trabajo: "Constancia realizada en la Direccion del Trabajo",
+  notificacion_producto_voluntario: "Notificacion de Producto Voluntario",
+  informacion_trabajadores: "Información de trabajadores",
+  certificado_exencion_cotizar: "Certificado Exención de cotizar",
+  certificado_pension_dipreca_capredena: "Certificado Pension (DIPRECA - CAPREDENA)",
+  otros_respaldos: "Otros Respaldos",
 };
 
 const getLinkedNavigationParams = () => {
