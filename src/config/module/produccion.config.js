@@ -159,7 +159,7 @@ const ProduccionConfig = {
           icon: RiCheckLine,
           label: "Validar",
           iconClass: "text-green-500",
-          rolesAllowed: ["admin"],
+          rolesAllowed: ["admin", "supervisor"],
           visibleWhen: (rowData) => rowData.estado === "pendiente",
         },
         {
@@ -167,7 +167,7 @@ const ProduccionConfig = {
           icon: RiCloseLine,
           label: "Rechazar",
           iconClass: "text-red-500",
-          rolesAllowed: ["admin"],
+          rolesAllowed: ["admin", "supervisor"],
           // visibleWhen: (row) =>
           //   row.estado === "analisis" || row.estado === "pendiente",
           visibleWhen: (rowData) => rowData.estado === "pendiente",
@@ -177,7 +177,7 @@ const ProduccionConfig = {
           icon: RiLockUnlockLine,
           label: "Reabrir",
           iconClass: "text-yellow-500",
-          rolesAllowed: ["admin"],
+          rolesAllowed: ["admin", "supervisor"],
           // visibleWhen: (rowData) => rowData.estado !== "pendiente" ,
           visibleWhen: (rowData) =>
             // !["pendiente", "pre-facturada","facturada",""].includes(rowData.estado),
@@ -186,7 +186,7 @@ const ProduccionConfig = {
         {
           id: "editar",
           icon: RiEditLine,
-          label: "Validar",
+          label: "Editar",
           iconClass: "text-blue-600",
           rolesAllowed: ["admin", "editor", "trabajador"],
           visibleWhen: (rowData) =>
@@ -223,7 +223,7 @@ const ProduccionConfig = {
       component: GenericModal,
       title: "Rechazar Producción",
       content: RejectProduccionContent,
-      rolesAllowed: ["admin", "editor"],
+      rolesAllowed: ["admin", "supervisor"],
     },
   },
 
