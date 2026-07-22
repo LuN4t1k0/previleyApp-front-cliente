@@ -93,12 +93,13 @@ const tipoSolicitudLabels = {
 
 const getLinkedNavigationParams = () => {
   if (typeof window === "undefined") {
-    return { gestionId: null, empresaRut: "" };
+    return { gestionId: null, empresaRut: "", solicitudId: null };
   }
   const params = new URLSearchParams(window.location.search);
   return {
     gestionId: params.get("gestionId"),
     empresaRut: params.get("empresaRut") || "",
+    solicitudId: params.get("solicitudId"),
   };
 };
 
@@ -115,6 +116,10 @@ const MoraGestionesDashboard = () => {
     () => linkedNavigationRef.current.gestionId
   );
   const linkedGestionId = focusedGestionId;
+  const [focusedSolicitudId, setFocusedSolicitudId] = useState(
+    () => linkedNavigationRef.current.solicitudId
+  );
+  const linkedSolicitudId = focusedSolicitudId;
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState(
     () => linkedNavigationRef.current.empresaRut || ""
   );
@@ -451,6 +456,7 @@ const MoraGestionesDashboard = () => {
 
   const handleShowAllGestiones = useCallback(() => {
     setFocusedGestionId(null);
+    setFocusedSolicitudId(null);
     router.replace("/servicios/mora-presunta/gestiones", { scroll: false });
   }, [router]);
 
@@ -462,6 +468,16 @@ const MoraGestionesDashboard = () => {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 150);
   }, [gestionesVisibles.length, linkedGestionId, loadingGestiones]);
+
+  useEffect(() => {
+    if (!linkedSolicitudId || loadingGestiones || !gestionesVisibles.length) return;
+    setExpandedSolicitudId(Number(linkedSolicitudId));
+    const element = document.getElementById(`solicitud-mora-${linkedSolicitudId}`);
+    if (!element) return;
+    window.setTimeout(() => {
+      element.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 250);
+  }, [gestionesVisibles.length, linkedSolicitudId, loadingGestiones]);
 
   const openResponderSolicitud = useCallback((solicitud) => {
     setSolicitudActiva(solicitud);
@@ -481,7 +497,7 @@ const MoraGestionesDashboard = () => {
   }, [enviandoRespuesta]);
 
   const handleResponderSolicitud = useCallback(async () => {
-    if (!solicitudActiva?.id) return;
+    if (enviandoRespuesta || !solicitudActiva?.id) return;
     if (!respuestaCliente.trim() && !respuestaArchivo) {
       return;
     }
@@ -512,7 +528,7 @@ const MoraGestionesDashboard = () => {
     } finally {
       setEnviandoRespuesta(false);
     }
-  }, [fetchSolicitudes, respuestaArchivo, respuestaCliente, solicitudActiva]);
+  }, [enviandoRespuesta, fetchSolicitudes, respuestaArchivo, respuestaCliente, solicitudActiva]);
 
   if (loadingEmpresas && !empresaSeleccionada) {
     return <DashboardMoraAnaliticoSkeleton />;
@@ -671,10 +687,12 @@ const MoraGestionesDashboard = () => {
             <section className="flex flex-col gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-4 text-sm text-indigo-950 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-semibold uppercase tracking-wide text-indigo-800">
-                  Vista desde plan de trabajo
+                  Vista desde notificación
                 </p>
                 <p className="mt-1 text-indigo-900">
-                  Mostrando solo la gestión #{linkedGestionId} seleccionada desde el plan.
+                  Mostrando solo la gestión #{linkedGestionId}
+                  {linkedSolicitudId ? ` y la solicitud #${linkedSolicitudId}` : ""} seleccionada
+                  desde una notificación.
                 </p>
               </div>
               <button
@@ -986,10 +1004,19 @@ const MoraGestionesDashboard = () => {
                             return (
                               <div
                                 key={solicitud.id}
+                                id={`solicitud-mora-${solicitud.id}`}
                                 className={
                                   accionable
-                                    ? "rounded-2xl border border-amber-300 bg-amber-50/40 px-4 py-4 shadow-sm md:col-span-3"
-                                    : "rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:border-blue-200 hover:shadow-md md:col-span-3"
+                                    ? `rounded-2xl border bg-amber-50/40 px-4 py-4 shadow-sm md:col-span-3 ${
+                                        Number(linkedSolicitudId) === Number(solicitud.id)
+                                          ? "border-indigo-300 ring-4 ring-indigo-100"
+                                          : "border-amber-300"
+                                      }`
+                                    : `rounded-2xl border bg-white px-4 py-3 shadow-sm transition hover:border-blue-200 hover:shadow-md md:col-span-3 ${
+                                        Number(linkedSolicitudId) === Number(solicitud.id)
+                                          ? "border-indigo-300 ring-4 ring-indigo-100"
+                                          : "border-slate-200"
+                                      }`
                                 }
                               >
                                 {accionable ? (

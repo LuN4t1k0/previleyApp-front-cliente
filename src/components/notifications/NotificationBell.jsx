@@ -12,6 +12,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/services/notificationService";
+import { getNotificationHref } from "@/utils/notificationLinks";
 
 const statusLabel = {
   unread: "No leída",
@@ -35,11 +36,6 @@ const formatDateTime = (value) => {
   } catch (_) {
     return "";
   }
-};
-
-const getNotificationHref = (notification) => {
-  const metadata = notification?.metadata || {};
-  return notification?.actionUrl || metadata.actionUrl || metadata.path || metadata.href || null;
 };
 
 const mergeNotification = (items, incoming) => {

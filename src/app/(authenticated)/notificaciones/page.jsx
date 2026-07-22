@@ -13,6 +13,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/services/notificationService";
+import { getNotificationHref } from "@/utils/notificationLinks";
 
 const statusOptions = [
   { value: "", label: "Todas" },
@@ -46,11 +47,6 @@ const formatDateTime = (value) => {
   } catch (_) {
     return "Sin fecha";
   }
-};
-
-const getNotificationHref = (notification) => {
-  const metadata = notification?.metadata || {};
-  return notification?.actionUrl || metadata.actionUrl || metadata.path || metadata.href || null;
 };
 
 export default function NotificationsPage() {
