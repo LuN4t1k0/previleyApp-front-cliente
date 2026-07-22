@@ -135,6 +135,7 @@ const MoraGestionesDashboard = () => {
   const [respuestaCliente, setRespuestaCliente] = useState("");
   const [respuestaArchivo, setRespuestaArchivo] = useState(null);
   const [enviandoRespuesta, setEnviandoRespuesta] = useState(false);
+  const enviandoRespuestaRef = useRef(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedSolicitudId, setExpandedSolicitudId] = useState(null);
 
@@ -379,7 +380,13 @@ const MoraGestionesDashboard = () => {
     () =>
       gestiones.map((gestion) => {
         const solicitudesGestion = solicitudesPorGestion.get(Number(gestion.id)) || [];
+        const gestionCerrada = isGestionCerrada(gestion?.estado);
         const solicitudesAccionables = solicitudesGestion.filter((solicitud) =>
+          !gestionCerrada &&
+          ["pendiente", "rechazada"].includes(String(solicitud.estado || "").toLowerCase())
+        );
+        const solicitudesPendientesCerradas = solicitudesGestion.filter((solicitud) =>
+          gestionCerrada &&
           ["pendiente", "rechazada"].includes(String(solicitud.estado || "").toLowerCase())
         );
         const deudaPendiente = Number(gestion?.deudaPendiente || 0);
@@ -420,6 +427,7 @@ const MoraGestionesDashboard = () => {
           montoCierre,
           solicitudesGestion,
           solicitudesAccionables,
+          solicitudesPendientesCerradas,
         };
       }),
     [gestiones, handleDownloadDetalle, solicitudesPorGestion]
@@ -497,11 +505,12 @@ const MoraGestionesDashboard = () => {
   }, [enviandoRespuesta]);
 
   const handleResponderSolicitud = useCallback(async () => {
-    if (enviandoRespuesta || !solicitudActiva?.id) return;
+    if (enviandoRespuestaRef.current || enviandoRespuesta || !solicitudActiva?.id) return;
     if (!respuestaCliente.trim() && !respuestaArchivo) {
       return;
     }
 
+    enviandoRespuestaRef.current = true;
     const formData = new FormData();
     if (respuestaCliente.trim()) formData.append("respuestaCliente", respuestaCliente.trim());
     if (respuestaArchivo) formData.append("respuestaArchivo", respuestaArchivo);
@@ -526,6 +535,7 @@ const MoraGestionesDashboard = () => {
       console.error("Error respondiendo solicitud de mora", error);
       setErrorGestiones("No se pudo enviar la respuesta de la solicitud.");
     } finally {
+      enviandoRespuestaRef.current = false;
       setEnviandoRespuesta(false);
     }
   }, [enviandoRespuesta, fetchSolicitudes, respuestaArchivo, respuestaCliente, solicitudActiva]);
@@ -536,7 +546,7 @@ const MoraGestionesDashboard = () => {
 
   return (
     <div className="theme-mora">
-      <main className="min-h-screen bg-[#f7f4fb] px-4 py-5 md:px-6 md:py-7">
+      <main className="min-h-dvh bg-[#f7f4fb] px-4 py-5 md:px-6 md:py-7">
         <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5">
           <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
@@ -733,7 +743,12 @@ const MoraGestionesDashboard = () => {
           ) : (
             <section className="space-y-5">
               {gestionesVisibles.map((item) => {
-                const { gestion, solicitudesGestion, solicitudesAccionables } = item;
+                const {
+                  gestion,
+                  solicitudesGestion,
+                  solicitudesAccionables,
+                  solicitudesPendientesCerradas,
+                } = item;
                 const estado = formatEstado(gestion.estado);
                 const gestionCerrada = isGestionCerrada(gestion.estado);
                 const isLinkedGestion =
@@ -965,6 +980,11 @@ const MoraGestionesDashboard = () => {
                               {solicitudesAccionables.length} requiere respuesta
                             </span>
                           ) : null}
+                          {solicitudesPendientesCerradas.length > 0 ? (
+                            <span className="rounded-full border border-slate-300 bg-slate-100 px-4 py-1 text-xs font-semibold uppercase text-slate-700">
+                              {solicitudesPendientesCerradas.length} pendiente cerrada
+                            </span>
+                          ) : null}
                           <span className="rounded-full bg-slate-200 px-4 py-1 text-xs font-semibold uppercase text-slate-700">
                             {solicitudesGestion.length} documento
                             {solicitudesGestion.length === 1 ? "" : "s"}
@@ -988,6 +1008,22 @@ const MoraGestionesDashboard = () => {
                         </div>
                       ) : null}
 
+                      {solicitudesPendientesCerradas.length > 0 ? (
+                        <div className="mt-4 flex gap-3 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3">
+                          <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-slate-600">
+                            <RiShieldCheckLine className="h-5 w-5" />
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              Gestión cerrada con antecedentes pendientes
+                            </p>
+                            <p className="mt-1 text-sm leading-5 text-slate-700">
+                              Estas solicitudes quedaron sin respuesta antes del cierre. Puedes revisar el detalle, pero ya no es posible adjuntar nuevos antecedentes.
+                            </p>
+                          </div>
+                        </div>
+                      ) : null}
+
                       <div className="mt-4 grid gap-3 md:grid-cols-3">
                         {solicitudesGestion.length === 0 ? (
                           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-5 text-sm font-semibold text-slate-500 md:col-span-3">
@@ -996,6 +1032,9 @@ const MoraGestionesDashboard = () => {
                         ) : (
                           solicitudesGestion.map((solicitud) => {
                             const accionable = solicitudesAccionables.some(
+                              (actual) => actual.id === solicitud.id
+                            );
+                            const pendienteCerrada = solicitudesPendientesCerradas.some(
                               (actual) => actual.id === solicitud.id
                             );
                             const solicitudLabel =
@@ -1064,6 +1103,67 @@ const MoraGestionesDashboard = () => {
                                       <RiFileUploadLine className="h-5 w-5" />
                                       Adjuntar respuesta
                                     </button>
+                                  </div>
+                                ) : pendienteCerrada ? (
+                                  <div className="w-full">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                      <div className="flex items-center gap-3">
+                                        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-slate-600">
+                                          <RiShieldCheckLine className="h-6 w-6" />
+                                        </span>
+                                        <div className="min-w-0">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <p className="text-base font-semibold text-slate-950">
+                                              {solicitudLabel}
+                                            </p>
+                                            <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${getEstadoTone(solicitud.estado)}`}>
+                                              {formatEstado(solicitud.estado)}
+                                            </span>
+                                          </div>
+                                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                                            Pendiente al momento del cierre
+                                          </p>
+                                        </div>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleSolicitudDetalle(solicitud.id)}
+                                        className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-[#06164b] shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+                                        aria-expanded={isExpanded}
+                                      >
+                                        {isExpanded ? "Ocultar detalle" : "Ver detalle"}
+                                        <RiArrowDownSLine
+                                          className={`h-4 w-4 transition ${isExpanded ? "rotate-180" : ""}`}
+                                        />
+                                      </button>
+                                    </div>
+
+                                    {isExpanded ? (
+                                      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                          <RiQuestionAnswerLine className="h-4 w-4 text-blue-600" />
+                                          Previley solicitó
+                                        </div>
+                                        <p className="mt-2 text-sm leading-5 text-slate-700">
+                                          {compactText(
+                                            solicitud.mensaje,
+                                            "Sin mensaje registrado para esta solicitud."
+                                          )}
+                                        </p>
+                                        {solicitud.solicitudArchivoUrl ? (
+                                          <a
+                                            href={solicitud.solicitudArchivoUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-400 hover:bg-blue-50"
+                                          >
+                                            <RiFileDownloadLine className="h-3.5 w-3.5" />
+                                            Documento de Previley
+                                            <RiExternalLinkLine className="h-3.5 w-3.5" />
+                                          </a>
+                                        ) : null}
+                                      </div>
+                                    ) : null}
                                   </div>
                                 ) : (
                                   <div className="w-full">
