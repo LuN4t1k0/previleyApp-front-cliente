@@ -59,6 +59,9 @@ const getRiskMixLabel = (judicial, preJudicial, noJudicial) => {
 const normalizeLabel = (value) =>
   formatMoraEstadoLabel(value).toLowerCase();
 
+const normalizeEstadoKey = (value) =>
+  String(value || "").trim().toLowerCase();
+
 const Panel = ({ children, className = "" }) => (
   <section className={`rounded-lg border border-slate-200 bg-white shadow-sm ${className}`}>
     {children}
@@ -527,17 +530,23 @@ const MoraGlobalDashboard = () => {
     data: empresa,
   }));
 
-  const distribuccionDatos = (data.distribucionEstado || []).map((item) => ({
-    name: normalizeLabel(item.estado),
-    monto: Number(item.monto || 0),
-    casos: Number(item.casos || 0),
-    montoJudicial: Number(item.montoJudicial || 0),
-    montoPreJudicial: Number(item.montoPreJudicial || 0),
-    montoNoJudicial: Number(item.montoNoJudicial || 0),
-    casosJudiciales: Number(item.casosJudiciales || 0),
-    casosPreJudiciales: Number(item.casosPreJudiciales || 0),
-    casosNoJudiciales: Number(item.casosNoJudiciales || 0),
-  }));
+  const distribuccionDatos = (data.distribucionEstado || []).reduce((acc, item) => {
+    if (normalizeEstadoKey(item.estado) === "completado") return acc;
+
+    acc.push({
+      name: normalizeLabel(item.estado),
+      monto: Number(item.monto || 0),
+      casos: Number(item.casos || 0),
+      montoJudicial: Number(item.montoJudicial || 0),
+      montoPreJudicial: Number(item.montoPreJudicial || 0),
+      montoNoJudicial: Number(item.montoNoJudicial || 0),
+      casosJudiciales: Number(item.casosJudiciales || 0),
+      casosPreJudiciales: Number(item.casosPreJudiciales || 0),
+      casosNoJudiciales: Number(item.casosNoJudiciales || 0),
+    });
+
+    return acc;
+  }, []);
 
   const usaMontos = distribuccionDatos.some((item) => item.monto > 0);
   const distribucionEstado = distribuccionDatos.map((item) => ({
