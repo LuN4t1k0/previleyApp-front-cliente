@@ -68,7 +68,14 @@ const Panel = ({ children, className = "" }) => (
   </section>
 );
 
-const RelativeRiskBar = ({ value = 0, maxValue = 0, judicial = 0, preJudicial = 0, noJudicial = 0 }) => {
+const RelativeRiskBar = ({
+  value = 0,
+  maxValue = 0,
+  judicial = 0,
+  preJudicial = 0,
+  noJudicial = 0,
+  residual = 0,
+}) => {
   const base = Number(maxValue || 0);
   const totalWidth = base ? Math.min((Number(value || 0) / base) * 100, 100) : 0;
   const judicialWidth = base ? Math.min((Number(judicial || 0) / base) * 100, totalWidth) : 0;
@@ -77,6 +84,12 @@ const RelativeRiskBar = ({ value = 0, maxValue = 0, judicial = 0, preJudicial = 
     : 0;
   const noJudicialWidth = base
     ? Math.min((Number(noJudicial || 0) / base) * 100, Math.max(totalWidth - judicialWidth - preJudicialWidth, 0))
+    : 0;
+  const residualWidth = base
+    ? Math.min(
+        (Number(residual || 0) / base) * 100,
+        Math.max(totalWidth - judicialWidth - preJudicialWidth - noJudicialWidth, 0)
+      )
     : 0;
 
   return (
@@ -111,6 +124,15 @@ const RelativeRiskBar = ({ value = 0, maxValue = 0, judicial = 0, preJudicial = 
           }}
         />
       )}
+      {residualWidth > 0 && (
+        <div
+          className="absolute inset-y-0 bg-slate-300"
+          style={{
+            left: `${judicialWidth + preJudicialWidth + noJudicialWidth}%`,
+            width: `${residualWidth}%`,
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -132,7 +154,31 @@ const RiskLegend = () => (
   </div>
 );
 
-const RiskBreakdownList = ({ items, usaMontos, valueKey, emptyText }) => {
+const BREAKDOWN_METRIC_TONES = {
+  red: "border-red-100 bg-red-50 text-red-950",
+  orange: "border-orange-100 bg-orange-50 text-orange-950",
+  blue: "border-blue-100 bg-blue-50 text-blue-950",
+  slate: "border-slate-200 bg-white text-slate-800",
+};
+
+const BreakdownMetric = ({ label, value, tone = "slate" }) => {
+  return (
+    <div className={`rounded-md border px-3 py-2 ${BREAKDOWN_METRIC_TONES[tone] || BREAKDOWN_METRIC_TONES.slate}`}>
+      <p className="text-[10px] font-semibold uppercase text-current opacity-70">{label}</p>
+      <p className="mt-1 text-xs font-semibold">{formatCurrency(value)}</p>
+    </div>
+  );
+};
+
+const RiskBreakdownList = ({
+  items,
+  usaMontos,
+  valueKey,
+  emptyText,
+  showResidual = false,
+  valueLabel = "Total",
+  breakdownLabel = "Clasificado",
+}) => {
   const maxValue = Math.max(...items.map((item) => Number(item[valueKey] || 0)), 0);
 
   if (!items.length) {
@@ -150,11 +196,14 @@ const RiskBreakdownList = ({ items, usaMontos, valueKey, emptyText }) => {
         const judicial = Number(item.montoJudicial || 0);
         const preJudicial = Number(item.montoPreJudicial || 0);
         const noJudicial = Number(item.montoNoJudicial || 0);
+        const breakdownTotal = judicial + preJudicial + noJudicial;
+        const residual = showResidual ? Math.max(value - breakdownTotal, 0) : 0;
+        const classifiedRate = getRate(breakdownTotal, value);
         const mixLabel = getRiskMixLabel(judicial, preJudicial, noJudicial);
 
         return (
-          <div key={item.name} className="rounded-lg border border-slate-100 bg-slate-50 p-3">
-            <div className="flex items-start justify-between gap-3">
+          <div key={item.name} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold capitalize text-slate-800">
                   {item.name}
@@ -163,9 +212,17 @@ const RiskBreakdownList = ({ items, usaMontos, valueKey, emptyText }) => {
                   {formatNumber(item.casos || 0)} casos · {mixLabel}
                 </p>
               </div>
-              <p className="shrink-0 text-sm font-semibold text-slate-950">
-                {usaMontos ? formatCurrency(value) : `${formatNumber(value)} casos`}
-              </p>
+              <div className="shrink-0 text-left sm:text-right">
+                <p className="text-[10px] font-semibold uppercase text-slate-500">{valueLabel}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-950">
+                  {usaMontos ? formatCurrency(value) : `${formatNumber(value)} casos`}
+                </p>
+                {showResidual ? (
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    {breakdownLabel}: {formatCurrency(breakdownTotal)} · {formatPercent(classifiedRate)}
+                  </p>
+                ) : null}
+              </div>
             </div>
 
             <div className="mt-3">
@@ -175,12 +232,16 @@ const RiskBreakdownList = ({ items, usaMontos, valueKey, emptyText }) => {
                 judicial={judicial}
                 preJudicial={preJudicial}
                 noJudicial={noJudicial}
+                residual={residual}
               />
             </div>
-            <div className="mt-2 grid gap-2 text-xs font-semibold text-slate-600 sm:grid-cols-3">
-              <span>Judicial: {formatCurrency(judicial)}</span>
-              <span>Pre judicial: {formatCurrency(preJudicial)}</span>
-              <span>No judicial: {formatCurrency(noJudicial)}</span>
+            <div className={`mt-3 grid gap-2 ${showResidual ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-3"}`}>
+              <BreakdownMetric label="Judicial" value={judicial} tone="red" />
+              <BreakdownMetric label="Pre judicial" value={preJudicial} tone="orange" />
+              <BreakdownMetric label="No judicial" value={noJudicial} tone="blue" />
+              {showResidual && residual > 0 ? (
+                <BreakdownMetric label="Fuera desglose" value={residual} />
+              ) : null}
             </div>
           </div>
         );
@@ -392,9 +453,9 @@ const DistributionAndEntities = ({ distribucionEstado, usaMontos, topEntidades }
     </Panel>
 
     <Panel className="p-5">
-      <Title className="text-slate-950">Entidades con mayor deuda</Title>
+      <Title className="text-slate-950">Entidades con mayor deuda observada</Title>
       <Text className="text-sm text-slate-500">
-        Instituciones que explican la mayor parte del saldo observado y su composición pendiente.
+        Instituciones que explican la mayor parte del saldo y su desglose judicial, pre judicial y no judicial.
       </Text>
       <RiskLegend />
       <RiskBreakdownList
@@ -408,6 +469,9 @@ const DistributionAndEntities = ({ distribucionEstado, usaMontos, topEntidades }
         }))}
         usaMontos
         valueKey="value"
+        showResidual
+        valueLabel="Deuda observada"
+        breakdownLabel="En desglose"
         emptyText="Sin entidades para mostrar."
       />
     </Panel>
