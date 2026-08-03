@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DateRangePicker } from "@tremor/react";
 import { useSession } from "next-auth/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
@@ -91,37 +91,40 @@ const tipoSolicitudLabels = {
   otros_respaldos: "Otros Respaldos",
 };
 
-const getLinkedNavigationParams = () => {
-  if (typeof window === "undefined") {
-    return { gestionId: null, empresaRut: "", solicitudId: null };
-  }
-  const params = new URLSearchParams(window.location.search);
+const getLinkedNavigationParams = (searchParams) => {
   return {
-    gestionId: params.get("gestionId"),
-    empresaRut: params.get("empresaRut") || "",
-    solicitudId: params.get("solicitudId"),
+    gestionId: searchParams.get("gestionId"),
+    empresaRut: searchParams.get("empresaRut") || "",
+    solicitudId: searchParams.get("solicitudId"),
+    folio: searchParams.get("folio") || searchParams.get("gestionFolio") || "",
   };
 };
 
 const MoraGestionesDashboard = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session } = useSession();
   const { socket } = useSocket(session?.accessToken);
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
-  const linkedNavigationRef = useRef(null);
-  if (linkedNavigationRef.current === null) {
-    linkedNavigationRef.current = getLinkedNavigationParams();
-  }
+  const searchParamsKey = searchParams.toString();
+  const linkedNavigation = useMemo(
+    () => getLinkedNavigationParams(new URLSearchParams(searchParamsKey)),
+    [searchParamsKey]
+  );
   const [focusedGestionId, setFocusedGestionId] = useState(
-    () => linkedNavigationRef.current.gestionId
+    () => linkedNavigation.gestionId
   );
   const linkedGestionId = focusedGestionId;
   const [focusedSolicitudId, setFocusedSolicitudId] = useState(
-    () => linkedNavigationRef.current.solicitudId
+    () => linkedNavigation.solicitudId
   );
   const linkedSolicitudId = focusedSolicitudId;
+  const [focusedFolio, setFocusedFolio] = useState(
+    () => linkedNavigation.folio
+  );
+  const linkedFolio = focusedFolio;
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState(
-    () => linkedNavigationRef.current.empresaRut || ""
+    () => linkedNavigation.empresaRut || ""
   );
   const [empresaInput, setEmpresaInput] = useState("");
   const lastEmpresaLabel = useRef("");
@@ -138,6 +141,21 @@ const MoraGestionesDashboard = () => {
   const enviandoRespuestaRef = useRef(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedSolicitudId, setExpandedSolicitudId] = useState(null);
+
+  useEffect(() => {
+    setFocusedGestionId(linkedNavigation.gestionId);
+    setFocusedSolicitudId(linkedNavigation.solicitudId);
+    setFocusedFolio(linkedNavigation.folio);
+
+    if (linkedNavigation.empresaRut) {
+      setEmpresaSeleccionada(linkedNavigation.empresaRut);
+    }
+  }, [
+    linkedNavigation.empresaRut,
+    linkedNavigation.folio,
+    linkedNavigation.gestionId,
+    linkedNavigation.solicitudId,
+  ]);
 
   const handleDownloadDetalle = useCallback(async (gestion) => {
     if (!gestion?.id) return;
@@ -434,11 +452,15 @@ const MoraGestionesDashboard = () => {
   );
 
   const gestionesVisibles = useMemo(() => {
-    if (!linkedGestionId) return gestionesEnriquecidas;
+    if (!linkedGestionId && !linkedFolio) return gestionesEnriquecidas;
+    const normalizedLinkedFolio = String(linkedFolio || "").trim().toLowerCase();
     return gestionesEnriquecidas.filter(
-      (item) => Number(item.gestion.id) === Number(linkedGestionId)
+      (item) =>
+        (linkedGestionId && Number(item.gestion.id) === Number(linkedGestionId)) ||
+        (normalizedLinkedFolio &&
+          String(item.gestion.folio || "").trim().toLowerCase() === normalizedLinkedFolio)
     );
-  }, [gestionesEnriquecidas, linkedGestionId]);
+  }, [gestionesEnriquecidas, linkedFolio, linkedGestionId]);
 
   const resumenBandeja = useMemo(() => {
     const pendientesCliente = gestionesVisibles.reduce(
@@ -465,17 +487,27 @@ const MoraGestionesDashboard = () => {
   const handleShowAllGestiones = useCallback(() => {
     setFocusedGestionId(null);
     setFocusedSolicitudId(null);
+    setFocusedFolio("");
     router.replace("/servicios/mora-presunta/gestiones", { scroll: false });
   }, [router]);
 
   useEffect(() => {
-    if (!linkedGestionId || loadingGestiones || !gestionesVisibles.length) return;
-    const element = document.getElementById(`gestion-mora-${linkedGestionId}`);
+    if ((!linkedGestionId && !linkedFolio) || loadingGestiones || !gestionesVisibles.length) {
+      return;
+    }
+    const targetGestion = linkedGestionId
+      ? gestionesVisibles.find(
+          (item) => Number(item.gestion.id) === Number(linkedGestionId)
+        )
+      : gestionesVisibles[0];
+    const element = targetGestion
+      ? document.getElementById(`gestion-mora-${targetGestion.gestion.id}`)
+      : null;
     if (!element) return;
     window.setTimeout(() => {
       element.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 150);
-  }, [gestionesVisibles.length, linkedGestionId, loadingGestiones]);
+  }, [gestionesVisibles, linkedFolio, linkedGestionId, loadingGestiones]);
 
   useEffect(() => {
     if (!linkedSolicitudId || loadingGestiones || !gestionesVisibles.length) return;
@@ -693,14 +725,14 @@ const MoraGestionesDashboard = () => {
             </div>
           </section>
 
-          {linkedGestionId ? (
+          {linkedGestionId || linkedFolio ? (
             <section className="flex flex-col gap-3 rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-4 text-sm text-indigo-950 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="font-semibold uppercase tracking-wide text-indigo-800">
                   Vista desde notificación
                 </p>
                 <p className="mt-1 text-indigo-900">
-                  Mostrando solo la gestión #{linkedGestionId}
+                  Mostrando solo la gestión {linkedGestionId ? `#${linkedGestionId}` : linkedFolio}
                   {linkedSolicitudId ? ` y la solicitud #${linkedSolicitudId}` : ""} seleccionada
                   desde una notificación.
                 </p>
@@ -732,10 +764,10 @@ const MoraGestionesDashboard = () => {
           ) : gestionesVisibles.length === 0 ? (
             <section className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-white/70 py-16 text-center">
               <p className="text-lg font-semibold text-slate-700">
-                {linkedGestionId ? "Gestión no encontrada" : "Sin gestiones"}
+                {linkedGestionId || linkedFolio ? "Gestión no encontrada" : "Sin gestiones"}
               </p>
               <p className="text-sm text-slate-500">
-                {linkedGestionId
+                {linkedGestionId || linkedFolio
                   ? "No encontramos esa gestión para la empresa seleccionada."
                   : "No hay gestiones registradas para los filtros seleccionados."}
               </p>
@@ -752,7 +784,10 @@ const MoraGestionesDashboard = () => {
                 const estado = formatEstado(gestion.estado);
                 const gestionCerrada = isGestionCerrada(gestion.estado);
                 const isLinkedGestion =
-                  linkedGestionId && Number(linkedGestionId) === Number(gestion.id);
+                  (linkedGestionId && Number(linkedGestionId) === Number(gestion.id)) ||
+                  (linkedFolio &&
+                    String(linkedFolio).trim().toLowerCase() ===
+                      String(gestion.folio || "").trim().toLowerCase());
                 const montoResumenLabel = gestionCerrada ? "Regularizado" : "Pendiente";
                 const montoResumenIconTone = gestionCerrada
                   ? "bg-emerald-600 text-white shadow-emerald-600/20"
