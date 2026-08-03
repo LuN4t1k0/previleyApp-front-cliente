@@ -13,6 +13,10 @@ import Swal from 'sweetalert2';
 import { saveAs } from 'file-saver';
 import { showErrorAlert } from '@/utils/alerts';
 import { downloadResumenYDifExcel } from '@/utils/exportUtils';
+import {
+  UPLOAD_MAX_FILE_SIZE_BYTES,
+  formatUploadMaxFileSize,
+} from '@/config/uploadLimits';
 
 const BulkUploadModal = ({ onClose, fetchData, endpoint, gestionId, parentIdField }) => {
   const [file, setFile] = useState(null);
@@ -47,11 +51,11 @@ const BulkUploadModal = ({ onClose, fetchData, endpoint, gestionId, parentIdFiel
   const validateFile = (newFile) => {
     const validTypes = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
     if (newFile && validTypes.includes(newFile.type)) {
-      if (newFile.size <= 10 * 1024 * 1024) {
+      if (newFile.size <= UPLOAD_MAX_FILE_SIZE_BYTES) {
         setFile(newFile);
         setError(null);
       } else {
-        setError('El archivo excede el tamaño máximo de 10 MB.');
+        setError(`El archivo excede el tamaño máximo de ${formatUploadMaxFileSize()}.`);
         setFile(null);
         setProgress(0);
       }
@@ -256,7 +260,9 @@ const downloadSummary = (data) => {
               </div>
             </div>
           )}
-          <p className="mt-2 text-sm text-gray-500">Tipos de archivos aceptados: CSV, XLSX o XLS. Tamaño máximo: 10MB</p>
+          <p className="mt-2 text-sm text-gray-500">
+            Tipos de archivos aceptados: CSV, XLSX o XLS. Tamaño máximo: {formatUploadMaxFileSize()}
+          </p>
           {error && (
             <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded relative flex items-center space-x-2">
               <RiErrorWarningFill className="h-5 w-5 text-red-500" />

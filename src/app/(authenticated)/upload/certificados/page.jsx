@@ -21,7 +21,6 @@ const UploadCertificadosPage = () => {
           <FileUpload
             acceptedFileTypes={[".pdf"]}
             uploadEndpoint="https://previley-lm-python-production.up.railway.app/certificados"
-            fileLimit={5}
             filePrefix="CERT"
           />
         </div>

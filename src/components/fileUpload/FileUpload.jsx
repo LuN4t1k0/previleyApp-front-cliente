@@ -1,13 +1,17 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RiUpload2Line, RiDeleteBin5Line } from '@remixicon/react';
 import Dropzone from './Dropzone';
 import UploadProgress from './UploadProgress';
 import CompletedUploads from './CompletedUploads';
 import AlertDialog from './AlertDialog';
 import ConversionProgressModal from './ConversionProgressModal';
+import {
+  UPLOAD_MAX_FILE_SIZE_BYTES,
+  UPLOAD_MAX_FILE_SIZE_MB,
+} from '@/config/uploadLimits';
 
-const FileUpload = ({ acceptedFileTypes, uploadEndpoint, fileLimit, filePrefix }) => {
+const FileUpload = ({ acceptedFileTypes, uploadEndpoint, fileLimit = UPLOAD_MAX_FILE_SIZE_MB, filePrefix }) => {
   const [files, setFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
   const [convertProgress, setConvertProgress] = useState(0);
@@ -16,6 +20,7 @@ const FileUpload = ({ acceptedFileTypes, uploadEndpoint, fileLimit, filePrefix }
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [fileName, setFileName] = useState('');
+  const uploadIntervalsRef = useRef({});
 
   useEffect(() => {
     files.forEach((file) => {
@@ -24,6 +29,13 @@ const FileUpload = ({ acceptedFileTypes, uploadEndpoint, fileLimit, filePrefix }
       }
     });
   }, [files]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(uploadIntervalsRef.current).forEach(clearInterval);
+      uploadIntervalsRef.current = {};
+    };
+  }, []);
 
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files);
@@ -49,7 +61,10 @@ const FileUpload = ({ acceptedFileTypes, uploadEndpoint, fileLimit, filePrefix }
         duplicateFiles.push(file.name);
         return false;
       }
-      return acceptedFileTypes.some(type => file.name.toLowerCase().endsWith(type));
+      return (
+        acceptedFileTypes.some(type => file.name.toLowerCase().endsWith(type)) &&
+        file.size <= UPLOAD_MAX_FILE_SIZE_BYTES
+      );
     });
 
     if (duplicateFiles.length > 0) {
@@ -73,6 +88,22 @@ const FileUpload = ({ acceptedFileTypes, uploadEndpoint, fileLimit, filePrefix }
       });
     }
 
+    const oversizedFiles = newFiles.filter(
+      (file) =>
+        acceptedFileTypes.some(type => file.name.toLowerCase().endsWith(type)) &&
+        file.size > UPLOAD_MAX_FILE_SIZE_BYTES &&
+        !duplicateFiles.includes(file.name)
+    );
+    if (oversizedFiles.length > 0) {
+      setAlert({
+        isOpen: true,
+        title: 'Archivo demasiado grande',
+        message: `El tamaño máximo permitido por archivo es ${fileLimit} MB. Los siguientes archivos no fueron añadidos:`,
+        type: 'error',
+        duplicatedFiles: oversizedFiles.map(file => file.name)
+      });
+    }
+
     const fileObjs = validFiles.map((file) => ({
       file,
       id: `${Date.now()}-${file.name}`,
@@ -83,15 +114,16 @@ const FileUpload = ({ acceptedFileTypes, uploadEndpoint, fileLimit, filePrefix }
   };
 
   const simulateUpload = (file) => {
+    let progress = 0;
     const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        const newProgress = { ...prev, [file.id]: (prev[file.id] || 0) + 10 };
-        if (newProgress[file.id] >= 100) {
-          clearInterval(interval);
-        }
-        return newProgress;
-      });
+      progress = Math.min(progress + 10, 100);
+      setUploadProgress((prev) => ({ ...prev, [file.id]: progress }));
+      if (progress >= 100) {
+        clearInterval(interval);
+        delete uploadIntervalsRef.current[file.id];
+      }
     }, 500);
+    uploadIntervalsRef.current[file.id] = interval;
   };
 
   const handleRemoveFile = (id) => setFiles((prevFiles) => prevFiles.filter((file) => file.id !== id));
@@ -126,11 +158,13 @@ const FileUpload = ({ acceptedFileTypes, uploadEndpoint, fileLimit, filePrefix }
         setFileName(nombreArchivo);
 
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        const objectUrl = URL.createObjectURL(blob);
+        a.href = objectUrl;
         a.download = nombreArchivo;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        URL.revokeObjectURL(objectUrl);
 
         handleRemoveAll();
       } else {

@@ -4,6 +4,10 @@ import useBulkProgress from "../hooks/useBulkProgress";
 import selectBulkJob from "../hooks/useBulkJob";
 import BulkProgressBar from "./BulkProgressBar";
 import { uploadFileWithProgress } from "../utils/uploadWithProgress";
+import {
+  UPLOAD_MAX_FILE_SIZE_BYTES,
+  formatUploadMaxFileSize,
+} from "../config/uploadLimits";
 
 export default function BulkUploadGL({
   token,
@@ -22,6 +26,7 @@ export default function BulkUploadGL({
   const { socket, isConnected, joinRoom } = useSocket(token);
   const { jobs } = useBulkProgress(socket);
   const [file, setFile] = useState(null);
+  const [fileError, setFileError] = useState("");
   const [uploadPercent, setUploadPercent] = useState(0);
   const [correlationId, setCorrelationId] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -196,6 +201,12 @@ export default function BulkUploadGL({
     setIsDragging(false);
     const f = e.dataTransfer?.files?.[0];
     if (f) {
+      if (f.size > UPLOAD_MAX_FILE_SIZE_BYTES) {
+        setFile(null);
+        setFileError(`El archivo excede el tamaño máximo de ${formatUploadMaxFileSize()}.`);
+        return;
+      }
+      setFileError("");
       setFile(f);
       try { onFileSelected?.(f); } catch (_) {}
     }
@@ -234,6 +245,12 @@ export default function BulkUploadGL({
                 className="sr-only"
                 onChange={(e) => {
                   const f = e.target.files?.[0] || null;
+                  if (f && f.size > UPLOAD_MAX_FILE_SIZE_BYTES) {
+                    setFile(null);
+                    setFileError(`El archivo excede el tamaño máximo de ${formatUploadMaxFileSize()}.`);
+                    return;
+                  }
+                  setFileError("");
                   setFile(f);
                   try { if (f) onFileSelected?.(f); } catch (_) {}
                 }}
@@ -242,6 +259,9 @@ export default function BulkUploadGL({
             {file && (
               <div className="text-xs text-tremor-content-subtle truncate max-w-[280px] mt-1">{file.name}</div>
             )}
+            {fileError && (
+              <div className="text-xs text-red-600 mt-1">{fileError}</div>
+            )}
             <button
               onClick={startUpload}
               disabled={!file || !gestionLicenciaId}
@@ -249,7 +269,9 @@ export default function BulkUploadGL({
             >
               Subir y procesar
             </button>
-            <div className="text-[11px] text-tremor-content-subtle mt-1">Formatos admitidos: CSV/XLS/XLSX • Máx 10MB</div>
+            <div className="text-[11px] text-tremor-content-subtle mt-1">
+              Formatos admitidos: CSV/XLS/XLSX - Máx {formatUploadMaxFileSize()}
+            </div>
           </div>
         </div>
       )}

@@ -21,7 +21,6 @@ const UploadLicenciasPage = () => {
           <FileUpload
             acceptedFileTypes={[".pdf"]}
             uploadEndpoint="https://previley-lm-python-production.up.railway.app/licencias"
-            fileLimit={5}
             filePrefix="LM"
           />
         </div>

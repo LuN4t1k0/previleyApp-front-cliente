@@ -12,6 +12,7 @@ import { Button, Text, Card, Title } from "@tremor/react";
 import UploadProgress from "./UploadProgress";
 import { useFileUploader } from "@/hooks/useFileUploader";
 import { useEffect, useState, useRef } from "react";
+import { formatUploadMaxFileSize } from "@/config/uploadLimits";
 
 export default function PagexUploader() {
   const {
@@ -34,13 +35,14 @@ export default function PagexUploader() {
   useEffect(() => {
     if (uploadSuccess) {
       setShowSuccess(true);
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setShowSuccess(false);
         resetUploader();
         if (inputRef.current) {
           inputRef.current.value = null;
         }
       }, 3000);
+      return () => clearTimeout(timer);
     }
   }, [uploadSuccess, resetUploader]);
 
@@ -61,7 +63,7 @@ export default function PagexUploader() {
             />
           </label>
           <p className="text-sm text-gray-500 mt-2">
-            Máx 10MB por archivo. Solo .PDF
+            Máx {formatUploadMaxFileSize()} por archivo. Solo .PDF
           </p>
         </div>
       </div>

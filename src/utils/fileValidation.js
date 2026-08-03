@@ -1,6 +1,10 @@
 // src/utils/fileValidation.js
+import {
+  UPLOAD_MAX_FILE_SIZE_BYTES,
+  UPLOAD_MAX_FILE_SIZE_MB,
+} from "@/config/uploadLimits";
 
-export const MAX_FILE_SIZE_MB = 10;
+export const MAX_FILE_SIZE_MB = UPLOAD_MAX_FILE_SIZE_MB;
 export const VALID_EXTENSIONS = [".pdf"];
 
 export function validarArchivo(file) {
@@ -15,8 +19,7 @@ export function validarArchivo(file) {
     };
   }
 
-  const tamañoEnMB = file.size / (1024 * 1024);
-  if (tamañoEnMB > MAX_FILE_SIZE_MB) {
+  if (file.size > UPLOAD_MAX_FILE_SIZE_BYTES) {
     return {
       valido: false,
       mensaje: `El archivo supera el límite de ${MAX_FILE_SIZE_MB} MB.`,
