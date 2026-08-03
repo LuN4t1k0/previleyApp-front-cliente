@@ -48,6 +48,7 @@ const DatasetSelector = ({
         {showSearch ? (
           <input
             type="text"
+            aria-label="Buscar dataset"
             placeholder="Buscar dataset..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -57,6 +58,7 @@ const DatasetSelector = ({
       </div>
       <div className="relative">
         <select
+          aria-label={title}
           value={selectedId || ""}
           onChange={(e) => onSelect(e.target.value)}
           className="w-full bg-slate-50 border-slate-200 rounded-xl py-3 px-4 appearance-none focus:ring-blue-500 focus:border-blue-500"
@@ -68,7 +70,7 @@ const DatasetSelector = ({
             <optgroup key={group} label={group}>
               {items.map((ds) => (
                 <option key={ds.id} value={ds.id}>
-                  {ds.name}
+                  {ds.canExport === false ? `${ds.name} (solo vista previa)` : ds.name}
                 </option>
               ))}
             </optgroup>

@@ -8,6 +8,7 @@ const ExportPanel = ({
   status,
   rowCount,
   errorMessage,
+  permissionMessage,
   downloadUrl,
   disabled,
 }) => {
@@ -92,9 +93,10 @@ const ExportPanel = ({
       </div>
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <button
+          type="button"
           onClick={onExport}
           disabled={disabled}
-          className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 disabled:opacity-50"
+          className="w-full sm:w-auto px-10 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <span className="material-icons-round">cloud_download</span>
           {isGenerating ? "Generando..." : "Generar y Exportar Reporte"}
@@ -108,6 +110,14 @@ const ExportPanel = ({
           Volver a Editar
         </button>
       </div>
+      {permissionMessage && (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <div className="flex gap-2">
+            <span className="material-icons-round text-base">lock</span>
+            <p>{permissionMessage}</p>
+          </div>
+        </div>
+      )}
       {errorMessage && <p className="text-xs text-red-500 mt-4">Error: {errorMessage}</p>}
       {downloadUrl && (
         <a

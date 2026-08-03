@@ -39,6 +39,7 @@ export default function ClientAdminUsuariosPage() {
   const [form, setForm] = useState(emptyForm);
   const [selectedEmpresas, setSelectedEmpresas] = useState([]);
   const [canSeeProtected, setCanSeeProtected] = useState(false);
+  const [reportingDetailExportEmpresaRuts, setReportingDetailExportEmpresaRuts] = useState([]);
 
   const empresaOptions = useMemo(
     () =>
@@ -59,6 +60,11 @@ export default function ClientAdminUsuariosPage() {
       return matchesText && matchesRole;
     });
   }, [users, search, roleFilter]);
+  const selectedEmpresasSet = useMemo(() => new Set(selectedEmpresas), [selectedEmpresas]);
+  const reportingDetailExportEmpresaRutSet = useMemo(
+    () => new Set(reportingDetailExportEmpresaRuts),
+    [reportingDetailExportEmpresaRuts]
+  );
 
   if (!isClientAdmin) {
     return <Restricted />;
@@ -69,6 +75,7 @@ export default function ClientAdminUsuariosPage() {
     setForm(emptyForm);
     setSelectedEmpresas([]);
     setCanSeeProtected(false);
+    setReportingDetailExportEmpresaRuts([]);
   };
 
   const openCreate = () => {
@@ -99,6 +106,7 @@ export default function ClientAdminUsuariosPage() {
 
   const openPermissions = (user) => {
     setCanSeeProtected(Boolean(user.canSeeProtected));
+    setReportingDetailExportEmpresaRuts(user.reportingDetailExportEmpresaRuts || []);
     setModal({ type: "permissions", user });
   };
 
@@ -124,7 +132,12 @@ export default function ClientAdminUsuariosPage() {
       return;
     }
     try {
-      await createUser({ ...form, empresas: selectedEmpresas });
+      await createUser({
+        ...form,
+        empresas: selectedEmpresas,
+        reportingDetailExportEmpresaRuts:
+          form.rol === "cliente" ? reportingDetailExportEmpresaRuts : [],
+      });
       showSuccessAlert("Usuario creado", "Subusuario creado correctamente.");
       showInfoAlert(
         "Activación requerida",
@@ -174,7 +187,10 @@ export default function ClientAdminUsuariosPage() {
 
   const handleSetPermissions = async () => {
     try {
-      await setPermissions(modal.user.id, { canSeeProtected });
+      await setPermissions(modal.user.id, {
+        canSeeProtected,
+        reportingDetailExportEmpresaRuts,
+      });
       showSuccessAlert("Permisos actualizados", "Permisos guardados correctamente.");
       showInfoAlert(
         "Re-login requerido",
@@ -255,6 +271,7 @@ export default function ClientAdminUsuariosPage() {
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Rol</th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Empresas</th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Protegidos</th>
+              <th className="px-4 py-3 text-left font-semibold text-slate-600">Export detalle</th>
               <th className="px-4 py-3 text-left font-semibold text-slate-600">Estado</th>
               <th className="px-4 py-3 text-right font-semibold text-slate-600">Acciones</th>
             </tr>
@@ -262,21 +279,21 @@ export default function ClientAdminUsuariosPage() {
           <tbody className="divide-y divide-slate-100">
             {loading && (
               <tr>
-                <td className="px-4 py-6 text-center text-slate-500" colSpan={6}>
+                <td className="px-4 py-6 text-center text-slate-500" colSpan={7}>
                   Cargando usuarios...
                 </td>
               </tr>
             )}
             {!loading && error && (
               <tr>
-                <td className="px-4 py-6 text-center text-rose-500" colSpan={6}>
+                <td className="px-4 py-6 text-center text-rose-500" colSpan={7}>
                   No se pudieron cargar los usuarios.
                 </td>
               </tr>
             )}
             {!loading && !error && filteredUsers.length === 0 && (
               <tr>
-                <td className="px-4 py-6 text-center text-slate-500" colSpan={6}>
+                <td className="px-4 py-6 text-center text-slate-500" colSpan={7}>
                   No hay usuarios para mostrar.
                 </td>
               </tr>
@@ -312,6 +329,23 @@ export default function ClientAdminUsuariosPage() {
                     <td className="px-4 py-4">
                       <CustomBadge variant={user.canSeeProtected ? "emerald" : "gray"} textTransform="normal">
                         {user.canSeeProtected ? "Habilitado" : "Bloqueado"}
+                      </CustomBadge>
+                    </td>
+                    <td className="px-4 py-4">
+                      <CustomBadge
+                        variant={
+                          user.rol === "cliente_admin" ||
+                          (user.reportingDetailExportEmpresaRuts || []).length
+                            ? "emerald"
+                            : "gray"
+                        }
+                        textTransform="normal"
+                      >
+                        {user.rol === "cliente_admin"
+                          ? "Por rol"
+                          : (user.reportingDetailExportEmpresaRuts || []).length
+                            ? `${user.reportingDetailExportEmpresaRuts.length} empresa(s)`
+                            : "Sin permiso"}
                       </CustomBadge>
                     </td>
                     <td className="px-4 py-4 text-slate-600">
@@ -390,7 +424,15 @@ export default function ClientAdminUsuariosPage() {
             <TextInput placeholder="RUT" value={form.rut} onChange={(e) => setForm({ ...form, rut: e.target.value })} />
             <TextInput placeholder="Teléfono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
             <TextInput placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            <Select value={form.rol} onValueChange={(value) => setForm({ ...form, rol: value })}>
+            <Select
+              value={form.rol}
+              onValueChange={(value) => {
+                setForm({ ...form, rol: value });
+                if (value !== "cliente") {
+                  setReportingDetailExportEmpresaRuts([]);
+                }
+              }}
+            >
               {roleOptions.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
@@ -410,7 +452,7 @@ export default function ClientAdminUsuariosPage() {
                 <span className="text-xs text-slate-400">No hay empresas disponibles.</span>
               )}
               {empresaOptions.map((opt) => {
-                const checked = selectedEmpresas.includes(opt.value);
+                const checked = selectedEmpresasSet.has(opt.value);
                 return (
                   <label
                     key={opt.value}
@@ -426,6 +468,9 @@ export default function ClientAdminUsuariosPage() {
                           setSelectedEmpresas([...selectedEmpresas, opt.value]);
                         } else {
                           setSelectedEmpresas(selectedEmpresas.filter((v) => v !== opt.value));
+                          setReportingDetailExportEmpresaRuts(
+                            reportingDetailExportEmpresaRuts.filter((rut) => rut !== opt.value)
+                          );
                         }
                       }}
                     />
@@ -435,6 +480,59 @@ export default function ClientAdminUsuariosPage() {
               })}
             </div>
           </div>
+
+          {form.rol === "cliente" && (
+            <div className="mt-5 rounded-xl border border-slate-200 p-4">
+              <p className="text-sm font-semibold text-slate-800">
+                Exportación de reportes de detalle
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Selecciona las empresas donde este usuario podrá descargar datasets de detalle.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectedEmpresas.length === 0 && (
+                  <span className="text-xs text-slate-400">
+                    Selecciona empresas primero.
+                  </span>
+                )}
+                {empresaOptions
+                  .filter((opt) => selectedEmpresasSet.has(opt.value))
+                  .map((opt) => {
+                    const checked = reportingDetailExportEmpresaRutSet.has(opt.value);
+                    return (
+                      <label
+                        key={opt.value}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium ${
+                          checked
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-slate-200 text-slate-600"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setReportingDetailExportEmpresaRuts([
+                                ...reportingDetailExportEmpresaRuts,
+                                opt.value,
+                              ]);
+                            } else {
+                              setReportingDetailExportEmpresaRuts(
+                                reportingDetailExportEmpresaRuts.filter(
+                                  (rut) => rut !== opt.value
+                                )
+                              );
+                            }
+                          }}
+                        />
+                        {opt.label}
+                      </label>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 flex justify-end gap-2">
             <Button variant="secondary" onClick={closeModal}>Cancelar</Button>
@@ -477,7 +575,7 @@ export default function ClientAdminUsuariosPage() {
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {empresaOptions.map((opt) => {
-              const checked = selectedEmpresas.includes(opt.value);
+              const checked = selectedEmpresasSet.has(opt.value);
               return (
                 <label
                   key={opt.value}
@@ -514,7 +612,7 @@ export default function ClientAdminUsuariosPage() {
         <DialogPanel className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
           <h3 className="text-lg font-semibold text-slate-900">Permisos de visibilidad</h3>
           <p className="mt-2 text-sm text-slate-500">
-            Habilita la visibilidad de trabajadores protegidos para este subusuario.
+            Administra visibilidad y exportación de reportes para este subusuario.
           </p>
           <label className="mt-4 flex items-center gap-3 text-sm font-medium text-slate-700">
             <input
@@ -527,6 +625,62 @@ export default function ClientAdminUsuariosPage() {
           <p className="mt-3 text-xs text-slate-500">
             El cambio se aplicará cuando el usuario vuelva a iniciar sesión.
           </p>
+          <div className="mt-5 rounded-xl border border-slate-200 p-4">
+            <p className="text-sm font-semibold text-slate-800">
+              Exportación de reportes de detalle
+            </p>
+            {modal.user?.rol === "cliente_admin" ? (
+              <p className="mt-2 text-sm text-slate-500">
+                Este usuario puede exportar reportes de detalle por su rol cliente admin.
+              </p>
+            ) : (
+              <>
+                <p className="mt-1 text-xs text-slate-500">
+                  Selecciona las empresas donde este usuario cliente puede descargar datasets de detalle.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(modal.user?.empresas || []).length === 0 && (
+                    <span className="text-xs text-slate-400">
+                      El usuario no tiene empresas asignadas.
+                    </span>
+                  )}
+                  {(modal.user?.empresas || []).map((empresa) => {
+                    const checked = reportingDetailExportEmpresaRutSet.has(empresa.empresaRut);
+                    return (
+                      <label
+                        key={empresa.empresaRut}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium ${
+                          checked
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-slate-200 text-slate-600"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setReportingDetailExportEmpresaRuts([
+                                ...reportingDetailExportEmpresaRuts,
+                                empresa.empresaRut,
+                              ]);
+                            } else {
+                              setReportingDetailExportEmpresaRuts(
+                                reportingDetailExportEmpresaRuts.filter(
+                                  (rut) => rut !== empresa.empresaRut
+                                )
+                              );
+                            }
+                          }}
+                        />
+                        {empresa.nombre || empresa.empresaRut}
+                      </label>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
           <div className="mt-6 flex justify-end gap-2">
             <Button variant="secondary" onClick={closeModal}>Cancelar</Button>
             <Button onClick={handleSetPermissions}>Guardar</Button>

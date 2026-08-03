@@ -47,6 +47,11 @@ const ReportesPage = () => {
   const lastExportStatus = useRef(null);
 
   const selectedDataset = datasetSchema;
+  const canExportSelectedDataset = selectedDataset?.canExport !== false;
+  const exportPermissionMessage =
+    selectedDataset && !canExportSelectedDataset
+      ? "Tu rol puede previsualizar este dataset, pero no exportarlo. Selecciona un dataset de gestión o solicita permisos para exportar este detalle."
+      : "";
 
   useEffect(() => {
     const load = async () => {
@@ -201,6 +206,10 @@ const ReportesPage = () => {
 
   const handleExport = async () => {
     if (!selectedDatasetId) return;
+    if (!canExportSelectedDataset) {
+      toast.error("Tu usuario no tiene permisos para exportar este dataset.");
+      return;
+    }
     try {
       const { data } = await apiService.post("/reporting/exports", {
         datasetId: selectedDatasetId,
@@ -327,7 +336,9 @@ const ReportesPage = () => {
     : preview.data;
   const activeSubtitle =
     activeStep === 4
-      ? "Finaliza tu configuración y exporta tu reporte personalizado."
+      ? canExportSelectedDataset
+        ? "Finaliza tu configuración y exporta tu reporte personalizado."
+        : "Este dataset está disponible solo para vista previa con tu rol actual."
       : "Sigue los pasos para generar un informe personalizado.";
 
   const resetSelections = () => {
@@ -653,12 +664,20 @@ const ReportesPage = () => {
               <button
                 onClick={() => setActiveStep(4)}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all disabled:bg-slate-200 disabled:text-slate-500"
-                disabled={!previewRan}
+                disabled={!previewRan || !canExportSelectedDataset}
               >
                 Siguiente
               </button>
             </div>
           </div>
+          {exportPermissionMessage && (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <div className="flex gap-3">
+                <span className="material-icons-round text-lg">lock</span>
+                <p>{exportPermissionMessage}</p>
+              </div>
+            </div>
+          )}
           <PreviewTable
             dataset={selectedDataset}
             columns={selectedColumns}
@@ -684,8 +703,11 @@ const ReportesPage = () => {
                 status={exportJob?.status}
                 rowCount={exportJob?.rowCount}
                 errorMessage={exportJob?.errorMessage}
+                permissionMessage={exportPermissionMessage}
                 downloadUrl={exportJob?.status === "done" ? exportJob.downloadUrl : null}
-                disabled={!selectedDatasetId || selectedColumns.length === 0}
+                disabled={
+                  !selectedDatasetId || selectedColumns.length === 0 || !canExportSelectedDataset
+                }
               />
               <ExportHistoryPanel
                 exportsData={exportHistory.data}
