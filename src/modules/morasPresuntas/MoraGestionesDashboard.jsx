@@ -18,6 +18,7 @@ import {
   RiBuildingLine,
   RiCalendarLine,
   RiCheckboxCircleLine,
+  RiCloseCircleLine,
   RiExternalLinkLine,
   RiFilter3Line,
   RiFileDownloadLine,
@@ -57,6 +58,36 @@ const getEstadoTone = (estado) =>
 
 const isGestionCerrada = (estado) =>
   ["cerrada", "cerrado"].includes(String(estado || "").trim().toLowerCase());
+
+const formatFileSize = (bytes) => {
+  const value = Number(bytes || 0);
+  if (!value) return "0 KB";
+  if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const getRespuestaArchivos = (solicitud = {}) => {
+  if (Array.isArray(solicitud.respuestaArchivos) && solicitud.respuestaArchivos.length) {
+    return solicitud.respuestaArchivos;
+  }
+  if (solicitud.respuestaArchivoUrl || solicitud.respuestaArchivo) {
+    return [
+      {
+        id: "legacy-respuesta",
+        originalName: "Documento del cliente",
+        url: solicitud.respuestaArchivoUrl,
+        fileKey: solicitud.respuestaArchivo,
+      },
+    ];
+  }
+  return [];
+};
+
+const getArchivoKey = (archivo = {}) =>
+  archivo.id ||
+  archivo.fileKey ||
+  archivo.url ||
+  `${archivo.originalName || archivo.name || "archivo"}-${archivo.sizeBytes || archivo.size || 0}-${archivo.createdAt || archivo.lastModified || "sin-fecha"}`;
 
 const compactText = (value, fallback = "Sin información registrada.", maxLength = 150) => {
   const text = String(value || "").replace(/\s+/g, " ").trim();
@@ -136,7 +167,8 @@ const MoraGestionesDashboard = () => {
   const [errorGestiones, setErrorGestiones] = useState("");
   const [solicitudActiva, setSolicitudActiva] = useState(null);
   const [respuestaCliente, setRespuestaCliente] = useState("");
-  const [respuestaArchivo, setRespuestaArchivo] = useState(null);
+  const [respuestaArchivos, setRespuestaArchivos] = useState([]);
+  const [isDraggingRespuestaArchivo, setIsDraggingRespuestaArchivo] = useState(false);
   const [enviandoRespuesta, setEnviandoRespuesta] = useState(false);
   const enviandoRespuestaRef = useRef(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -522,7 +554,8 @@ const MoraGestionesDashboard = () => {
   const openResponderSolicitud = useCallback((solicitud) => {
     setSolicitudActiva(solicitud);
     setRespuestaCliente("");
-    setRespuestaArchivo(null);
+    setRespuestaArchivos([]);
+    setIsDraggingRespuestaArchivo(false);
   }, []);
 
   const toggleSolicitudDetalle = useCallback((solicitudId) => {
@@ -533,19 +566,53 @@ const MoraGestionesDashboard = () => {
     if (enviandoRespuesta) return;
     setSolicitudActiva(null);
     setRespuestaCliente("");
-    setRespuestaArchivo(null);
+    setRespuestaArchivos([]);
+    setIsDraggingRespuestaArchivo(false);
   }, [enviandoRespuesta]);
+
+  const addRespuestaArchivos = useCallback((fileList) => {
+    const incoming = Array.from(fileList || []).filter(Boolean);
+    if (!incoming.length) return;
+    setRespuestaArchivos((current) => {
+      const existingKeys = new Set(
+        current.map((file) => `${file.name}-${file.size}-${file.lastModified}`)
+      );
+      const merged = [...current];
+      incoming.forEach((file) => {
+        const key = `${file.name}-${file.size}-${file.lastModified}`;
+        if (!existingKeys.has(key)) {
+          existingKeys.add(key);
+          merged.push(file);
+        }
+      });
+      return merged;
+    });
+  }, []);
+
+  const removeRespuestaArchivo = useCallback((indexToRemove) => {
+    setRespuestaArchivos((current) => current.filter((_, index) => index !== indexToRemove));
+  }, []);
+
+  const handleRespuestaDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+      setIsDraggingRespuestaArchivo(false);
+      if (enviandoRespuesta) return;
+      addRespuestaArchivos(event.dataTransfer.files);
+    },
+    [addRespuestaArchivos, enviandoRespuesta]
+  );
 
   const handleResponderSolicitud = useCallback(async () => {
     if (enviandoRespuestaRef.current || enviandoRespuesta || !solicitudActiva?.id) return;
-    if (!respuestaCliente.trim() && !respuestaArchivo) {
+    if (!respuestaCliente.trim() && respuestaArchivos.length === 0) {
       return;
     }
 
     enviandoRespuestaRef.current = true;
     const formData = new FormData();
     if (respuestaCliente.trim()) formData.append("respuestaCliente", respuestaCliente.trim());
-    if (respuestaArchivo) formData.append("respuestaArchivo", respuestaArchivo);
+    respuestaArchivos.forEach((file) => formData.append("respuestaArchivos", file));
 
     try {
       setEnviandoRespuesta(true);
@@ -555,7 +622,8 @@ const MoraGestionesDashboard = () => {
       await fetchSolicitudes();
       setSolicitudActiva(null);
       setRespuestaCliente("");
-      setRespuestaArchivo(null);
+      setRespuestaArchivos([]);
+      setIsDraggingRespuestaArchivo(false);
       setGestiones((current) =>
         current.map((gestion) =>
           Number(gestion.id) === Number(solicitudActiva.gestionMoraId)
@@ -570,7 +638,7 @@ const MoraGestionesDashboard = () => {
       enviandoRespuestaRef.current = false;
       setEnviandoRespuesta(false);
     }
-  }, [enviandoRespuesta, fetchSolicitudes, respuestaArchivo, respuestaCliente, solicitudActiva]);
+  }, [enviandoRespuesta, fetchSolicitudes, respuestaArchivos, respuestaCliente, solicitudActiva]);
 
   if (loadingEmpresas && !empresaSeleccionada) {
     return <DashboardMoraAnaliticoSkeleton />;
@@ -1212,19 +1280,24 @@ const MoraGestionesDashboard = () => {
                                             <p className="text-base font-semibold text-slate-950">
                                               {solicitudLabel}
                                             </p>
-                                            {solicitud.respuestaArchivoUrl ? (
+                                            {getRespuestaArchivos(solicitud).length &&
+                                            getRespuestaArchivos(solicitud)[0]?.url ? (
                                               <a
-                                                href={solicitud.respuestaArchivoUrl}
+                                                href={getRespuestaArchivos(solicitud)[0]?.url}
                                                 target="_blank"
                                                 rel="noreferrer"
                                                 className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
                                               >
-                                                Adjunto
+                                                {getRespuestaArchivos(solicitud).length === 1
+                                                  ? "Adjunto"
+                                                  : `${getRespuestaArchivos(solicitud).length} adjuntos`}
                                                 <RiExternalLinkLine className="h-3.5 w-3.5" />
                                               </a>
-                                            ) : solicitud.respuestaArchivo ? (
-                                              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                                                Adjunto recibido
+                                            ) : getRespuestaArchivos(solicitud).length ? (
+                                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                                {getRespuestaArchivos(solicitud).length === 1
+                                                  ? "Adjunto recibido"
+                                                  : `${getRespuestaArchivos(solicitud).length} adjuntos recibidos`}
                                               </span>
                                             ) : null}
                                           </div>
@@ -1287,27 +1360,43 @@ const MoraGestionesDashboard = () => {
                                           <p className="mt-2 text-sm leading-5 text-slate-700">
                                             {compactText(
                                               solicitud.respuestaCliente,
-                                              solicitud.respuestaArchivo || solicitud.respuestaArchivoUrl
+                                              getRespuestaArchivos(solicitud).length
                                                 ? "El cliente adjuntó documentación sin comentario adicional."
                                                 : "Sin respuesta registrada."
                                             )}
                                           </p>
-                                          {solicitud.respuestaArchivoUrl ? (
-                                            <a
-                                              href={solicitud.respuestaArchivoUrl}
-                                              target="_blank"
-                                              rel="noreferrer"
-                                              className="mt-3 inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50"
-                                            >
-                                              <RiFileDownloadLine className="h-3.5 w-3.5" />
-                                              Documento del cliente
-                                              <RiExternalLinkLine className="h-3.5 w-3.5" />
-                                            </a>
-                                          ) : solicitud.respuestaArchivo ? (
-                                            <span className="mt-3 inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-xs font-semibold text-emerald-700">
-                                              <RiFileList3Line className="h-3.5 w-3.5" />
-                                              Documento del cliente recibido
-                                            </span>
+                                          {getRespuestaArchivos(solicitud).length ? (
+                                            <div className="mt-3 space-y-2">
+                                              {getRespuestaArchivos(solicitud).map((archivo, index) =>
+                                                archivo.url ? (
+                                                  <a
+                                                    key={getArchivoKey(archivo)}
+                                                    href={archivo.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="flex items-center justify-between gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 transition hover:border-emerald-400 hover:bg-emerald-50"
+                                                  >
+                                                    <span className="inline-flex min-w-0 items-center gap-2">
+                                                      <RiFileDownloadLine className="h-3.5 w-3.5 shrink-0" />
+                                                      <span className="truncate">
+                                                        {archivo.originalName || `Documento del cliente ${index + 1}`}
+                                                      </span>
+                                                    </span>
+                                                    <RiExternalLinkLine className="h-3.5 w-3.5 shrink-0" />
+                                                  </a>
+                                                ) : (
+                                                  <span
+                                                    key={getArchivoKey(archivo)}
+                                                    className="flex items-center gap-2 rounded-lg border border-emerald-100 bg-white px-3 py-2 text-xs font-semibold text-emerald-700"
+                                                  >
+                                                    <RiFileList3Line className="h-3.5 w-3.5 shrink-0" />
+                                                    <span className="truncate">
+                                                      {archivo.originalName || `Documento del cliente ${index + 1}`}
+                                                    </span>
+                                                  </span>
+                                                )
+                                              )}
+                                            </div>
                                           ) : null}
                                         </div>
                                       </div>
@@ -1436,29 +1525,81 @@ const MoraGestionesDashboard = () => {
 
               <div>
                 <label htmlFor="archivo-solicitud-mora" className="text-base font-semibold text-[#06164b]">
-                  Documento adjunto
+                  Documentos adjuntos
                 </label>
                 <label
                   htmlFor="archivo-solicitud-mora"
-                  className="mt-2 flex min-h-[145px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-blue-200 bg-sky-50/20 px-5 py-6 text-center transition hover:border-blue-500 hover:bg-blue-50"
+                  onDragEnter={(event) => {
+                    event.preventDefault();
+                    if (!enviandoRespuesta) setIsDraggingRespuestaArchivo(true);
+                  }}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    if (!enviandoRespuesta) setIsDraggingRespuestaArchivo(true);
+                  }}
+                  onDragLeave={(event) => {
+                    event.preventDefault();
+                    if (event.currentTarget.contains(event.relatedTarget)) return;
+                    setIsDraggingRespuestaArchivo(false);
+                  }}
+                  onDrop={handleRespuestaDrop}
+                  className={`mt-2 flex min-h-[165px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-5 py-6 text-center transition ${
+                    isDraggingRespuestaArchivo
+                      ? "border-blue-600 bg-blue-50"
+                      : "border-blue-200 bg-sky-50/20 hover:border-blue-500 hover:bg-blue-50"
+                  } ${enviandoRespuesta ? "cursor-not-allowed opacity-70" : ""}`}
                 >
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white">
                     <RiFileUploadLine className="h-6 w-6" />
                   </span>
                   <span className="mt-4 max-w-full break-words text-lg font-semibold text-[#06164b]">
-                    {respuestaArchivo ? respuestaArchivo.name : "Seleccionar archivo"}
+                    {respuestaArchivos.length
+                      ? `${respuestaArchivos.length} archivo${respuestaArchivos.length === 1 ? "" : "s"} seleccionado${respuestaArchivos.length === 1 ? "" : "s"}`
+                      : "Arrastra archivos aquí o selecciona desde tu equipo"}
                   </span>
                   <span className="mt-1 text-sm text-slate-500">
-                    Adjunta el respaldo solicitado para cerrar esta solicitud.
+                    Puedes adjuntar varios respaldos o un ZIP. Máximo 10 MB por archivo.
                   </span>
                 </label>
                 <input
                   id="archivo-solicitud-mora"
                   type="file"
-                  onChange={(event) => setRespuestaArchivo(event.target.files?.[0] || null)}
+                  multiple
+                  onChange={(event) => {
+                    addRespuestaArchivos(event.target.files);
+                    event.target.value = "";
+                  }}
                   className="sr-only"
                   disabled={enviandoRespuesta}
                 />
+                {respuestaArchivos.length ? (
+                  <ul className="mt-3 max-h-48 space-y-2 overflow-y-auto">
+                    {respuestaArchivos.map((file, index) => (
+                      <li
+                        key={getArchivoKey(file)}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left"
+                      >
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-semibold text-slate-800">
+                            {file.name}
+                          </span>
+                          <span className="block text-xs text-slate-500">
+                            {formatFileSize(file.size)}
+                          </span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeRespuestaArchivo(index)}
+                          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-rose-50 hover:text-rose-600"
+                          disabled={enviandoRespuesta}
+                          aria-label={`Quitar ${file.name}`}
+                        >
+                          <RiCloseCircleLine className="h-5 w-5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </div>
             </div>
 
@@ -1474,7 +1615,7 @@ const MoraGestionesDashboard = () => {
               <button
                 type="button"
                 onClick={handleResponderSolicitud}
-                disabled={enviandoRespuesta || (!respuestaCliente.trim() && !respuestaArchivo)}
+                disabled={enviandoRespuesta || (!respuestaCliente.trim() && respuestaArchivos.length === 0)}
                 className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {enviandoRespuesta ? "Enviando..." : "Enviar respuesta a Previley"}
