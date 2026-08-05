@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { DateRangePicker } from "@tremor/react";
 import { useSession } from "next-auth/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
@@ -1544,7 +1545,7 @@ const MoraGestionesDashboard = () => {
 
       {solicitudActiva && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 px-4 py-5 backdrop-blur-sm">
-          <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+          <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
             <div className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 md:px-6">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#06164b]">
                 Acción requerida
@@ -1689,11 +1690,26 @@ const MoraGestionesDashboard = () => {
                 type="button"
                 onClick={handleResponderSolicitud}
                 disabled={enviandoRespuesta || (!respuestaCliente.trim() && respuestaArchivos.length === 0)}
-                className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                {enviandoRespuesta ? "Enviando..." : "Enviar respuesta a Previley"}
+                {enviandoRespuesta ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  "Enviar respuesta a Previley"
+                )}
               </button>
             </div>
+
+            {enviandoRespuesta ? (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/80 backdrop-blur-sm">
+                <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+                <p className="text-sm font-semibold text-[#06164b]">Enviando tu respuesta a Previley...</p>
+                <p className="text-xs text-slate-500">Esto puede tardar unos segundos si adjuntaste varios archivos.</p>
+              </div>
+            ) : null}
           </div>
         </div>
       )}
