@@ -64,6 +64,15 @@ const compactText = (value, fallback = "Sin información registrada.", maxLength
   return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text;
 };
 
+const formatDiasTranscurridos = (fecha) => {
+  if (!fecha) return null;
+  const dias = Math.floor((Date.now() - new Date(fecha).getTime()) / 86400000);
+  if (dias < 0) return null;
+  if (dias === 0) return "Hoy";
+  if (dias === 1) return "Hace 1 día";
+  return `Hace ${dias} días`;
+};
+
 const tipoSolicitudLabels = {
   certificado_detalle_deuda_actualizado: "Certificado detalle deuda actualizado",
   comprobante_pago: "Comprobante de pago",
@@ -1096,6 +1105,19 @@ const MoraGestionesDashboard = () => {
                                         <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800">
                                           Pendiente de respuesta
                                         </span>
+                                        {formatDiasTranscurridos(solicitud.fechaSolicitud) ? (
+                                          <span
+                                            className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${
+                                              solicitud.slaEstado === "vencido"
+                                                ? "border-rose-200 bg-rose-50 text-rose-700"
+                                                : "border-slate-200 bg-slate-50 text-slate-600"
+                                            }`}
+                                          >
+                                            {solicitud.slaEstado === "vencido"
+                                              ? `Vencido · ${formatDiasTranscurridos(solicitud.fechaSolicitud)}`
+                                              : formatDiasTranscurridos(solicitud.fechaSolicitud)}
+                                          </span>
+                                        ) : null}
                                         <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${getEstadoTone(solicitud.estado)}`}>
                                           {formatEstado(solicitud.estado)}
                                         </span>
@@ -1233,6 +1255,17 @@ const MoraGestionesDashboard = () => {
                                         {solicitud.fechaRespuesta ? (
                                           <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
                                             {formatDate(solicitud.fechaRespuesta)}
+                                          </span>
+                                        ) : null}
+                                        {solicitud.slaEstado ? (
+                                          <span
+                                            className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase ${
+                                              solicitud.slaEstado === "vencido"
+                                                ? "border-rose-200 bg-rose-50 text-rose-700"
+                                                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                            }`}
+                                          >
+                                            {solicitud.slaEstado === "vencido" ? "Respondido fuera de plazo" : "Respondido a tiempo"}
                                           </span>
                                         ) : null}
                                         <button
