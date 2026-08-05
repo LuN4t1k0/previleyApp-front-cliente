@@ -58,6 +58,31 @@ const getEstadoTone = (estado) =>
 const isGestionCerrada = (estado) =>
   ["cerrada", "cerrado"].includes(String(estado || "").trim().toLowerCase());
 
+// Explicit lookup instead of a ternary whose final `else` reads as "en plazo"
+// (green/compliant) for any value it doesn't recognize — the least safe
+// default for a compliance indicator. Same pattern as SLA_TONE/SLA_LABEL in
+// frontend/'s GestionMoraDetalleModal.jsx. Anything not one of these three
+// keys falls back to SLA_TONE_FALLBACK (neutral gray), never to green.
+const SLA_TONE = {
+  en_plazo: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  por_vencer: "border-amber-200 bg-amber-50 text-amber-800",
+  vencido: "border-rose-200 bg-rose-50 text-rose-700",
+};
+const SLA_TONE_FALLBACK = "border-slate-200 bg-slate-50 text-slate-600";
+
+const SLA_LABEL = {
+  en_plazo: "En plazo",
+  por_vencer: "Por vencer",
+  vencido: "Vencido",
+};
+
+// Copy specific to the "ya fue respondida" badge on solicitudes.
+const SLA_RESPUESTA_LABEL = {
+  en_plazo: "Respondido a tiempo",
+  por_vencer: "Respondido a tiempo",
+  vencido: "Respondido fuera de plazo",
+};
+
 const compactText = (value, fallback = "Sin información registrada.", maxLength = 150) => {
   const text = String(value || "").replace(/\s+/g, " ").trim();
   if (!text) return fallback;
@@ -67,10 +92,28 @@ const compactText = (value, fallback = "Sin información registrada.", maxLength
 const formatDiasTranscurridos = (fecha) => {
   if (!fecha) return null;
   const dias = Math.floor((Date.now() - new Date(fecha).getTime()) / 86400000);
+  if (!Number.isFinite(dias)) return null;
   if (dias < 0) return null;
   if (dias === 0) return "Hoy";
   if (dias === 1) return "Hace 1 día";
   return `Hace ${dias} días`;
+};
+
+// duracionHoras llega del backend como un número de horas (p.ej. 26.5). La
+// etapa timeline necesita transmitir "cuánto duró" de un vistazo, así que la
+// convertimos a algo legible tipo "1 d 2 h" (o "< 1 h" / "N h" para tramos
+// cortos). Este helper reemplaza al formatDurationHours que existía antes de
+// que Task 18 quitara la sección que lo usaba.
+const formatDurationCompact = (horas) => {
+  if (!Number.isFinite(horas) || horas < 0) return null;
+  if (horas < 1) return "< 1 h";
+  const totalMinutos = Math.round(horas * 60);
+  const dias = Math.floor(totalMinutos / (24 * 60));
+  const horasRestantes = Math.floor((totalMinutos % (24 * 60)) / 60);
+  if (dias > 0) {
+    return horasRestantes > 0 ? `${dias} d ${horasRestantes} h` : `${dias} d`;
+  }
+  return `${Math.round(horas)} h`;
 };
 
 const tipoSolicitudLabels = {
@@ -977,23 +1020,18 @@ const MoraGestionesDashboard = () => {
                               <p className="mt-1 text-sm font-medium text-slate-950">
                                 {formatDate(etapa.fechaInicio)}
                                 {etapa.fechaFin ? ` — ${formatDate(etapa.fechaFin)}` : " — En curso"}
+                                {etapa.duracionHoras != null
+                                  ? ` (${formatDurationCompact(etapa.duracionHoras) || `${etapa.duracionHoras} h`})`
+                                  : ""}
                               </p>
                             </div>
                             {etapa.slaEstado ? (
                               <span
                                 className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${
-                                  etapa.slaEstado === "vencido"
-                                    ? "border-rose-200 bg-rose-50 text-rose-700"
-                                    : etapa.slaEstado === "por_vencer"
-                                    ? "border-amber-200 bg-amber-50 text-amber-800"
-                                    : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                  SLA_TONE[etapa.slaEstado] || SLA_TONE_FALLBACK
                                 }`}
                               >
-                                {etapa.slaEstado === "vencido"
-                                  ? "Vencido"
-                                  : etapa.slaEstado === "por_vencer"
-                                  ? "Por vencer"
-                                  : "En plazo"}
+                                {SLA_LABEL[etapa.slaEstado] || "SLA desconocido"}
                               </span>
                             ) : null}
                           </div>
@@ -1108,9 +1146,7 @@ const MoraGestionesDashboard = () => {
                                         {formatDiasTranscurridos(solicitud.fechaSolicitud) ? (
                                           <span
                                             className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${
-                                              solicitud.slaEstado === "vencido"
-                                                ? "border-rose-200 bg-rose-50 text-rose-700"
-                                                : "border-slate-200 bg-slate-50 text-slate-600"
+                                              SLA_TONE[solicitud.slaEstado] || SLA_TONE_FALLBACK
                                             }`}
                                           >
                                             {solicitud.slaEstado === "vencido"
@@ -1222,7 +1258,13 @@ const MoraGestionesDashboard = () => {
                                   <div className="w-full">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                       <div className="flex items-center gap-3">
-                                        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700">
+                                        <span
+                                          className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border ${
+                                            solicitud.fechaRespuesta
+                                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                              : "border-slate-200 bg-slate-100 text-slate-500"
+                                          }`}
+                                        >
                                           <RiCheckboxCircleLine className="h-6 w-6" />
                                         </span>
                                         <div className="min-w-0">
@@ -1246,8 +1288,12 @@ const MoraGestionesDashboard = () => {
                                               </span>
                                             ) : null}
                                           </div>
-                                          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                                            Respuesta recibida
+                                          <p
+                                            className={`text-xs font-semibold uppercase tracking-wide ${
+                                              solicitud.fechaRespuesta ? "text-emerald-700" : "text-slate-600"
+                                            }`}
+                                          >
+                                            {solicitud.fechaRespuesta ? "Respuesta recibida" : "Sin respuesta registrada"}
                                           </p>
                                         </div>
                                       </div>
@@ -1257,15 +1303,13 @@ const MoraGestionesDashboard = () => {
                                             {formatDate(solicitud.fechaRespuesta)}
                                           </span>
                                         ) : null}
-                                        {solicitud.slaEstado ? (
+                                        {solicitud.fechaRespuesta && solicitud.slaEstado ? (
                                           <span
                                             className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase ${
-                                              solicitud.slaEstado === "vencido"
-                                                ? "border-rose-200 bg-rose-50 text-rose-700"
-                                                : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                              SLA_TONE[solicitud.slaEstado] || SLA_TONE_FALLBACK
                                             }`}
                                           >
-                                            {solicitud.slaEstado === "vencido" ? "Respondido fuera de plazo" : "Respondido a tiempo"}
+                                            {SLA_RESPUESTA_LABEL[solicitud.slaEstado] || "SLA desconocido"}
                                           </span>
                                         ) : null}
                                         <button
