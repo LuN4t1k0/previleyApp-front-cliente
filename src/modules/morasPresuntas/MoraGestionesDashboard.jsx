@@ -64,16 +64,6 @@ const compactText = (value, fallback = "Sin información registrada.", maxLength
   return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text;
 };
 
-const formatDurationHours = (hours) => {
-  if (hours === null || hours === undefined || Number.isNaN(Number(hours))) return "Sin dato";
-  const value = Number(hours);
-  if (value < 1) return "Menos de 1 h";
-  if (value < 24) return `${Math.round(value)} h`;
-  const days = Math.floor(value / 24);
-  const restHours = Math.round(value % 24);
-  return restHours > 0 ? `${days} d ${restHours} h` : `${days} d`;
-};
-
 const tipoSolicitudLabels = {
   certificado_detalle_deuda_actualizado: "Certificado detalle deuda actualizado",
   comprobante_pago: "Comprobante de pago",
@@ -952,50 +942,56 @@ const MoraGestionesDashboard = () => {
                           Ciclo de gestión
                         </p>
                       </div>
-                      <div className="grid gap-3 md:grid-cols-3">
-                        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3">
-                          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                            <RiCalendarLine className="h-5 w-5" />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              Ingresada
-                            </p>
-                            <p className="mt-1 text-sm font-medium text-slate-950">
-                              {gestion.fechaRegistro || gestion.createdAt
-                                ? formatDate(gestion.fechaRegistro || gestion.createdAt)
-                                : "Sin fecha"}
-                            </p>
+                      <div className="space-y-2">
+                        {(gestion.etapas || []).map((etapa, index) => (
+                          <div
+                            key={`${etapa.estado}-${etapa.fechaInicio}-${index}`}
+                            className="flex items-center gap-3 rounded-xl bg-white px-4 py-3"
+                          >
+                            <span
+                              className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                                etapa.fechaFin
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : "bg-blue-50 text-blue-600"
+                              }`}
+                            >
+                              {etapa.fechaFin ? (
+                                <RiCalendarLine className="h-5 w-5" />
+                              ) : (
+                                <RiTimeLine className="h-5 w-5" />
+                              )}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                {formatMoraEstadoLabel(etapa.estado)}
+                              </p>
+                              <p className="mt-1 text-sm font-medium text-slate-950">
+                                {formatDate(etapa.fechaInicio)}
+                                {etapa.fechaFin ? ` — ${formatDate(etapa.fechaFin)}` : " — En curso"}
+                              </p>
+                            </div>
+                            {etapa.slaEstado ? (
+                              <span
+                                className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${
+                                  etapa.slaEstado === "vencido"
+                                    ? "border-rose-200 bg-rose-50 text-rose-700"
+                                    : etapa.slaEstado === "por_vencer"
+                                    ? "border-amber-200 bg-amber-50 text-amber-800"
+                                    : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                }`}
+                              >
+                                {etapa.slaEstado === "vencido"
+                                  ? "Vencido"
+                                  : etapa.slaEstado === "por_vencer"
+                                  ? "Por vencer"
+                                  : "En plazo"}
+                              </span>
+                            ) : null}
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3">
-                          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-                            <RiTimeLine className="h-5 w-5" />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              Pasó a análisis
-                            </p>
-                            <p className="mt-1 text-sm font-medium text-slate-950">
-                              {gestion.fechaAnalisis ? formatDate(gestion.fechaAnalisis) : "Pendiente"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3">
-                          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                            <RiRefreshLine className="h-5 w-5" />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              Tiempo de resolución
-                            </p>
-                            <p className="mt-1 text-sm font-medium text-[#06164b]">
-                              {gestion.fechaCierre
-                                ? formatDurationHours(gestion.horasResolucionTotal)
-                                : "En curso"}
-                            </p>
-                          </div>
-                        </div>
+                        ))}
+                        {!gestion.etapas?.length ? (
+                          <p className="px-1 text-sm text-slate-500">Aún no hay etapas registradas.</p>
+                        ) : null}
                       </div>
                     </div>
 
