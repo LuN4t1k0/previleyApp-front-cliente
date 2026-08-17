@@ -17,17 +17,22 @@ import { formatCurrency, formatDate } from "@/utils/formatters";
 
 const PAGE_SIZE = 10;
 
-const getFacturaNumbers = (prefactura) => {
+const getFacturaItems = (prefactura) => {
   const facturas = Array.isArray(prefactura?.facturas)
     ? prefactura.facturas
     : prefactura?.factura
       ? [prefactura.factura]
       : [];
 
-  return facturas.reduce((numbers, factura) => {
+  return facturas.reduce((items, factura) => {
     const number = factura?.numeroFactura || factura?.folioFactura || factura?.numero;
-    if (number) numbers.push(number);
-    return numbers;
+    if (!number) return items;
+    items.push({
+      id: factura?.id || factura?.facturaId || null,
+      number,
+      pdfUrl: factura?.pdfUrl || factura?.url || null,
+    });
+    return items;
   }, []);
 };
 
@@ -310,7 +315,7 @@ const PrefacturasPage = () => {
                 </tr>
               ) : prefacturas.length > 0 ? (
                 prefacturas.map((prefactura) => {
-                  const facturaNumbers = getFacturaNumbers(prefactura);
+                  const facturaItems = getFacturaItems(prefactura);
                   return (
                     <tr key={prefactura.id} className="hover:bg-[color:var(--theme-soft)]/60">
                       <td className="px-4 py-3 font-semibold">
@@ -328,10 +333,30 @@ const PrefacturasPage = () => {
                         <StatusPill estado={prefactura.estado} />
                       </td>
                       <td className="px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-                        {facturaNumbers.length ? (
-                          <span className="font-semibold text-[color:var(--text-primary)]">
-                            {facturaNumbers.join(", ")}
-                          </span>
+                        {facturaItems.length ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {facturaItems.map((factura) => {
+                              const key = factura.id || factura.pdfUrl || factura.number;
+                              return factura.pdfUrl ? (
+                                <a
+                                  key={key}
+                                  href={factura.pdfUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="rounded-full border border-[color:var(--theme-primary)]/30 bg-[color:var(--theme-primary)]/10 px-2 py-0.5 text-xs font-semibold text-[color:var(--theme-primary)] hover:bg-[color:var(--theme-primary)]/20"
+                                >
+                                  {factura.number}
+                                </a>
+                              ) : (
+                                <span
+                                  key={key}
+                                  className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-[color:var(--text-primary)]"
+                                >
+                                  {factura.number}
+                                </span>
+                              );
+                            })}
+                          </div>
                         ) : (
                           <span className="text-[color:var(--text-secondary)]/70">
                             Sin factura
