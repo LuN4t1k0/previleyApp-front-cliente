@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import { DateRangePicker } from "@tremor/react";
 import { useSession } from "next-auth/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
@@ -59,6 +60,31 @@ const getEstadoTone = (estado) =>
 const isGestionCerrada = (estado) =>
   ["cerrada", "cerrado"].includes(String(estado || "").trim().toLowerCase());
 
+// Explicit lookup instead of a ternary whose final `else` reads as "en plazo"
+// (green/compliant) for any value it doesn't recognize — the least safe
+// default for a compliance indicator. Same pattern as SLA_TONE/SLA_LABEL in
+// frontend/'s GestionMoraDetalleModal.jsx. Anything not one of these three
+// keys falls back to SLA_TONE_FALLBACK (neutral gray), never to green.
+const SLA_TONE = {
+  en_plazo: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  por_vencer: "border-amber-200 bg-amber-50 text-amber-800",
+  vencido: "border-rose-200 bg-rose-50 text-rose-700",
+};
+const SLA_TONE_FALLBACK = "border-slate-200 bg-slate-50 text-slate-600";
+
+const SLA_LABEL = {
+  en_plazo: "En plazo",
+  por_vencer: "Por vencer",
+  vencido: "Vencido",
+};
+
+// Copy specific to the "ya fue respondida" badge on solicitudes.
+const SLA_RESPUESTA_LABEL = {
+  en_plazo: "Respondido a tiempo",
+  por_vencer: "Respondido a tiempo",
+  vencido: "Respondido fuera de plazo",
+};
+
 const formatFileSize = (bytes) => {
   const value = Number(bytes || 0);
   if (!value) return "0 KB";
@@ -95,14 +121,31 @@ const compactText = (value, fallback = "Sin información registrada.", maxLength
   return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text;
 };
 
-const formatDurationHours = (hours) => {
-  if (hours === null || hours === undefined || Number.isNaN(Number(hours))) return "Sin dato";
-  const value = Number(hours);
-  if (value < 1) return "Menos de 1 h";
-  if (value < 24) return `${Math.round(value)} h`;
-  const days = Math.floor(value / 24);
-  const restHours = Math.round(value % 24);
-  return restHours > 0 ? `${days} d ${restHours} h` : `${days} d`;
+const formatDiasTranscurridos = (fecha) => {
+  if (!fecha) return null;
+  const dias = Math.floor((Date.now() - new Date(fecha).getTime()) / 86400000);
+  if (!Number.isFinite(dias)) return null;
+  if (dias < 0) return null;
+  if (dias === 0) return "Hoy";
+  if (dias === 1) return "Hace 1 día";
+  return `Hace ${dias} días`;
+};
+
+// duracionHoras llega del backend como un número de horas (p.ej. 26.5). La
+// etapa timeline necesita transmitir "cuánto duró" de un vistazo, así que la
+// convertimos a algo legible tipo "1 d 2 h" (o "< 1 h" / "N h" para tramos
+// cortos). Este helper reemplaza al formatDurationHours que existía antes de
+// que Task 18 quitara la sección que lo usaba.
+const formatDurationCompact = (horas) => {
+  if (!Number.isFinite(horas) || horas < 0) return null;
+  if (horas < 1) return "< 1 h";
+  const totalMinutos = Math.round(horas * 60);
+  const dias = Math.floor(totalMinutos / (24 * 60));
+  const horasRestantes = Math.floor((totalMinutos % (24 * 60)) / 60);
+  if (dias > 0) {
+    return horasRestantes > 0 ? `${dias} d ${horasRestantes} h` : `${dias} d`;
+  }
+  return `${Math.round(horas)} h`;
 };
 
 const tipoSolicitudLabels = {
@@ -1020,50 +1063,51 @@ const MoraGestionesDashboard = () => {
                           Ciclo de gestión
                         </p>
                       </div>
-                      <div className="grid gap-3 md:grid-cols-3">
-                        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3">
-                          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                            <RiCalendarLine className="h-5 w-5" />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              Ingresada
-                            </p>
-                            <p className="mt-1 text-sm font-medium text-slate-950">
-                              {gestion.fechaRegistro || gestion.createdAt
-                                ? formatDate(gestion.fechaRegistro || gestion.createdAt)
-                                : "Sin fecha"}
-                            </p>
+                      <div className="space-y-2">
+                        {(gestion.etapas || []).map((etapa) => (
+                          <div
+                            key={`${etapa.estado}-${etapa.fechaInicio || "sin-inicio"}-${etapa.fechaFin || "abierta"}`}
+                            className="flex items-center gap-3 rounded-xl bg-white px-4 py-3"
+                          >
+                            <span
+                              className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                                etapa.fechaFin
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : "bg-blue-50 text-blue-600"
+                              }`}
+                            >
+                              {etapa.fechaFin ? (
+                                <RiCalendarLine className="h-5 w-5" />
+                              ) : (
+                                <RiTimeLine className="h-5 w-5" />
+                              )}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                {formatMoraEstadoLabel(etapa.estado)}
+                              </p>
+                              <p className="mt-1 text-sm font-medium text-slate-950">
+                                {formatDate(etapa.fechaInicio)}
+                                {etapa.fechaFin ? ` — ${formatDate(etapa.fechaFin)}` : " — En curso"}
+                                {etapa.duracionHoras != null
+                                  ? ` (${formatDurationCompact(etapa.duracionHoras) || `${etapa.duracionHoras} h`})`
+                                  : ""}
+                              </p>
+                            </div>
+                            {etapa.slaEstado ? (
+                              <span
+                                className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${
+                                  SLA_TONE[etapa.slaEstado] || SLA_TONE_FALLBACK
+                                }`}
+                              >
+                                {SLA_LABEL[etapa.slaEstado] || "SLA desconocido"}
+                              </span>
+                            ) : null}
                           </div>
-                        </div>
-                        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3">
-                          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
-                            <RiTimeLine className="h-5 w-5" />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              Pasó a análisis
-                            </p>
-                            <p className="mt-1 text-sm font-medium text-slate-950">
-                              {gestion.fechaAnalisis ? formatDate(gestion.fechaAnalisis) : "Pendiente"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 rounded-xl bg-white px-4 py-3">
-                          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                            <RiRefreshLine className="h-5 w-5" />
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              Tiempo de resolución
-                            </p>
-                            <p className="mt-1 text-sm font-medium text-[#06164b]">
-                              {gestion.fechaCierre
-                                ? formatDurationHours(gestion.horasResolucionTotal)
-                                : "En curso"}
-                            </p>
-                          </div>
-                        </div>
+                        ))}
+                        {!gestion.etapas?.length ? (
+                          <p className="px-1 text-sm text-slate-500">Aún no hay etapas registradas.</p>
+                        ) : null}
                       </div>
                     </div>
 
@@ -1168,6 +1212,17 @@ const MoraGestionesDashboard = () => {
                                         <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800">
                                           Pendiente de respuesta
                                         </span>
+                                        {formatDiasTranscurridos(solicitud.fechaSolicitud) ? (
+                                          <span
+                                            className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${
+                                              SLA_TONE[solicitud.slaEstado] || SLA_TONE_FALLBACK
+                                            }`}
+                                          >
+                                            {solicitud.slaEstado === "vencido"
+                                              ? `Vencido · ${formatDiasTranscurridos(solicitud.fechaSolicitud)}`
+                                              : formatDiasTranscurridos(solicitud.fechaSolicitud)}
+                                          </span>
+                                        ) : null}
                                         <span className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase ${getEstadoTone(solicitud.estado)}`}>
                                           {formatEstado(solicitud.estado)}
                                         </span>
@@ -1272,7 +1327,13 @@ const MoraGestionesDashboard = () => {
                                   <div className="w-full">
                                     <div className="flex flex-wrap items-center justify-between gap-3">
                                       <div className="flex items-center gap-3">
-                                        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700">
+                                        <span
+                                          className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border ${
+                                            solicitud.fechaRespuesta
+                                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                              : "border-slate-200 bg-slate-100 text-slate-500"
+                                          }`}
+                                        >
                                           <RiCheckboxCircleLine className="h-6 w-6" />
                                         </span>
                                         <div className="min-w-0">
@@ -1301,8 +1362,12 @@ const MoraGestionesDashboard = () => {
                                               </span>
                                             ) : null}
                                           </div>
-                                          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                                            Respuesta recibida
+                                          <p
+                                            className={`text-xs font-semibold uppercase tracking-wide ${
+                                              solicitud.fechaRespuesta ? "text-emerald-700" : "text-slate-600"
+                                            }`}
+                                          >
+                                            {solicitud.fechaRespuesta ? "Respuesta recibida" : "Sin respuesta registrada"}
                                           </p>
                                         </div>
                                       </div>
@@ -1310,6 +1375,15 @@ const MoraGestionesDashboard = () => {
                                         {solicitud.fechaRespuesta ? (
                                           <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
                                             {formatDate(solicitud.fechaRespuesta)}
+                                          </span>
+                                        ) : null}
+                                        {solicitud.fechaRespuesta && solicitud.slaEstado ? (
+                                          <span
+                                            className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase ${
+                                              SLA_TONE[solicitud.slaEstado] || SLA_TONE_FALLBACK
+                                            }`}
+                                          >
+                                            {SLA_RESPUESTA_LABEL[solicitud.slaEstado] || "SLA desconocido"}
                                           </span>
                                         ) : null}
                                         <button
@@ -1471,7 +1545,7 @@ const MoraGestionesDashboard = () => {
 
       {solicitudActiva && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/35 px-4 py-5 backdrop-blur-sm">
-          <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+          <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
             <div className="shrink-0 border-b border-slate-200 bg-white px-5 py-4 md:px-6">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#06164b]">
                 Acción requerida
@@ -1616,11 +1690,26 @@ const MoraGestionesDashboard = () => {
                 type="button"
                 onClick={handleResponderSolicitud}
                 disabled={enviandoRespuesta || (!respuestaCliente.trim() && respuestaArchivos.length === 0)}
-                className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                {enviandoRespuesta ? "Enviando..." : "Enviar respuesta a Previley"}
+                {enviandoRespuesta ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  "Enviar respuesta a Previley"
+                )}
               </button>
             </div>
+
+            {enviandoRespuesta ? (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-2xl bg-white/80 backdrop-blur-sm">
+                <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+                <p className="text-sm font-semibold text-[#06164b]">Enviando tu respuesta a Previley...</p>
+                <p className="text-xs text-slate-500">Esto puede tardar unos segundos si adjuntaste varios archivos.</p>
+              </div>
+            ) : null}
           </div>
         </div>
       )}

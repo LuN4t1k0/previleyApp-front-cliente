@@ -50,6 +50,18 @@ const MoraPresuntaConfig = {
       options: "estadoOptions",
     },
     {
+      key: "requiereRespuestaCliente",
+      type: "multiselect",
+      field: "requiereRespuestaCliente",
+      placeholder: "Respuesta cliente...",
+      options: [
+        {
+          value: "solicitud cliente",
+          label: "Requiere respuesta del cliente",
+        },
+      ],
+    },
+    {
       key: "empresaRut",
       type: "multiselect",
       field: "empresaRut",
