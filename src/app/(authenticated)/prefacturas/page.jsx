@@ -17,6 +17,20 @@ import { formatCurrency, formatDate } from "@/utils/formatters";
 
 const PAGE_SIZE = 10;
 
+const getFacturaNumbers = (prefactura) => {
+  const facturas = Array.isArray(prefactura?.facturas)
+    ? prefactura.facturas
+    : prefactura?.factura
+      ? [prefactura.factura]
+      : [];
+
+  return facturas.reduce((numbers, factura) => {
+    const number = factura?.numeroFactura || factura?.folioFactura || factura?.numero;
+    if (number) numbers.push(number);
+    return numbers;
+  }, []);
+};
+
 const PrefacturasPage = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
   const empresaOptions = useMemo(
@@ -261,6 +275,9 @@ const PrefacturasPage = () => {
                 <th scope="col" className="px-4 py-3">
                   Estado
                 </th>
+                <th scope="col" className="px-4 py-3">
+                  Factura
+                </th>
                 <th scope="col" className="px-4 py-3 text-right">
                   Total
                 </th>
@@ -276,7 +293,7 @@ const PrefacturasPage = () => {
               {loading || loadingEmpresas ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-6 text-center text-sm text-[color:var(--text-secondary)]"
                   >
                     Cargando prefacturas...
@@ -285,49 +302,63 @@ const PrefacturasPage = () => {
               ) : error ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-6 text-center text-sm text-rose-500"
                   >
                     Ocurrió un error al cargar las prefacturas.
                   </td>
                 </tr>
               ) : prefacturas.length > 0 ? (
-                prefacturas.map((prefactura) => (
-                  <tr key={prefactura.id} className="hover:bg-[color:var(--theme-soft)]/60">
-                    <td className="px-4 py-3 font-semibold">
-                      <Link
-                        href={`/prefacturas/${prefactura.id}`}
-                        className="text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
-                      >
-                        {prefactura.folio}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[color:var(--text-secondary)]">
-                      {prefactura.empresaNombre || prefactura.empresaRut}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusPill estado={prefactura.estado} />
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm font-semibold">
-                      {formatCurrency(prefactura.totalFacturado)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm text-[color:var(--text-secondary)]">
-                      {formatDate(prefactura.fechaGeneracion)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm">
-                      <Link
-                        href={`/prefacturas/${prefactura.id}`}
-                        className="font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
-                      >
-                        Ver detalle →
-                      </Link>
-                    </td>
-                  </tr>
-                ))
+                prefacturas.map((prefactura) => {
+                  const facturaNumbers = getFacturaNumbers(prefactura);
+                  return (
+                    <tr key={prefactura.id} className="hover:bg-[color:var(--theme-soft)]/60">
+                      <td className="px-4 py-3 font-semibold">
+                        <Link
+                          href={`/prefacturas/${prefactura.id}`}
+                          className="text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
+                        >
+                          {prefactura.folio}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+                        {prefactura.empresaNombre || prefactura.empresaRut}
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusPill estado={prefactura.estado} />
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[color:var(--text-secondary)]">
+                        {facturaNumbers.length ? (
+                          <span className="font-semibold text-[color:var(--text-primary)]">
+                            {facturaNumbers.join(", ")}
+                          </span>
+                        ) : (
+                          <span className="text-[color:var(--text-secondary)]/70">
+                            Sin factura
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-semibold">
+                        {formatCurrency(prefactura.totalFacturado)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-[color:var(--text-secondary)]">
+                        {formatDate(prefactura.fechaGeneracion)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm">
+                        <Link
+                          href={`/prefacturas/${prefactura.id}`}
+                          className="font-semibold text-[color:var(--theme-primary)] hover:text-[color:var(--theme-primary-dark)]"
+                        >
+                          Ver detalle →
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-6 text-center text-sm text-[color:var(--text-secondary)]"
                   >
                     No se encontraron prefacturas con los filtros aplicados.
