@@ -165,6 +165,20 @@ const tipoSolicitudLabels = {
   otros_respaldos: "Otros Respaldos",
 };
 
+const estadoGestionOptions = [
+  "registrada",
+  "pendiente",
+  "analisis",
+  "solicitud cliente",
+  "respuesta cliente",
+  "espera entidad",
+  "cerrada",
+  "cerrado",
+  "rechazada",
+  "pagado",
+  "regularizado",
+];
+
 const getLinkedNavigationParams = (searchParams) => {
   return {
     gestionId: searchParams.get("gestionId"),
@@ -204,6 +218,7 @@ const MoraGestionesDashboard = () => {
   const lastEmpresaLabel = useRef("");
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
   const [entidadSeleccionada, setEntidadSeleccionada] = useState("");
+  const [estadoGestionSeleccionado, setEstadoGestionSeleccionado] = useState("");
   const [gestiones, setGestiones] = useState([]);
   const [solicitudes, setSolicitudes] = useState([]);
   const [loadingGestiones, setLoadingGestiones] = useState(false);
@@ -312,6 +327,10 @@ const MoraGestionesDashboard = () => {
         params.entidadId = entidadSeleccionada;
       }
 
+      if (estadoGestionSeleccionado) {
+        params.estado = estadoGestionSeleccionado;
+      }
+
       if (dateRange?.from instanceof Date) {
         params.fechaGestion_inicio = dateRange.from.toISOString().split("T")[0];
       }
@@ -331,7 +350,7 @@ const MoraGestionesDashboard = () => {
     } finally {
       setLoadingGestiones(false);
     }
-  }, [empresaSeleccionada, entidadSeleccionada, dateRange]);
+  }, [empresaSeleccionada, entidadSeleccionada, estadoGestionSeleccionado, dateRange]);
 
   useEffect(() => {
     fetchGestiones();
@@ -723,7 +742,7 @@ const MoraGestionesDashboard = () => {
 
           {filtersOpen ? (
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="grid gap-4 lg:grid-cols-[minmax(260px,1.2fr)_minmax(220px,0.8fr)_minmax(260px,1fr)]">
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(260px,1.2fr)_minmax(220px,0.8fr)_minmax(220px,0.8fr)_minmax(260px,1fr)]">
                 <div className="flex flex-col gap-2">
                   <label
                     htmlFor="mora-gestiones-empresa"
@@ -784,6 +803,33 @@ const MoraGestionesDashboard = () => {
                       {entidadesDisponibles.map((entidad) => (
                         <option key={entidad.value} value={entidad.value}>
                           {entidad.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label
+                    htmlFor="mora-gestiones-estado"
+                    className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500"
+                  >
+                    Estado gestión
+                  </label>
+                  <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
+                    <RiShieldCheckLine className="h-4 w-4 text-blue-600" aria-hidden="true" />
+                    <select
+                      id="mora-gestiones-estado"
+                      aria-label="Filtrar por estado de gestión"
+                      className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none"
+                      value={estadoGestionSeleccionado}
+                      onChange={(event) => setEstadoGestionSeleccionado(event.target.value)}
+                      disabled={loadingGestiones}
+                    >
+                      <option value="">Todos los estados</option>
+                      {estadoGestionOptions.map((estado) => (
+                        <option key={estado} value={estado}>
+                          {formatMoraEstadoLabel(estado)}
                         </option>
                       ))}
                     </select>
