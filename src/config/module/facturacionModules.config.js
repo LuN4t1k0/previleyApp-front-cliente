@@ -4,7 +4,7 @@ const facturacionModules = {
     description: "Detalle de facturas emitidas y pendientes.",
     icon: "📄",
     path: "/prefactura",
-    roles: ["admin"],
+    roles: ["admin", "facturacion"],
     category: "facturacion",
     badge: { label: "Beta", color: "blue" },
   },
@@ -13,7 +13,7 @@ const facturacionModules = {
     description: "Detalle de facturas emitidas y pendientes.",
     icon: "📑",
     path: "/facturacion",
-    roles: ["admin"],
+    roles: ["admin", "facturacion"],
     category: "facturacion",
   },
   anticipos: {

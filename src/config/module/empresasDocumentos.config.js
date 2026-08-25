@@ -293,7 +293,7 @@ const EmpresaDocuentosConfig = {
           icon: RiDeleteBinLine,
           label: "Eliminar",
           iconClass: "text-red-600",
-          rolesAllowed: ["admin", "editor", "trabajador"],
+          rolesAllowed: ["admin", "editor", "trabajador", "facturacion"],
         },
         
         
@@ -335,7 +335,7 @@ const EmpresaDocuentosConfig = {
       component: GenericModal,
       title: "Agregar/Editar Producion",
       content: EmpresaDocumentosModal,
-      rolesAllowed: ["admin", "trabajador"],
+      rolesAllowed: ["admin", "trabajador", "facturacion"],
     },
    
   },
@@ -344,7 +344,7 @@ const EmpresaDocuentosConfig = {
       id: "nuevo",
       modalName: "crearDocumento",
       buttonText: "Nuevo",
-      rolesAllowed: ["admin", "trabajador"],
+      rolesAllowed: ["admin", "trabajador", "facturacion"],
       actionType: "create",
       color: "blue",
       icon: "RiFileAddFill",

@@ -236,14 +236,14 @@ const EmpresasConfig = {
           icon: RiEditLine,
           label: "Editar",
           iconClass: "text-blue-600",
-          rolesAllowed: ["admin", "editor", "trabajador"],
+          rolesAllowed: ["admin", "editor", "trabajador", "facturacion"],
         },
         {
           id: "eliminar",
           icon: RiDeleteBinLine,
           label: "Eliminar",
           iconClass: "text-red-600",
-          rolesAllowed: ["admin", "editor", "trabajador"],
+          rolesAllowed: ["admin", "editor", "trabajador", "facturacion"],
         },
       ],
     },
@@ -278,20 +278,20 @@ const EmpresasConfig = {
       component: GenericModal,
       title: "Agregar/Editar Producion",
       content: EmpresaFormModal,
-      rolesAllowed: ["admin", "trabajador"],
+      rolesAllowed: ["admin", "trabajador", "facturacion"],
     },
 
     asignarEmpresa: {
       component: GenericModal,
       title: "Detalle Usuario",
       content: AsignarUsuariosEmpresasModal,
-      rolesAllowed: ["admin", "previley", "editor"],
+      rolesAllowed: ["admin", "previley", "editor", "facturacion"],
     },
     empresaDetails: {
       component: GenericModal,
       title: "Detalle Empresa",
       content: EmpresaDetailsContent,
-      rolesAllowed: ["admin", "previley", "editor"],
+      rolesAllowed: ["admin", "previley", "editor", "facturacion"],
     },
   },
 
@@ -300,7 +300,7 @@ const EmpresasConfig = {
       id: "nuevo",
       modalName: "licenciaForm",
       buttonText: "Agregar",
-      rolesAllowed: ["admin"],
+      rolesAllowed: ["admin", "facturacion"],
       actionType: "create",
       color: "blue",
       icon: "RiFileAddFill",
@@ -309,7 +309,7 @@ const EmpresasConfig = {
       id: "asignarEmpresa",
       modalName: "asignarEmpresa", // ✅ ya está correcto
       buttonText: "Asignar",
-      rolesAllowed: ["admin"],
+      rolesAllowed: ["admin", "facturacion"],
       actionType: "asignarEmpresa", // ✅ este nombre debe coincidir con la clave del handler
       color: "purple",
       icon: "RiBuildingFill",

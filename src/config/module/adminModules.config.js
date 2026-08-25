@@ -13,7 +13,7 @@ const adminModules = {
     description: "Gestión de datos de empresas.",
     icon: "🏢",
     path: "/admin/gestion-empresas",
-    roles: ["admin"],
+    roles: ["admin", "facturacion"],
     category: "administracion",
   },
   contratosServicios: {
@@ -45,7 +45,7 @@ const adminModules = {
     description: "Administrar poderes, RUT electrónicos, etc.",
     icon: "📑",
     path: "/admin/gestion-documentos",
-    roles: ["admin", "trabajador"],
+    roles: ["admin", "trabajador", "facturacion"],
     category: "administracion",
   },
   gestionComisiones: {
@@ -61,7 +61,7 @@ const adminModules = {
     description: "Asigna y gestiona correos de facturación, cobranza y notificación por empresa.",
     icon: "✉️",
     path: "/admin/empresa-correos",
-    roles: ["admin"],
+    roles: ["admin", "facturacion"],
     category: "administracion",
   },
   usuariosActivos: {
