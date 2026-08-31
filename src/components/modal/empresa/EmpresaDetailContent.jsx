@@ -186,6 +186,25 @@ const EmpresaDetailsContent = ({ empresaData, onClose }) => {
               </div>
 
               <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
+                <Title className="text-lg font-bold">Configuración de Facturación</Title>
+                <Divider className="my-2" />
+                <Grid className="grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-sm pt-2">
+                  <div>
+                    <Text className="uppercase font-bold text-gray-700">Orden de Compra</Text>
+                    <Badge color={empresa.usaOrdenCompra ? "green" : "gray"}>
+                      {empresa.usaOrdenCompra ? "Activa" : "Inactiva"}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Text className="uppercase font-bold text-gray-700">HES</Text>
+                    <Badge color={empresa.usaHes ? "green" : "gray"}>
+                      {empresa.usaHes ? "Activa" : "Inactiva"}
+                    </Badge>
+                  </div>
+                </Grid>
+              </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
                 <Title className="text-lg font-bold">Información de Contacto y Banco</Title>
                 <Divider className="my-2" />
                 <Grid className="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-8 text-sm pt-2">

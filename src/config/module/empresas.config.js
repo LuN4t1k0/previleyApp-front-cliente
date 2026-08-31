@@ -219,7 +219,7 @@ const EmpresasConfig = {
   columnOrder: [],
 
   // Columnas a excluir en la visualización de tablas
-  excludeColumns: ["id","updatedAt"],
+  excludeColumns: ["id","updatedAt","usaOrdenCompra","usaHes"],
 
   // Columnas a formatear como moneda
   monetaryColumns: [], // Añade las columnas que necesites

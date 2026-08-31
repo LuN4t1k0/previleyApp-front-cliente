@@ -26,10 +26,13 @@ const GenericForm = ({ config, initialData, onClose, fetchData }) => {
     const validationSchemaFields = {};
 
     config.fields.forEach((field) => {
-      let value = initialData?.[field.name] || field.initialValue || "";
+      let value = initialData?.[field.name];
+      if (value === undefined || value === null) {
+        value = field.initialValue ?? "";
+      }
 
       // Aplicar transformación de entrada (ej: API -> Formato visible)
-      if (field.transform?.incoming && value) {
+      if (field.transform?.incoming && value !== null && value !== undefined) {
         value = field.transform.incoming(value);
       }
 
@@ -115,7 +118,7 @@ const GenericForm = ({ config, initialData, onClose, fetchData }) => {
             const fieldConfig = config.fields.find(f => f.name === key);
             let value = values[key];
 
-            if (fieldConfig?.transform?.outgoing && value) {
+            if (fieldConfig?.transform?.outgoing && value !== null && value !== undefined) {
               value = fieldConfig.transform.outgoing(value);
             }
             
@@ -127,7 +130,7 @@ const GenericForm = ({ config, initialData, onClose, fetchData }) => {
           dataToSend = { ...values };
           for (const key in dataToSend) {
             const fieldConfig = config.fields.find(f => f.name === key);
-            if (fieldConfig?.transform?.outgoing && dataToSend[key]) {
+            if (fieldConfig?.transform?.outgoing && dataToSend[key] !== null && dataToSend[key] !== undefined) {
               dataToSend[key] = fieldConfig.transform.outgoing(dataToSend[key]);
             }
           }
@@ -281,6 +284,21 @@ const GenericForm = ({ config, initialData, onClose, fetchData }) => {
                     disabled={isDisabled}
                   />
                 </>
+              );
+
+            case "checkbox":
+              return (
+                <label className="flex items-center gap-3 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                  <input
+                    name={field.name}
+                    type="checkbox"
+                    checked={Boolean(formik.values[field.name])}
+                    onChange={(e) => handleChange(e.target.checked)}
+                    disabled={isDisabled}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span>{field.description || field.label}</span>
+                </label>
               );
 
             case "text":

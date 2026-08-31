@@ -79,5 +79,19 @@ export const empresaFormConfig = {
       validation: Yup.string().required("El estado es obligatorio"),
       optionsEndpoint: "/enum/estado-contrato",
     },
+    {
+      name: "usaOrdenCompra",
+      label: "Usa Orden de Compra",
+      type: "checkbox",
+      initialValue: false,
+      validation: Yup.boolean(),
+    },
+    {
+      name: "usaHes",
+      label: "Usa HES",
+      type: "checkbox",
+      initialValue: false,
+      validation: Yup.boolean(),
+    },
   ],
 };
