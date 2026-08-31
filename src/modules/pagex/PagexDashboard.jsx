@@ -52,36 +52,36 @@ const buildDateParams = (range) => {
 };
 
 const EmptyState = ({ message }) => (
-  <section className="rounded-3xl border border-white/70 bg-white/70 p-12 text-center shadow-sm backdrop-blur">
-    <RiInformationLine className="mx-auto h-12 w-12 text-[color:var(--theme-primary)]" />
-    <h2 className="mt-4 text-2xl font-semibold text-[color:var(--text-primary)]">
+  <section className="rounded-[2rem] border border-slate-200 bg-white p-12 text-center shadow-sm">
+    <RiInformationLine className="mx-auto h-12 w-12 text-blue-600" />
+    <h2 className="mt-4 text-2xl font-semibold text-[#06164b]">
       Selecciona una empresa
     </h2>
-    <p className="mt-2 text-sm text-[color:var(--text-secondary)]">{message}</p>
+    <p className="mt-2 text-sm text-slate-600">{message}</p>
   </section>
 );
 
 const ChartEmpty = ({ message }) => (
-  <div className="mt-6 rounded-2xl border border-dashed border-white/60 bg-white/70 p-6 text-center text-sm text-[color:var(--text-secondary)]">
+  <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-white/70 p-6 text-center text-sm text-slate-500">
     {message}
   </div>
 );
 
 const MetricCard = ({ label, value, helper, highlight }) => (
-  <div className="rounded-3xl border border-white/70 bg-white/80 p-5 shadow-sm backdrop-blur transition hover:shadow-md">
-    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[color:var(--theme-primary)]">
+  <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+    <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">
       {label}
     </p>
-    <p className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
+    <p className="mt-2 text-2xl font-bold text-[#06164b]">
       {value}
     </p>
     {helper && (
-      <p className="mt-1 text-xs text-[color:var(--text-secondary)]">
+      <p className="mt-1 text-xs text-slate-500">
         {helper}
       </p>
     )}
     {highlight && (
-      <p className="mt-1 text-xs font-semibold text-[color:var(--theme-primary)]">
+      <p className="mt-1 text-xs font-semibold text-blue-600">
         {highlight}
       </p>
     )}
@@ -279,9 +279,9 @@ const PagexDashboard = () => {
 
   if (!empresaSeleccionada) {
     return (
-      <div className="theme-pagex">
-        <main className="dashboard-gradient min-h-screen px-4 py-8 md:px-8 md:py-12">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+      <div className="theme-mora">
+        <main className="min-h-dvh bg-[#f7f4fb] px-4 py-5 md:px-6 md:py-7">
+          <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5">
             <EmptyState message="Elige una empresa autorizada para revisar su actividad en pagos en exceso." />
           </div>
         </main>
@@ -290,31 +290,27 @@ const PagexDashboard = () => {
   }
 
   const surface =
-    "rounded-3xl border border-white/70 bg-white/80 p-6 shadow-sm backdrop-blur";
+    "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6";
 
   return (
-    <div className="theme-pagex">
-      <main className="dashboard-gradient min-h-screen px-4 py-8 md:px-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-          <section className="glass-panel rounded-[2.5rem] p-6 md:p-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-purple-100 bg-purple-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[color:var(--theme-primary)]">
-                  Panel operativo
-                </span>
-                <h1 className="text-3xl font-semibold text-[color:var(--text-primary)] md:text-4xl">
+    <div className="theme-mora">
+      <main className="min-h-dvh bg-[#f7f4fb] px-4 py-5 md:px-6 md:py-7">
+        <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5">
+          <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+                <h1 className="text-[clamp(2rem,2.3vw,2.85rem)] font-bold leading-tight tracking-normal text-[#06164b]">
                   Dashboard operativo de Pagex
                 </h1>
-                <p className="text-sm text-[color:var(--text-secondary)] md:text-base">
+                <p className="mt-2 max-w-4xl text-base text-slate-600 md:text-lg">
                   Monitorea tus recuperaciones, saldos pendientes y los casos
                   prioritarios de pagos en exceso.
                 </p>
               </div>
 
               <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-                <div className="relative flex min-w-[260px] flex-1 items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
+                <div className="relative flex min-w-[260px] flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm">
                   <RiBuildingLine
-                    className="h-5 w-5 text-[color:var(--theme-primary)]"
+                    className="h-4 w-4 text-blue-600"
                     aria-hidden="true"
                   />
                   <input
@@ -324,7 +320,7 @@ const PagexDashboard = () => {
                         ? "Cargando empresas..."
                         : "Busca por nombre o RUT"
                     }
-                    className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] placeholder:text-gray-400 outline-none"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 outline-none"
                     value={empresaInput}
                     onChange={(event) =>
                       handleEmpresaInputChange(event.target.value)
@@ -345,9 +341,9 @@ const PagexDashboard = () => {
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="flex min-w-[220px] flex-1 items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
+                  <div className="flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm">
                     <RiCalendarLine
-                      className="h-5 w-5 text-[color:var(--theme-primary)]"
+                      className="h-4 w-4 text-blue-600"
                       aria-hidden="true"
                     />
                     <DateRangePicker
@@ -361,29 +357,28 @@ const PagexDashboard = () => {
                     type="button"
                     onClick={cargarDashboard}
                     disabled={loadingDatos}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[color:var(--theme-primary)] to-[color:var(--theme-primary-dark)] px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <RiRefreshLine className="h-4 w-4" />
                     Actualizar
                   </button>
                 </div>
               </div>
-            </div>
           </section>
 
-          <section className="rounded-2xl border border-white/60 bg-white/60 px-4 py-3 shadow-sm backdrop-blur md:px-6">
-            <div className="flex flex-wrap items-center gap-3 text-sm text-[color:var(--text-secondary)]">
-              <RiInformationLine className="h-4 w-4 text-[color:var(--theme-primary)]" />
+          <section className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm md:px-6">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+              <RiInformationLine className="h-4 w-4 text-blue-600" />
               <span className="font-semibold">Filtros activos</span>
               {filtrosActivos.length === 0 && (
-                <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium text-[color:var(--text-secondary)] shadow-sm">
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
                   Sin filtros adicionales
                 </span>
               )}
               {filtrosActivos.map((filtro) => (
                 <span
                   key={`${filtro.etiqueta}-${filtro.valor}`}
-                  className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[color:var(--theme-primary)] shadow-sm"
+                  className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
                 >
                   {filtro.etiqueta}: {filtro.valor}
                 </span>
