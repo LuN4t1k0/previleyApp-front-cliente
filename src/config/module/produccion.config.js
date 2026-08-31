@@ -159,7 +159,7 @@ const ProduccionConfig = {
           icon: RiCheckLine,
           label: "Validar",
           iconClass: "text-green-500",
-          rolesAllowed: ["admin", "supervisor"],
+          rolesAllowed: ["admin", "supervisor", "facturacion"],
           visibleWhen: (rowData) => rowData.estado === "pendiente",
         },
         {
@@ -167,7 +167,7 @@ const ProduccionConfig = {
           icon: RiCloseLine,
           label: "Rechazar",
           iconClass: "text-red-500",
-          rolesAllowed: ["admin", "supervisor"],
+          rolesAllowed: ["admin", "supervisor", "facturacion"],
           // visibleWhen: (row) =>
           //   row.estado === "analisis" || row.estado === "pendiente",
           visibleWhen: (rowData) => rowData.estado === "pendiente",
@@ -223,7 +223,7 @@ const ProduccionConfig = {
       component: GenericModal,
       title: "Rechazar Producción",
       content: RejectProduccionContent,
-      rolesAllowed: ["admin", "supervisor"],
+      rolesAllowed: ["admin", "supervisor", "facturacion"],
     },
   },
 
