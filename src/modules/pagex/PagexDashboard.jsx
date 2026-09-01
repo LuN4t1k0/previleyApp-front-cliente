@@ -7,6 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   DateRangePicker,
   BarChart,
@@ -29,17 +30,21 @@ import apiService from "@/app/api/apiService";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
 import ServiceTimeline from "@/components/servicios/ServiceTimeline";
 
+const currencyFormatter = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
+
+const numberFormatter = new Intl.NumberFormat("es-CL", {
+  maximumFractionDigits: 0,
+});
+
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
-    maximumFractionDigits: 0,
-  }).format(Number.isFinite(Number(value)) ? Number(value) : 0);
+  currencyFormatter.format(Number.isFinite(Number(value)) ? Number(value) : 0);
 
 const formatNumber = (value) =>
-  new Intl.NumberFormat("es-CL", {
-    maximumFractionDigits: 0,
-  }).format(Number.isFinite(Number(value)) ? Number(value) : 0);
+  numberFormatter.format(Number.isFinite(Number(value)) ? Number(value) : 0);
 
 const formatPercentage = (value) =>
   `${Number.isFinite(Number(value)) ? Number(value).toFixed(1) : "0.0"}%`;
@@ -49,6 +54,13 @@ const buildDateParams = (range) => {
   const fechaInicio = range.from.toISOString().split("T")[0];
   const fechaFin = range.to.toISOString().split("T")[0];
   return { fechaInicio, fechaFin };
+};
+
+const formatDisplayDate = (date) => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "-";
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${day}-${month}-${date.getFullYear()}`;
 };
 
 const EmptyState = ({ message }) => (
@@ -90,6 +102,7 @@ const MetricCard = ({ label, value, helper, highlight }) => (
 
 const PagexDashboard = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
+  const searchParams = useSearchParams();
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState("");
   const [empresaInput, setEmpresaInput] = useState("");
   const lastEmpresaLabel = useRef("");
@@ -125,6 +138,15 @@ const PagexDashboard = () => {
       setEmpresaSeleccionada(empresaOptions[0].rut);
     }
   }, [empresaOptions, empresaSeleccionada]);
+
+  useEffect(() => {
+    const empresaParam = searchParams?.get("empresa");
+    if (!empresaParam) return;
+    const exists = empresaOptions.find((option) => option.rut === empresaParam);
+    if (exists) {
+      setEmpresaSeleccionada(empresaParam);
+    }
+  }, [searchParams, empresaOptions]);
 
   useEffect(() => {
     const match = empresaOptions.find(
@@ -186,18 +208,8 @@ const PagexDashboard = () => {
   const filtrosActivos = useMemo(() => {
     const filtros = [];
     if (dateRange?.from || dateRange?.to) {
-      const inicio =
-        dateRange?.from?.toLocaleDateString("es-CL", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        }) || "-";
-      const fin =
-        dateRange?.to?.toLocaleDateString("es-CL", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        }) || "-";
+      const inicio = dateRange?.from ? formatDisplayDate(dateRange.from) : "-";
+      const fin = dateRange?.to ? formatDisplayDate(dateRange.to) : "-";
       filtros.push({ etiqueta: "Rango", valor: `${inicio} → ${fin}` });
     }
     return filtros;
@@ -440,10 +452,10 @@ const PagexDashboard = () => {
           <section className={surface}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex-1">
-                <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
+                <h2 className="text-lg font-semibold text-[#06164b]">
                   Distribución de deuda por entidad
                 </h2>
-                <p className="text-sm text-[color:var(--text-secondary)]">
+                <p className="text-sm text-slate-600">
                   Compara los montos solicitados, recuperados y pendientes por
                   institución.
                 </p>
@@ -468,10 +480,10 @@ const PagexDashboard = () => {
           <section className={surface}>
             <div className="grid gap-6 lg:grid-cols-5">
               <div className="lg:col-span-2">
-                <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
+                <h2 className="text-lg font-semibold text-[#06164b]">
                   Casos por estado
                 </h2>
-                <p className="text-sm text-[color:var(--text-secondary)]">
+                <p className="text-sm text-slate-600">
                   Distribución de gestiones según su estado actual.
                 </p>
                 {donutData.length > 0 ? (
@@ -491,17 +503,17 @@ const PagexDashboard = () => {
               </div>
 
               <div className="lg:col-span-3">
-                <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
+                <h2 className="text-lg font-semibold text-[#06164b]">
                   Top de trabajadores con montos pendientes
                 </h2>
-                <p className="text-sm text-[color:var(--text-secondary)]">
+                <p className="text-sm text-slate-600">
                   Revisa los trabajadores con mayor monto pendiente para
                   priorizar las gestiones.
                 </p>
 
-                <div className="mt-6 overflow-hidden rounded-2xl border border-white/70 bg-white/80 shadow-sm">
-                  <Table className="min-w-full divide-y divide-slate-200/50 text-sm">
-                    <TableHead className="bg-white/70">
+                <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  <Table className="min-w-full divide-y divide-slate-200 text-sm">
+                    <TableHead className="bg-slate-50">
                       <TableRow>
                         <TableHeaderCell>Trabajador</TableHeaderCell>
                         <TableHeaderCell>RUT</TableHeaderCell>
@@ -518,7 +530,7 @@ const PagexDashboard = () => {
                         <TableRow>
                           <TableCell
                             colSpan={4}
-                            className="py-6 text-center text-[color:var(--text-secondary)]"
+                            className="py-6 text-center text-slate-500"
                           >
                             No existen pendientes para la empresa
                             seleccionada.
@@ -530,10 +542,10 @@ const PagexDashboard = () => {
                           <TableCell>
                             {item.nombreTrabajador || "Sin nombre"}
                           </TableCell>
-                          <TableCell className="text-[color:var(--text-secondary)]">
+                          <TableCell className="text-slate-500">
                             {item.rutTrabajador}
                           </TableCell>
-                          <TableCell className="text-right font-semibold text-[color:var(--theme-primary)]">
+                          <TableCell className="text-right font-semibold text-blue-700">
                             {formatCurrency(item.totalDeudaPendiente)}
                           </TableCell>
                           <TableCell className="text-right">
@@ -556,9 +568,9 @@ const PagexDashboard = () => {
 
           <section className={surface}>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-[color:var(--theme-primary)] shadow-sm">
+              <span className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-950">
                 <RiInformationLine className="h-3.5 w-3.5" />
-                <span className="uppercase tracking-[0.18em]">Empresa</span>
+                <span className="uppercase">Empresa</span>
                 <span className="font-semibold normal-case">
                   {empresaOptions.find(
                     (empresa) => empresa.rut === empresaSeleccionada
@@ -566,9 +578,9 @@ const PagexDashboard = () => {
                 </span>
               </span>
 
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-[color:var(--theme-primary)] shadow-sm">
+              <span className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-950">
                 <RiInformationLine className="h-3.5 w-3.5" />
-                <span className="uppercase tracking-[0.18em]">
+                <span className="uppercase">
                   Casos Analizados
                 </span>
                 <span className="font-semibold normal-case">
@@ -576,9 +588,9 @@ const PagexDashboard = () => {
                 </span>
               </span>
 
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-[color:var(--theme-primary)] shadow-sm">
+              <span className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-950">
                 <RiInformationLine className="h-3.5 w-3.5" />
-                <span className="uppercase tracking-[0.18em]">Avance</span>
+                <span className="uppercase">Avance</span>
                 <span className="font-semibold normal-case">
                   {formatPercentage(casosEstado?.porcentajeAvance ?? 0)}
                 </span>

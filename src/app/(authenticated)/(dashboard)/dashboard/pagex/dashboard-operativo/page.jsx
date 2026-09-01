@@ -1,9 +1,11 @@
 import dynamic from "next/dynamic";
 
-const PagexDashboard = dynamic(() => import("@/modules/pagex/PagexDashboard"));
+const PagexOperativaDashboard = dynamic(() =>
+  import("@/modules/pagex/PagexOperativaDashboard")
+);
 
 const Page = () => {
-  return <PagexDashboard />;
+  return <PagexOperativaDashboard />;
 };
 
 export default Page;
