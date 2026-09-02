@@ -36,6 +36,9 @@ const LoginV2 = () => {
   const [, setLockoutTick] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [mfaToken, setMfaToken] = useState(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaDestination, setMfaDestination] = useState("");
   const router = useRouter();
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -162,15 +165,33 @@ const LoginV2 = () => {
     setLoading(true);
 
     try {
-      const responseNextAuth = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+      const responseNextAuth = await signIn("credentials", mfaToken
+        ? {
+            mfaToken,
+            mfaCode,
+            redirect: false,
+          }
+        : {
+            email,
+            password,
+            redirect: false,
+          });
 
       if (responseNextAuth?.error) {
         const parsedError = parseAuthError(responseNextAuth.error);
         const errorCode = parsedError?.message;
+        if (parsedError?.mfaRequired) {
+          setMfaToken(parsedError.mfaToken);
+          setMfaDestination(parsedError.destination || "");
+          setMfaCode("");
+          setAuthError({
+            message: parsedError.destination
+              ? `Ingresa el código enviado a ${parsedError.destination}.`
+              : "Ingresa el código de verificación enviado a tu correo.",
+          });
+          setLoading(false);
+          return;
+        }
         if (errorCode === "MUST_CHANGE_PASSWORD") {
           router.push("/activate");
           return;
@@ -209,6 +230,9 @@ const LoginV2 = () => {
         localStorage.removeItem("authLockoutUntil");
         localStorage.removeItem("authLockoutEmail");
       }
+      setMfaToken(null);
+      setMfaCode("");
+      setMfaDestination("");
       setLockoutUntil(null);
       router.push("/dashboard");
       router.refresh();
@@ -251,6 +275,7 @@ const LoginV2 = () => {
                 placeholder="usuario@previley.cl"
                 required
                 type="email"
+                disabled={Boolean(mfaToken)}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1"
@@ -274,12 +299,51 @@ const LoginV2 = () => {
                 id="password"
                 required
                 type="password"
-                disabled={isLocked}
+                disabled={isLocked || Boolean(mfaToken)}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="mt-1"
               />
             </div>
+
+            {mfaToken && (
+              <div>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="mfaCode" className="text-xs font-bold uppercase tracking-wider text-slate-600 ml-1">
+                    Código de verificación
+                  </label>
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+                    onClick={() => {
+                      setMfaToken(null);
+                      setMfaCode("");
+                      setMfaDestination("");
+                      setAuthError(null);
+                    }}
+                  >
+                    Cambiar credenciales
+                  </button>
+                </div>
+                <TextInput
+                  icon={RiMailLine}
+                  id="mfaCode"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  required
+                  maxLength={6}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="mt-1"
+                  placeholder="000000"
+                />
+                {mfaDestination && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Código enviado a {mfaDestination}.
+                  </p>
+                )}
+              </div>
+            )}
 
             {authError && (
               <Callout title="Fallo de ingreso" icon={RiErrorWarningLine} color="rose">
@@ -300,12 +364,12 @@ const LoginV2 = () => {
             )}
 
             <Button
-              className="w-full h-12 text-sm font-bold shadow-lg bg-[#1D4ED8] hover:bg-[#1e40af] transition-all transform active:scale-[0.98] border-none"
+              className="w-full h-12 text-sm font-bold shadow-lg bg-[#1D4ED8] hover:bg-[#1e40af] transition-colors transform active:scale-[0.98] border-none"
               type="submit"
               loading={loading}
-              disabled={isLocked}
+              disabled={isLocked || (mfaToken && mfaCode.length !== 6)}
             >
-              INGRESAR AL PANEL
+              {mfaToken ? "VERIFICAR CÓDIGO" : "INGRESAR AL PANEL"}
             </Button>
           </form>
 

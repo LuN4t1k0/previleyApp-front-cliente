@@ -45,20 +45,37 @@ const authOptions = {
       credentials: {
         email: { label: 'Email', type: 'email', placeholder: 'test@test.com' },
         password: { label: 'Password', type: 'password' },
+        mfaToken: { label: 'MFA Token', type: 'text' },
+        mfaCode: { label: 'MFA Code', type: 'text' },
       },
       async authorize(credentials) {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        const isMfaVerification = credentials?.mfaToken && credentials?.mfaCode;
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}${isMfaVerification ? "/auth/mfa/verify" : "/auth/login"}`,
+          {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: credentials?.email,
-            password: credentials?.password,
-          }),
-        });
+          body: JSON.stringify(
+            isMfaVerification
+              ? {
+                  mfaToken: credentials?.mfaToken,
+                  code: credentials?.mfaCode,
+                }
+              : {
+                  email: credentials?.email,
+                  password: credentials?.password,
+                }
+          ),
+          }
+        );
 
         const data = await res.json();
 
         if (!res.ok) {
+          throw new Error(JSON.stringify(data));
+        }
+
+        if (data?.mfaRequired) {
           throw new Error(JSON.stringify(data));
         }
 
