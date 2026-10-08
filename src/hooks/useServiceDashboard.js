@@ -5,6 +5,7 @@ import {
   fetchLicenciasDashboard,
   fetchMoraDashboard,
   fetchPagexDashboard,
+  fetchZonasExtremasDashboard,
 } from "@/services/clientServiceApi";
 import { resolveServiceDefinition } from "@/config/clientServices.config";
 
@@ -12,6 +13,7 @@ const DASHBOARD_FETCHERS = {
   mora: fetchMoraDashboard,
   pagex: fetchPagexDashboard,
   licencias: fetchLicenciasDashboard,
+  "zonas-extremas": fetchZonasExtremasDashboard,
 };
 
 export const useServiceDashboard = (serviceKey, empresaRut, range) => {

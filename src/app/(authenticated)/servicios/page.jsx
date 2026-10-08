@@ -22,6 +22,7 @@ const serviceOrder = [
   "mora",
   "licencias",
   "pagex",
+  "zonas-extremas",
   "cargas-familiares",
   "notificaciones-previsionales",
   "depositos-convenidos",
@@ -34,6 +35,7 @@ const serviceGroups = {
   rsil: "licencias",
   dc: "depositos-convenidos",
   cf: "cargas-familiares",
+  zonasExtremas: "zonas-extremas",
 };
 
 const serviceTones = {
@@ -51,6 +53,11 @@ const serviceTones = {
     accent: "from-blue-500 to-cyan-500",
     soft: "bg-blue-50 text-blue-700 border-blue-100",
     button: "border-blue-100 bg-blue-50 text-blue-700 group-hover:bg-blue-600 group-hover:text-white",
+  },
+  "zonas-extremas": {
+    accent: "from-violet-500 to-sky-500",
+    soft: "bg-violet-50 text-violet-700 border-violet-100",
+    button: "border-violet-100 bg-violet-50 text-violet-700 group-hover:bg-violet-600 group-hover:text-white",
   },
   default: {
     accent: "from-slate-700 to-indigo-500",

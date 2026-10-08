@@ -348,12 +348,23 @@ const GenericServiceContent = ({ definition, slug }) => {
             <div className="text-sm text-[color:var(--text-secondary)]">
               Selecciona un rango de fechas para refrescar los indicadores (opcional).
             </div>
-            <DateRangePicker
-              value={range}
-              onValueChange={setRange}
-              enableSelect={false}
-              enableClear
-            />
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              {serviceKey === "zonas-extremas" ? (
+                <Link
+                  href="/servicios/zonas-extremas/gestiones"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[color:var(--theme-primary)] bg-white px-4 py-2 text-xs font-semibold text-[color:var(--theme-primary)] shadow-sm hover:bg-[color:var(--theme-primary)]/10"
+                >
+                  <RiFileList3Line className="h-4 w-4" />
+                  Ver gestiones
+                </Link>
+              ) : null}
+              <DateRangePicker
+                value={range}
+                onValueChange={setRange}
+                enableSelect={false}
+                enableClear
+              />
+            </div>
           </div>
           <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />
         </header>
@@ -468,6 +479,43 @@ const GenericServiceContent = ({ definition, slug }) => {
                       helperText="Sobre el total de licencias"
                       tone="warning"
                       icon="🚫"
+                    />
+                  </>
+                )}
+
+                {serviceKey === "zonas-extremas" && (
+                  <>
+                    <MetricCard
+                      label="Gestiones"
+                      value={dashboardData?.summary?.totalGestiones || 0}
+                      helperText="Procesos registrados"
+                      tone="primary"
+                      icon="🧭"
+                    />
+                    <MetricCard
+                      label="Registros"
+                      value={dashboardData?.summary?.totalRegistros || 0}
+                      helperText="Trabajadores incluidos"
+                      tone="info"
+                      icon="📋"
+                    />
+                    <MetricCard
+                      label="Trabajadores informados"
+                      value={dashboardData?.summary?.trabajadores || 0}
+                      helperText="Según detalle disponible o registros de gestión"
+                      tone="success"
+                      icon="👥"
+                    />
+                    <MetricCard
+                      label="Total recuperado"
+                      value={formatCurrency(
+                        dashboardData?.summary?.totalRecuperado ||
+                          dashboardData?.summary?.totalBonificado ||
+                          0
+                      )}
+                      helperText="Monto cerrado o bonificado"
+                      tone="warning"
+                      icon="💰"
                     />
                   </>
                 )}
@@ -719,6 +767,155 @@ const GenericServiceContent = ({ definition, slug }) => {
                         {formatCurrency(dashboardData?.comparativo?.totalSubsidios || 0)}
                       </span>
                     </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {serviceKey === "zonas-extremas" && (
+              <section className="flex flex-col gap-4">
+                <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
+                  Seguimiento de zonas extremas
+                </h2>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="glass-panel rounded-[2rem] p-5 ">
+                    <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
+                      Estado de gestiones
+                    </h3>
+                    <Divider className="my-3" />
+                    <ul className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+                      {Object.entries(dashboardData?.states || {}).length ? (
+                        Object.entries(dashboardData.states).map(([estado, total]) => (
+                          <li
+                            key={estado}
+                            className="flex items-center justify-between rounded-xl border border-white/60 bg-white/70 px-3 py-2"
+                          >
+                            <span className="capitalize">{estado}</span>
+                            <span className="font-semibold text-[color:var(--theme-primary)]">
+                              {total}
+                            </span>
+                          </li>
+                        ))
+                      ) : (
+                        <li>Sin gestiones registradas.</li>
+                      )}
+                    </ul>
+                  </div>
+                  <div className="glass-panel rounded-[2rem] p-5 ">
+                    <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
+                      Distribución por zona
+                    </h3>
+                    <Divider className="my-3" />
+                    <ul className="space-y-2 text-sm text-[color:var(--text-secondary)]">
+                      {Object.entries(dashboardData?.zones || {}).length ? (
+                        Object.entries(dashboardData.zones).map(([zona, total]) => (
+                          <li
+                            key={zona}
+                            className="flex items-center justify-between rounded-xl border border-white/60 bg-white/70 px-3 py-2"
+                          >
+                            <span>{zona}</span>
+                            <span className="font-semibold text-[color:var(--theme-primary)]">
+                              {total}
+                            </span>
+                          </li>
+                        ))
+                      ) : (
+                        <li>Sin zonas informadas.</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="glass-panel rounded-[2rem] p-5 ">
+                  <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
+                    Últimas gestiones
+                  </h3>
+                  <Divider className="my-3" />
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-white/60 text-xs">
+                      <thead className="bg-white/70 text-left font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
+                        <tr>
+                          <th className="px-3 py-2">Folio</th>
+                          <th className="px-3 py-2">Fecha</th>
+                          <th className="px-3 py-2">Zona</th>
+                          <th className="px-3 py-2">Estado</th>
+                          <th className="px-3 py-2 text-right">Registros</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/50">
+                        {dashboardData?.latestGestiones?.length ? (
+                          dashboardData.latestGestiones.map((gestion) => (
+                            <tr key={gestion.id}>
+                              <td className="px-3 py-2">{gestion.folio || "—"}</td>
+                              <td className="px-3 py-2">{formatDate(gestion.fechaGestion)}</td>
+                              <td className="px-3 py-2">{gestion.zonaExtrema || "—"}</td>
+                              <td className="px-3 py-2 capitalize">{gestion.estado || "—"}</td>
+                              <td className="px-3 py-2 text-right">
+                                {gestion.totalRegistros || 0}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              className="px-3 py-4 text-center text-[color:var(--text-secondary)]"
+                              colSpan={5}
+                            >
+                              Sin gestiones registradas.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="glass-panel rounded-[2rem] p-5 ">
+                  <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
+                    Últimos trabajadores informados
+                  </h3>
+                  <Divider className="my-3" />
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-white/60 text-xs">
+                      <thead className="bg-white/70 text-left font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
+                        <tr>
+                          <th className="px-3 py-2">Trabajador</th>
+                          <th className="px-3 py-2">Periodo</th>
+                          <th className="px-3 py-2">Zona</th>
+                          <th className="px-3 py-2 text-right">Bonificación</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/50">
+                        {dashboardData?.latestDetalles?.length ? (
+                          dashboardData.latestDetalles.map((detalle) => (
+                            <tr key={detalle.id}>
+                              <td className="px-3 py-2">
+                                <div className="font-semibold text-[color:var(--text-primary)]">
+                                  {detalle.nombreCompleto || "Sin nombre"}
+                                </div>
+                                <div className="text-[color:var(--text-secondary)]">
+                                  {detalle.trabajadorRut || "—"}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2">{detalle.periodo || "—"}</td>
+                              <td className="px-3 py-2">{detalle.zonaExtrema || "—"}</td>
+                              <td className="px-3 py-2 text-right">
+                                {formatCurrency(detalle.montoBonificado || 0)}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              className="px-3 py-4 text-center text-[color:var(--text-secondary)]"
+                              colSpan={4}
+                            >
+                              Sin detalle disponible.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </section>

@@ -83,3 +83,48 @@ export const fetchLicenciasDashboard = async (empresaRut) => {
     comparativo: comparativoRes?.data?.data || {},
   };
 };
+
+const normalizeRows = (response) => response?.data?.data || [];
+
+const normalizeDistribution = (response) =>
+  normalizeRows(response).reduce((acc, item) => {
+    const label = item.label || "Sin información";
+    acc[label] = Number(item.total || 0);
+    return acc;
+  }, {});
+
+export const fetchZonasExtremasDashboard = async (empresaRut, range) => {
+  const params = buildRangeParams(range);
+  const basePath = `/zonas-extremas-dashboard/${empresaRut}`;
+
+  const [summaryRes, statesRes, zonesRes, gestionesRes, detallesRes] =
+    await Promise.all([
+      apiService.get(`${basePath}/resumen-financiero`, { params }),
+      apiService.get(`${basePath}/distribucion-estado`, { params }),
+      apiService.get(`${basePath}/distribucion-zona`, { params }),
+      apiService.get(`${basePath}/ultimas-gestiones`, {
+        params: { ...params, limit: 8 },
+      }),
+      apiService.get(`${basePath}/ultimos-detalles`, {
+        params: { ...params, limit: 8 },
+      }),
+    ]);
+
+  const summary = summaryRes?.data?.data || {};
+
+  return {
+    summary: {
+      totalGestiones: Number(summary.totalGestiones || 0),
+      totalRegistros: Number(summary.totalRegistros || 0),
+      trabajadores: Number(summary.trabajadoresInformados || 0),
+      totalBonificado: Number(summary.totalBonificado || 0),
+      totalRecuperado: Number(summary.totalRecuperado || 0),
+      totalRemuneracion: Number(summary.totalRemuneracion || 0),
+      totalEnProduccion: Number(summary.totalEnProduccion || 0),
+    },
+    states: normalizeDistribution(statesRes),
+    zones: normalizeDistribution(zonesRes),
+    latestGestiones: normalizeRows(gestionesRes),
+    latestDetalles: normalizeRows(detallesRes),
+  };
+};

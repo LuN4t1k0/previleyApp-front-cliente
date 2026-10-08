@@ -129,6 +129,22 @@ export const CLIENT_SERVICE_DEFINITIONS = {
     icon: "📣",
     keywords: ["notificaciones previsionales", "notificacion previsional"],
   },
+  zonasExtremas: {
+    key: "zonas-extremas",
+    slug: "zonas-extremas",
+    label: "Zonas Extremas",
+    description:
+      "Seguimiento de solicitudes, trabajadores y montos asociados a bonificaciones de zonas extremas.",
+    icon: "🧭",
+    keywords: [
+      "zonas extremas",
+      "zona extrema",
+      "z-ext",
+      "ze",
+      "bonificacion zonas extremas",
+      "bonificación zonas extremas",
+    ],
+  },
   funes: {
     key: "funes",
     slug: "funes",
