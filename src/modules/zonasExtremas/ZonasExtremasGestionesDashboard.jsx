@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { DateRangePicker, Divider } from "@tremor/react";
+import { DateRangePicker } from "@tremor/react";
 import {
   RiArrowLeftLine,
   RiBuildingLine,
   RiCalendarLine,
-  RiCloseCircleLine,
   RiDownloadLine,
   RiFileList3Line,
   RiFilter3Line,
@@ -85,9 +84,6 @@ const ZonasExtremasGestionesDashboard = () => {
   const [listTotal, setListTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedGestion, setSelectedGestion] = useState(null);
-  const [detalles, setDetalles] = useState([]);
-  const [loadingDetalles, setLoadingDetalles] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const empresaOptions = useMemo(
@@ -149,24 +145,6 @@ const ZonasExtremasGestionesDashboard = () => {
     fetchGestiones();
   }, [fetchGestiones]);
 
-  const fetchDetalles = useCallback(async (gestion) => {
-    if (!gestion?.id) return;
-    setSelectedGestion(gestion);
-    setLoadingDetalles(true);
-    try {
-      const response = await apiService.get(
-        `/gestion-zonas-extremas/${gestion.id}/detalles`,
-        { params: { limit: 100 } }
-      );
-      setDetalles(response?.data?.data?.data || response?.data?.data || []);
-    } catch (err) {
-      console.error("Error cargando detalle de zonas extremas", err);
-      setDetalles([]);
-    } finally {
-      setLoadingDetalles(false);
-    }
-  }, []);
-
   const handleDownloadDetalle = useCallback(async (gestion) => {
     if (!gestion?.id) return;
     try {
@@ -210,7 +188,7 @@ const ZonasExtremasGestionesDashboard = () => {
               Bandeja de Gestiones
             </h1>
             <p className="mt-2 max-w-4xl text-base text-slate-600 md:text-lg">
-              Monitorea las gestiones de Zonas Extremas, sus montos recuperados y los trabajadores informados.
+              Monitorea las gestiones de Zonas Extremas, sus montos recuperados y descarga el detalle Excel.
             </p>
           </div>
 
@@ -349,15 +327,12 @@ const ZonasExtremasGestionesDashboard = () => {
         ) : (
           <section className="space-y-5">
             {gestiones.map((gestion) => {
-              const isSelected = selectedGestion?.id === gestion.id;
               const montoRecuperado = Number(gestion.montoRecuperado || 0);
 
               return (
                 <article
                   key={gestion.id}
-                  className={`relative overflow-hidden rounded-2xl border bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition md:p-5 ${
-                    isSelected ? "border-indigo-300 ring-4 ring-indigo-100" : "border-slate-200"
-                  }`}
+                  className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition md:p-5"
                 >
                   <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-600 via-sky-400 to-emerald-400" />
 
@@ -482,87 +457,9 @@ const ZonasExtremasGestionesDashboard = () => {
                           <RiDownloadLine className="h-4 w-4" />
                           Descargar Excel
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isSelected) {
-                              setSelectedGestion(null);
-                              setDetalles([]);
-                              return;
-                            }
-                            fetchDetalles(gestion);
-                          }}
-                          className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold uppercase tracking-wide text-blue-700 transition hover:bg-blue-100"
-                        >
-                          {isSelected ? (
-                            <>
-                              <RiCloseCircleLine className="h-4 w-4" />
-                              Ocultar trabajadores
-                            </>
-                          ) : (
-                            <>
-                              <RiFileList3Line className="h-4 w-4" />
-                              Ver trabajadores
-                            </>
-                          )}
-                        </button>
                       </div>
                     </aside>
                   </div>
-
-                  {isSelected ? (
-                    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
-                      <div className="mb-3 flex items-center gap-2 px-1">
-                        <RiUserLine className="h-4 w-4 text-slate-500" />
-                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          Trabajadores informados
-                        </p>
-                      </div>
-                      {loadingDetalles ? (
-                        <p className="rounded-xl bg-white px-4 py-6 text-center text-sm text-slate-500">
-                          Cargando detalle...
-                        </p>
-                      ) : detalles.length ? (
-                        <div className="grid gap-3 lg:grid-cols-2">
-                          {detalles.map((detalle) => (
-                            <article
-                              key={detalle.id}
-                              className="rounded-xl border border-slate-100 bg-white px-4 py-3"
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-semibold text-slate-950">
-                                    {detalle.nombreCompleto || "Sin nombre"}
-                                  </p>
-                                  <p className="mt-1 text-xs text-slate-500">
-                                    {detalle.trabajadorRut || "Sin RUT"} · Periodo{" "}
-                                    {detalle.periodo || "sin periodo"}
-                                  </p>
-                                </div>
-                                <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600">
-                                  {detalle.afp || "AFP —"}
-                                </span>
-                              </div>
-                              <div className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
-                                <span>Region: {detalle.region || "—"}</span>
-                                <span>Zona: {detalle.zonaExtrema || "—"}</span>
-                                <span>
-                                  Remuneracion: {formatCurrency(detalle.remuneracionImponible || 0)}
-                                </span>
-                                <span className="font-semibold text-emerald-700">
-                                  Bonificacion: {formatCurrency(detalle.montoBonificado || 0)}
-                                </span>
-                              </div>
-                            </article>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="rounded-xl bg-white px-4 py-6 text-center text-sm text-slate-500">
-                          Esta gestión no tiene detalle visible para tu usuario.
-                        </p>
-                      )}
-                    </div>
-                  ) : null}
                 </article>
               );
             })}
