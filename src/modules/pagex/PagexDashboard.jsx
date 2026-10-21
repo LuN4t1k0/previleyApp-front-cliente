@@ -232,14 +232,14 @@ const PagexDashboard = () => {
           `/pagex-dashboard/${empresaSeleccionada}/resumen-financiero`,
           { params }
         ),
+        apiService.get(`/pagex-dashboard/${empresaSeleccionada}/casos-por-estado`, { params }),
         apiService.get(
-          `/pagex-dashboard/${empresaSeleccionada}/casos-por-estado`
+          `/pagex-dashboard/${empresaSeleccionada}/deuda-por-institucion`,
+          { params }
         ),
         apiService.get(
-          `/pagex-dashboard/${empresaSeleccionada}/deuda-por-institucion`
-        ),
-        apiService.get(
-          `/pagex-dashboard/${empresaSeleccionada}/top-pendientes`
+          `/pagex-dashboard/${empresaSeleccionada}/top-pendientes`,
+          { params }
         ),
       ]);
 

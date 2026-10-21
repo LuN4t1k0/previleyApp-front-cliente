@@ -244,6 +244,19 @@ import { getFechaConBadge } from "@/utils/fechaVencimientoBadge";
 const formatColumnName = (name) =>
   name.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
 
+const formatDisplayValue = (value) => {
+  if (value === null || value === undefined) return "";
+  if (typeof value !== "object") return value;
+  return (
+    value.nombre ??
+    value.name ??
+    value.label ??
+    value.descripcion ??
+    value.description ??
+    "—"
+  );
+};
+
 const getColumnStyles = (columnConfig = {}) => {
   return {
     textTransform: columnConfig.textTransform ?? "uppercase",
@@ -492,8 +505,9 @@ export const generateColumns = (
             ...common,
             cell: ({ getValue }) => {
               const value = getValue();
-              if (value == null) return "";
-              return <span className={textTransform}>{value}</span>;
+              return (
+                <span className={textTransform}>{formatDisplayValue(value)}</span>
+              );
             },
           };
       }

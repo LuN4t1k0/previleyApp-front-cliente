@@ -511,6 +511,10 @@ const PrefacturaDetailPage = () => {
                                             </a>
                                           ))}
                                         </div>
+                                      ) : prod?.id && prefactura?.produccionesNoDisponibles?.some((id) => String(id) === String(prod.id)) ? (
+                                        <span className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                          Detalle no disponible para este usuario
+                                        </span>
                                       ) : (
                                         <span className="text-xs text-[color:var(--text-secondary)]">
                                           Sin adjuntos

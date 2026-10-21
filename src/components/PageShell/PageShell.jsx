@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useRole } from '@/context/RoleContext';
 import Swal from 'sweetalert2';
 import { cx } from '@/lib/utils';
@@ -13,10 +13,17 @@ export default function PageShell({ tabsConfig, moduleTitle = 'Módulo' }) {
   const [visibleTabs, setVisibleTabs] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [hasAccess, setHasAccess] = useState(true);
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const [tabFromUrl, setTabFromUrl] = useState('');
 
-  const tabFromUrl = searchParams?.get('tab');
+  useEffect(() => {
+    const readTab = () => {
+      setTabFromUrl(new URLSearchParams(window.location.search).get('tab') || '');
+    };
+    readTab();
+    window.addEventListener('popstate', readTab);
+    return () => window.removeEventListener('popstate', readTab);
+  }, []);
 
   useEffect(() => {
     if (status !== 'authenticated') return;

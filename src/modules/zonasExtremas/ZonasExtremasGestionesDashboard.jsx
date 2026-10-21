@@ -318,11 +318,15 @@ const ZonasExtremasGestionesDashboard = () => {
             Cargando gestiones...
           </section>
         ) : !gestiones.length ? (
-          <section className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-white/70 py-16 text-center">
+          <section className="rounded-2xl border-2 border-dashed border-slate-200 bg-white/80 px-6 py-12 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+              <RiFileList3Line className="h-6 w-6" />
+            </div>
             <p className="text-lg font-semibold text-slate-700">Sin gestiones</p>
             <p className="text-sm text-slate-500">
-              No hay gestiones registradas para los filtros seleccionados.
+              No existen gestiones de Zonas Extremas para la empresa y los filtros seleccionados.
             </p>
+            <p className="mt-2 text-xs font-medium text-slate-400">Puedes cambiar la empresa o ampliar el rango de fechas.</p>
           </section>
         ) : (
           <section className="space-y-5">

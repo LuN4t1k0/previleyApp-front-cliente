@@ -27,9 +27,9 @@ export const fetchMoraDashboard = async (empresaRut, range) => {
     apiService.get(`/mora-dashboard/${empresaRut}/resumen-financiero`, {
       params,
     }),
-    apiService.get(`/mora-dashboard/${empresaRut}/casos-por-estado`),
-    apiService.get(`/mora-dashboard/${empresaRut}/top-pendientes`),
-    apiService.get(`/mora-dashboard/${empresaRut}/evolucion-temporal`),
+    apiService.get(`/mora-dashboard/${empresaRut}/casos-por-estado`, { params }),
+    apiService.get(`/mora-dashboard/${empresaRut}/top-pendientes`, { params }),
+    apiService.get(`/mora-dashboard/${empresaRut}/evolucion-temporal`, { params }),
   ]);
 
   return {

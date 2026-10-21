@@ -139,15 +139,24 @@ export const enrichPrefacturaWithSignedAssets = async (prefactura) => {
             const data = response?.data?.data || null;
             return [produccionId, data];
           } catch (error) {
-            console.error(
-              `No se pudo obtener la producción ${produccionId} con URLs firmadas:`,
-              error
-            );
+            // La ausencia de permiso para ver un detalle de producción no debe
+            // romper la prefactura ni llenar la consola con errores esperables.
+            // El backend mantiene la autorización; aquí solo dejamos el activo
+            // como no disponible para que la UI lo comunique correctamente.
+            if (error?.response?.status !== 403) {
+              console.error(
+                `No se pudo obtener la producción ${produccionId} con URLs firmadas:`,
+                error
+              );
+            }
             return [produccionId, null];
           }
         })
       );
 
+      const produccionesNoDisponibles = produccionEntries
+        .filter(([, data]) => !data)
+        .map(([id]) => id);
       const produccionesMap = produccionEntries.reduce((map, [id, data]) => {
         if (id && data) map.set(id, data);
         return map;
@@ -155,6 +164,7 @@ export const enrichPrefacturaWithSignedAssets = async (prefactura) => {
 
       enriched = {
         ...enriched,
+        produccionesNoDisponibles,
         detalles: detalles.map((detalle) => ({
           ...detalle,
           producciones: mergeProduccionesForDetalle(detalle, produccionesMap),

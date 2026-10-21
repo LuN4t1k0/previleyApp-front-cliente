@@ -66,12 +66,12 @@ const LicenciasGlobalDashboard = () => {
                 Dashboard global
               </h1>
               <p className="text-sm text-[color:var(--text-secondary)] md:text-base">
-                Vision consolidada de licencias, anticipos y subsidios en todas tus empresas.
+                Visión consolidada de licencias, anticipos y subsidios en las empresas con información disponible.
               </p>
               <div className="flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-4 py-2 text-xs font-semibold text-[color:var(--text-secondary)] shadow-sm">
                 <RiBuildingLine className="h-4 w-4 text-[color:var(--theme-primary)]" />
                 <span>
-                  Alcance: {data.scope?.isGlobal ? "Administrador" : "Empresas asignadas"} ·{" "}
+                  Alcance: {data.scope?.isGlobal ? "Administrador" : "Empresas con información visible"} ·{" "}
                   {Array.isArray(data.scope?.empresas) ? data.scope.empresas.length : "∞"} empresas
                 </span>
               </div>

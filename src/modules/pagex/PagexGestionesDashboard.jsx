@@ -103,6 +103,11 @@ const getArchivoKey = (archivo = {}) =>
 const isGestionCerrada = (estado) =>
   ["cerrada", "cerrado"].includes(String(estado || "").trim().toLowerCase());
 
+const isGestionRecuperada = (estado) =>
+  ["pagado", "pagada", "recuperado", "recuperada", "resuelto", "resuelta"].includes(
+    String(estado || "").trim().toLowerCase()
+  );
+
 const compactText = (value, fallback = "Sin información registrada.", maxLength = 150) => {
   const text = String(value || "").replace(/\s+/g, " ").trim();
   if (!text) return fallback;
@@ -187,6 +192,7 @@ const PagexGestionesDashboard = () => {
   const enviandoRespuestaRef = useRef(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedSolicitudId, setExpandedSolicitudId] = useState(null);
+  const [expandedGestionId, setExpandedGestionId] = useState(null);
 
   useEffect(() => {
     setFocusedGestionId(linkedNavigation.gestionId);
@@ -441,6 +447,7 @@ const PagexGestionesDashboard = () => {
       gestiones.map((gestion) => {
         const solicitudesGestion = solicitudesPorGestion.get(Number(gestion.id)) || [];
         const cerrada = isGestionCerrada(gestion.estado);
+        const recuperada = isGestionRecuperada(gestion.estado);
         const solicitudesAccionables = solicitudesGestion.filter((solicitud) =>
           !cerrada && ["pendiente", "rechazada"].includes(String(solicitud.estado || "").toLowerCase())
         );
@@ -450,17 +457,19 @@ const PagexGestionesDashboard = () => {
         const montoSolicitado = Number(gestion?.montoSolicitado || 0);
         const montoRecibido = Number(gestion?.montoRecibido || 0);
         const montoPendiente = Math.max(montoSolicitado - montoRecibido, 0);
-        const montoTotal = cerrada ? montoRecibido || montoSolicitado : montoPendiente || montoSolicitado;
+        const montoTotal = recuperada
+          ? montoRecibido || montoSolicitado
+          : montoPendiente || montoSolicitado;
         const documentos = [
           {
             key: "detalle",
-            label: "Archivo de detalle",
+            label: `Descargar detalle${gestion.folioInterno ? ` · ${gestion.folioInterno}` : ""}`,
             onClick: () => handleDownloadDetalle(gestion),
             primary: true,
           },
           {
             key: "comprobante",
-            label: "Comprobante pago",
+            label: gestion?.comprobantePago ? "Comprobante pago" : "Comprobante no disponible",
             href: gestion?.comprobantePago,
           },
         ];
@@ -491,6 +500,19 @@ const PagexGestionesDashboard = () => {
             .some((folio) => String(folio).trim().toLowerCase() === normalizedLinkedFolio))
     );
   }, [gestionesEnriquecidas, linkedFolio, linkedGestionId]);
+
+  useEffect(() => {
+    if (!gestionesVisibles.length) {
+      setExpandedGestionId(null);
+      return;
+    }
+
+    const linked = linkedGestionId
+      ? gestionesVisibles.find((item) => Number(item.gestion.id) === Number(linkedGestionId))
+      : null;
+    const actionable = gestionesVisibles.find((item) => item.solicitudesAccionables.length > 0);
+    setExpandedGestionId(Number((linked || actionable || gestionesVisibles[0]).gestion.id));
+  }, [gestionesVisibles, linkedGestionId]);
 
   const resumenBandeja = useMemo(() => {
     const pendientesCliente = gestionesVisibles.reduce(
@@ -651,6 +673,9 @@ const PagexGestionesDashboard = () => {
               </h1>
               <p className="mt-2 max-w-4xl text-base text-slate-600 md:text-lg">
                 Monitorea y administra las solicitudes PAGEX en tiempo real.
+              </p>
+              <p className="mt-2 inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
+                Empresa en vista: {empresaInput || "Todas las empresas"}
               </p>
             </div>
 
@@ -849,7 +874,7 @@ const PagexGestionesDashboard = () => {
               <p className="text-sm text-slate-500">
                 {linkedGestionId || linkedFolio
                   ? "No encontramos esa gestión para la empresa seleccionada."
-                  : "No hay gestiones registradas para los filtros seleccionados."}
+                  : `No hay gestiones registradas para ${empresaInput || "la empresa seleccionada"}. Prueba con otra empresa o ajusta los filtros.`}
               </p>
             </section>
           ) : (
@@ -862,6 +887,7 @@ const PagexGestionesDashboard = () => {
                   solicitudesPendientesCerradas,
                 } = item;
                 const gestionCerrada = isGestionCerrada(gestion.estado);
+                const gestionRecuperada = isGestionRecuperada(gestion.estado);
                 const isLinkedGestion =
                   (linkedGestionId && Number(linkedGestionId) === Number(gestion.id)) ||
                   (linkedFolio &&
@@ -872,10 +898,11 @@ const PagexGestionesDashboard = () => {
                           String(linkedFolio).trim().toLowerCase() ===
                           String(folio).trim().toLowerCase()
                       ));
-                const montoResumenLabel = gestionCerrada ? "Recuperado" : "Pendiente";
-                const montoResumenIconTone = gestionCerrada
+                const montoResumenLabel = gestionRecuperada ? "Recuperado" : "Pendiente";
+                const montoResumenIconTone = gestionRecuperada
                   ? "bg-emerald-600 text-white shadow-emerald-600/20"
                   : "bg-amber-600 text-white shadow-amber-600/20";
+                const isGestionExpanded = expandedGestionId === Number(gestion.id);
 
                 return (
                   <article
@@ -897,11 +924,9 @@ const PagexGestionesDashboard = () => {
                             <span className="text-2xl font-bold leading-tight tracking-normal text-[#06164b]">
                               Gestión #{gestion.id}
                             </span>
-                            {gestion.folioInterno || gestion.folio ? (
-                              <span className="text-2xl font-bold text-slate-400">
-                                / {gestion.folioInterno || gestion.folio}
-                              </span>
-                            ) : null}
+                            <span className="text-2xl font-bold text-slate-400">
+                              / {gestion.folioInterno || gestion.folio || "Sin folio interno"}
+                            </span>
                             <span
                               className={`inline-flex max-w-full items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wide shadow-sm ring-1 ${getEstadoTone(
                                 gestion.estado
@@ -1007,7 +1032,19 @@ const PagexGestionesDashboard = () => {
                         </aside>
                       </div>
 
-                      <section className="mt-6 rounded-2xl border border-slate-200 bg-[#f8f7fb] p-4 md:p-5">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedGestionId((current) => (
+                          current === Number(gestion.id) ? null : Number(gestion.id)
+                        ))}
+                        className="mt-3 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#06164b] shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+                        aria-expanded={isGestionExpanded}
+                      >
+                        {isGestionExpanded ? "Ocultar antecedentes" : "Ver antecedentes"}
+                        <RiArrowDownSLine className={`h-4 w-4 transition ${isGestionExpanded ? "rotate-180" : ""}`} />
+                      </button>
+
+                      <section className={`${isGestionExpanded ? "" : "hidden"} mt-6 rounded-2xl border border-slate-200 bg-[#f8f7fb] p-4 md:p-5`}>
                         <div className="flex flex-wrap items-center justify-between gap-4">
                           <div className="flex items-center gap-3">
                             <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">

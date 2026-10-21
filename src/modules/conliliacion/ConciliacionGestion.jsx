@@ -31,6 +31,7 @@ import useSocket from "@/hooks/useSocket";
 import useRealtimeEntity from "@/hooks/useRealtimeEntity";
 import useDebouncedCallback from "@/hooks/useDebouncedCallback";
 import Restricted from "@/components/restricted/Restricted";
+import { RiFileSearchLine } from "@remixicon/react";
 
 const LicenciasContent = () => {
   const { openModal } = useModal();
@@ -219,9 +220,13 @@ const handleViewDetails = useCallback((item) => {
   }
 
   return (
-    <div className="w-full px-2 sm:px-6 lg:px-8 pt-4 relative space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <div className="min-h-dvh w-full bg-slate-50 px-3 pb-16 pt-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1440px] space-y-5">
+      <div className="flex flex-col gap-4 rounded-[2rem] border border-slate-200 bg-white px-6 py-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
+          <div className="mb-2 inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">
+            Licencias médicas · Gestiones
+          </div>
           <Titulo title={title} subtitle={subtitle} />
         </div>
         <div className="mt-2 sm:mt-0 flex flex-row space-x-2 justify-end">
@@ -232,7 +237,7 @@ const handleViewDetails = useCallback((item) => {
         </div>
       </div>
 
-      <div className="flex flex-row items-center space-x-2 flex-grow">
+      <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
         <GenericFilter
           filters={filters}
           uniqueValues={uniqueValues}
@@ -273,7 +278,19 @@ const handleViewDetails = useCallback((item) => {
         scrollTriggerRef={lastRowRef}
         useInfiniteScroll={isInfiniteScrollEnabled} 
         handleViewDetails={handleViewDetails}
+        emptyState={
+          <div className="flex flex-col items-center gap-2 py-6 text-center">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+              <RiFileSearchLine className="h-5 w-5" />
+            </span>
+            <p className="font-semibold text-slate-700">No hay gestiones de licencias para mostrar</p>
+            <p className="max-w-md text-sm text-slate-500">
+              Prueba cambiando los filtros o revisa nuevamente cuando existan nuevas conciliaciones.
+            </p>
+          </div>
+        }
       />
+    </div>
     </div>
   );
 };
