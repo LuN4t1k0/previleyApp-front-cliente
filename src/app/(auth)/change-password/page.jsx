@@ -240,7 +240,7 @@ const ChangePassword = () => {
             </Link>
             <Image
               alt="Previley Asesorías"
-              src="https://firebasestorage.googleapis.com/v0/b/storage-previleyapp.appspot.com/o/previleApp%2FlogoAzul-web.png?alt=media&token=1b4fb56f-1179-41c1-95d3-6eec9649446e"
+              src="https://assets.previley.cl/logos/logo-previley-h.png"
               width={180}
               height={50}
               priority

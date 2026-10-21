@@ -29,6 +29,13 @@ import {
 
 const DEFAULT_YEAR = 2026;
 
+const canonicalServiceKey = (serviceKey) => ({
+  "mp-p": "mora",
+  "mp-r": "mora",
+  adml: "licencias",
+  rsil: "licencias",
+}[serviceKey] || serviceKey);
+
 const DashboardPage = () => {
   const { data: session } = useSession();
   const nombre = session?.user?.nombre || "";
@@ -113,7 +120,7 @@ const DashboardPage = () => {
     empresasConServicios.forEach((empresa) => {
       (empresa.serviciosAsignados || []).forEach((servicio) => {
         if (servicio?.serviceKey) {
-          uniqueKeys.add(servicio.serviceKey);
+          uniqueKeys.add(canonicalServiceKey(servicio.serviceKey));
         } else if (servicio?.nombre) {
           uniqueKeys.add(servicio.nombre);
         }
@@ -194,6 +201,9 @@ const DashboardPage = () => {
       missingDetalle: Number(documentAlerts.missingDetalle || 0),
     };
   }, [prefacturasAlertas, documentAlerts]);
+
+  const totalAlertasAccionables =
+    alertas.overdue + alertas.dueSoon + alertas.missingCertificados + alertas.missingDetalle;
 
   useEffect(() => {
     let isActive = true;
@@ -295,19 +305,26 @@ const DashboardPage = () => {
 
   const executiveCards = useMemo(() => {
     if (!servicesByType.length) return [];
-    return servicesByType.map((service) => {
+    const grouped = new Map();
+    servicesByType.forEach((service) => {
+      const key = canonicalServiceKey(service.serviceKey);
+      if (!grouped.has(key)) grouped.set(key, { ...service, serviceKey: key });
+    });
+    return Array.from(grouped.values()).map((service) => {
       const definition =
-        service.definition || resolveServiceDefinition(service.serviceKey);
+        resolveServiceDefinition(service.serviceKey) || service.definition;
       const summary =
         executiveSummaryByKey.get(service.serviceKey) ||
         (service.serviceKey === "mora"
           ? executiveSummaryByKey.get("mp-r")
+          : service.serviceKey === "licencias"
+          ? executiveSummaryByKey.get("adml") || executiveSummaryByKey.get("rsil")
           : null);
       const totalValue = Number(summary?.value || 0);
       const isCurrency = summary?.unit !== "count";
       return {
         key: service.serviceKey,
-        title: summary?.label || definition?.label || service.serviceKey,
+        title: definition?.label || summary?.label || service.serviceKey,
         mainValue: totalValue,
         label: summary?.metricLabel || "Total procesado",
         link: definition?.slug ? `/servicios/${definition.slug}` : "/servicios",
@@ -323,33 +340,38 @@ const DashboardPage = () => {
   return (
     <section className="min-h-screen bg-[#f8fafc] bg-[radial-gradient(at_top_right,_#e2e8f0,_20%)] pb-20 font-sans text-slate-900">
       <div className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
-        <header className="relative overflow-hidden rounded-[2.5rem] border border-white/50 bg-white/70 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.05)] backdrop-blur-2xl md:p-12">
+        <header className="relative overflow-hidden rounded-[2rem] border border-blue-100/70 bg-gradient-to-br from-white via-white to-blue-50/80 p-6 shadow-[0_20px_50px_rgba(30,64,175,0.08)] backdrop-blur-2xl sm:p-8 md:rounded-[2.5rem] md:p-12">
           <div className="relative z-10 flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-600">
+              <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-blue-700">
                 <RiDashboardLine className="h-3 w-3" />
-                Panel de Control
+                Vista general
               </div>
               <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
                 Hola<span className="text-blue-600">{nombre ? `, ${nombre}` : ""}</span> 👋
               </h1>
-              <p className="max-w-xl text-lg font-medium text-slate-500/90 leading-relaxed">
-                Bienvenido de nuevo. Aquí tienes el balance actual de tus operaciones y prefacturación.
+              <p className="max-w-xl text-base font-medium leading-relaxed text-slate-500/90 sm:text-lg">
+                Bienvenido de nuevo. Revisa el estado de tus operaciones y encuentra rápidamente lo que requiere atención.
               </p>
             </div>
 
-            <Link
+            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center md:flex-col md:items-stretch">
+              <Link
               href="/servicios"
-              className="group inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-7 py-4 text-sm font-bold text-white transition-all hover:bg-blue-600 hover:shadow-[0_10px_20px_rgba(37,99,235,0.3)] active:scale-95"
-            >
-              Explorar Servicios
-              <RiArrowRightLine className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+              className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-6 py-3.5 text-sm font-bold text-white transition-all hover:bg-blue-600 hover:shadow-[0_10px_20px_rgba(37,99,235,0.3)] active:scale-95"
+              >
+                Explorar Servicios
+                <RiArrowRightLine className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+              <span className="text-center text-xs font-semibold text-slate-400 sm:px-2 md:text-right">
+                Información consolidada de tu cuenta
+              </span>
+            </div>
           </div>
           <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-400/10 blur-3xl"></div>
         </header>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
           <StatCard
             label="Empresas"
             value={loading ? "…" : empresas?.length || 0}
@@ -431,6 +453,17 @@ const DashboardPage = () => {
             <h2 className="text-2xl font-bold text-slate-900">Alertas Accionables</h2>
             <p className="text-slate-500">Documentos y tareas que requieren tu atención inmediata.</p>
           </div>
+          {totalAlertasAccionables > 0 ? (
+            <div className="mb-6 flex flex-col gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-bold">Tienes {totalAlertasAccionables} acciones pendientes</p>
+                <p className="mt-1 text-amber-800">Revisa primero los documentos vencidos y los respaldos pendientes.</p>
+              </div>
+              <Link href="/prefacturas" className="inline-flex w-fit items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-500">
+                Revisar ahora <RiArrowRightLine className="h-4 w-4" />
+              </Link>
+            </div>
+          ) : null}
           {loadingAlertas || loadingDocumentAlerts ? (
             <div className="rounded-2xl border border-white/60 bg-white/80 p-6 text-sm text-slate-500 shadow-sm backdrop-blur">
               Analizando alertas...
@@ -451,13 +484,13 @@ const DashboardPage = () => {
                 link="/prefacturas"
               />
               <AlertTile
-                label="PDFs pendientes"
+                label="Documentos PDF pendientes"
                 count={alertas.missingCertificados}
                 icon={<RiFileTextLine className="h-5 w-5" />}
                 link="/documentos"
               />
               <AlertTile
-                label="Excels pendientes"
+                label="Detalles Excel pendientes"
                 count={alertas.missingDetalle}
                 icon={<RiReceiptLine className="h-5 w-5" />}
                 link="/documentos"
@@ -537,8 +570,8 @@ const StatCard = ({ label, value, icon, color, loading }) => {
   };
 
   return (
-    <div className="group rounded-3xl border border-white/60 bg-white/50 p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md backdrop-blur-sm">
-      <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl border ${colors[color] || colors.blue}`}>
+    <div className="group rounded-3xl border border-white/70 bg-white/75 p-5 shadow-[0_8px_25px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-1 hover:shadow-md backdrop-blur-sm sm:p-6">
+      <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-2xl border ${colors[color] || colors.blue}`}>
         {icon}
       </div>
       <p className="text-sm font-bold uppercase tracking-tight text-slate-400">{label}</p>

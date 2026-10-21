@@ -57,6 +57,21 @@ const SkeletonRow = ({ columns }) => (
   </TableRow>
 );
 
+const normalizeCellContent = (value) => {
+  if (value === null || value === undefined) return "";
+  if (React.isValidElement(value)) return value;
+  if (typeof value !== "object") return value;
+
+  return (
+    value.nombre ??
+    value.name ??
+    value.label ??
+    value.descripcion ??
+    value.description ??
+    "—"
+  );
+};
+
 const GenericTableWithDetail = ({
   data,
   total,
@@ -93,6 +108,7 @@ const GenericTableWithDetail = ({
   onVisibleColumnsChange,
   columnVisibilityKey,
   showColumnVisibilityControl = true,
+  emptyState,
 }) => {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -521,8 +537,10 @@ const GenericTableWithDetail = ({
                   cellContent = value;
                 }
               } else {
-                cellContent = flexRender(cell.column.columnDef.cell, cell.getContext());
+                  cellContent = flexRender(cell.column.columnDef.cell, cell.getContext());
               }
+
+              cellContent = normalizeCellContent(cellContent);
 
               return (
                 <TableCell
@@ -540,7 +558,7 @@ const GenericTableWithDetail = ({
   {!loading && data.length === 0 && !error && (
     <TableRow>
       <TableCell colSpan={table.getAllColumns().length} className="text-center">
-        No hay registros que cumplan con los filtros ingresados.
+        {emptyState || "No hay registros que cumplan con los filtros ingresados."}
       </TableCell>
     </TableRow>
   )}

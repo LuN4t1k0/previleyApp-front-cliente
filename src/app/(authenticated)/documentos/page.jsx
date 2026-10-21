@@ -504,6 +504,7 @@ const DocumentosPage = () => {
               const detail = detailMap[pref.id];
               const isLoadingDetail = loadingDetail[pref.id];
               const hasDetailError = detail?.error;
+              const unavailableProductionIds = detail?.produccionesNoDisponibles || [];
               const detailDocs = detail?.detalles?.flatMap((detalle) => {
                 const producciones = normalizeProducciones(detalle);
                 return producciones.flatMap((prod) =>
@@ -640,6 +641,10 @@ const DocumentosPage = () => {
                                               );
                                             })}
                                           </div>
+                                        ) : prod?.id && unavailableProductionIds.some((id) => String(id) === String(prod.id)) ? (
+                                          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                            Detalle no disponible para este usuario.
+                                          </p>
                                         ) : (
                                           <p className="mt-2 text-xs text-[color:var(--text-secondary)]">
                                             Sin adjuntos para este filtro.

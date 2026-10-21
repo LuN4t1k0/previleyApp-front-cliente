@@ -113,14 +113,14 @@ const ActionHeader = ({
   ];
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-start">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:p-6">
         <div>
           <Titulo
             title={`EXPEDIENTE: ${gestion.folioInterno}`}
             subtitle={`Periodo: ${gestion.periodo}`}
           />
-          <p className="mt-1 text-tremor-default text-tremor-content">
+          <p className="mt-2 text-sm text-slate-600">
             Empresa: <span className="font-semibold">{gestion.empresaRut}</span>
           </p>
         </div>
@@ -141,7 +141,7 @@ const ActionHeader = ({
         </Badge>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 border-y py-3">
+      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
         {!isReadOnly &&
           (gestion.estado === "cerrada" ? (
             <button
@@ -183,6 +183,7 @@ const ActionHeader = ({
             )
           ))}
         <button
+          type="button"
           onClick={onVolver}
           className="ml-auto flex items-center space-x-1 whitespace-nowrap rounded-tremor-small border border-tremor-border px-4 py-2 text-tremor-default font-medium text-tremor-content shadow-tremor-input"
         >
@@ -192,7 +193,7 @@ const ActionHeader = ({
       </div>
 
       {!isReadOnly && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-3">
           {dataTypes.map(({ key, label, onUpload, onDelete }) => (
             <div key={key} className="flex flex-col space-y-2">
               <h4 className="text-tremor-default font-medium text-tremor-content-strong">
@@ -663,13 +664,13 @@ const handleCargarArchivo = (tipo) => {
     });
   };
 
-  if (loading) return <div className="p-8 text-center">Cargando Folio...</div>;
-  if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
+  if (loading) return <div className="min-h-[40vh] bg-slate-50 p-8 text-center text-slate-600">Cargando expediente...</div>;
+  if (error) return <div className="m-6 rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center text-rose-700">{error}</div>;
   if (!gestion)
     return <div className="p-8 text-center">Gestión no encontrada.</div>;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+    <div className="min-h-dvh space-y-6 bg-slate-50 p-3 sm:p-6 lg:p-8">
       <ActionHeader
         gestion={gestion}
         isEditable={isEditable}

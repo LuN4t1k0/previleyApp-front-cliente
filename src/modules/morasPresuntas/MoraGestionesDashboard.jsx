@@ -231,6 +231,7 @@ const MoraGestionesDashboard = () => {
   const enviandoRespuestaRef = useRef(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [expandedSolicitudId, setExpandedSolicitudId] = useState(null);
+  const [expandedGestionId, setExpandedGestionId] = useState(null);
 
   useEffect(() => {
     setFocusedGestionId(linkedNavigation.gestionId);
@@ -488,6 +489,20 @@ const MoraGestionesDashboard = () => {
     return map;
   }, [solicitudes]);
 
+  useEffect(() => {
+    if (linkedGestionId) {
+      setExpandedGestionId(Number(linkedGestionId));
+      return;
+    }
+    const primeraConAccion = gestiones.find((gestion) => {
+      const solicitudesGestion = solicitudesPorGestion.get(Number(gestion.id)) || [];
+      return solicitudesGestion.some((solicitud) =>
+        ["pendiente", "rechazada"].includes(String(solicitud.estado || "").toLowerCase())
+      );
+    });
+    setExpandedGestionId(primeraConAccion ? Number(primeraConAccion.id) : null);
+  }, [gestiones, linkedGestionId, solicitudesPorGestion]);
+
   const gestionesEnriquecidas = useMemo(
     () =>
       gestiones.map((gestion) => {
@@ -718,6 +733,9 @@ const MoraGestionesDashboard = () => {
               <p className="mt-2 max-w-4xl text-base text-slate-600 md:text-lg">
                 Monitorea y administra las solicitudes de Mora Presunta en tiempo real.
               </p>
+              <p className="mt-2 inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
+                Empresa en vista: {empresaInput || "Todas las empresas"}
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -926,11 +944,11 @@ const MoraGestionesDashboard = () => {
               <p className="text-sm text-slate-500">
                 {linkedGestionId || linkedFolio
                   ? "No encontramos esa gestión para la empresa seleccionada."
-                  : "No hay gestiones registradas para los filtros seleccionados."}
+                  : `No hay gestiones registradas para ${empresaInput || "la empresa seleccionada"}. Prueba con otra empresa o ajusta los filtros.`}
               </p>
             </section>
           ) : (
-            <section className="space-y-5">
+            <section className="space-y-3">
               {gestionesVisibles.map((item) => {
                 const {
                   gestion,
@@ -949,12 +967,13 @@ const MoraGestionesDashboard = () => {
                 const montoResumenIconTone = gestionCerrada
                   ? "bg-emerald-600 text-white shadow-emerald-600/20"
                   : "bg-amber-600 text-white shadow-amber-600/20";
+                const isGestionExpanded = expandedGestionId === Number(gestion.id);
 
                 return (
                   <article
                     key={gestion.id}
                     id={`gestion-mora-${gestion.id}`}
-                    className={`relative scroll-mt-6 overflow-hidden rounded-2xl border bg-white p-4 shadow-[0_18px_45px_rgba(15,23,42,0.06)] transition md:p-5 ${
+                    className={`relative scroll-mt-6 overflow-hidden rounded-2xl border bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)] transition md:p-5 ${
                       isLinkedGestion
                         ? "border-indigo-300 ring-4 ring-indigo-100"
                         : "border-slate-200"
@@ -989,6 +1008,18 @@ const MoraGestionesDashboard = () => {
                             </span>
                           </div>
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setExpandedGestionId((current) => (
+                            current === Number(gestion.id) ? null : Number(gestion.id)
+                          ))}
+                          className="mt-3 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-[#06164b] shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+                          aria-expanded={isGestionExpanded}
+                        >
+                          {isGestionExpanded ? "Ocultar antecedentes" : "Ver antecedentes"}
+                          <RiArrowDownSLine className={`h-4 w-4 transition ${isGestionExpanded ? "rotate-180" : ""}`} />
+                        </button>
 
                         <div className="mt-5 grid gap-3 md:grid-cols-2">
                           <div className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 px-4 py-3">
@@ -1157,7 +1188,7 @@ const MoraGestionesDashboard = () => {
                       </div>
                     </div>
 
-                    <section className="mt-6 rounded-2xl border border-slate-200 bg-[#f8f7fb] p-4 md:p-5">
+                    <section className={`${isGestionExpanded ? "" : "hidden"} mt-6 rounded-2xl border border-slate-200 bg-[#f8f7fb] p-4 md:p-5`}>
                       <div className="flex flex-wrap items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">

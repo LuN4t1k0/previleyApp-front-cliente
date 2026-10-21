@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { DateRangePicker, Divider } from "@tremor/react";
 import { toast } from "react-hot-toast";
 import {
@@ -62,6 +62,21 @@ const buildRangeParams = (range) => {
     from: toISODate(range.from),
     to: toISODate(range.to),
   };
+};
+
+const useClientQueryParam = (key) => {
+  const [value, setValue] = useState("");
+
+  useEffect(() => {
+    const readValue = () =>
+      new URLSearchParams(window.location.search).get(key) || "";
+    setValue(readValue());
+
+    window.addEventListener("popstate", readValue);
+    return () => window.removeEventListener("popstate", readValue);
+  }, [key]);
+
+  return value;
 };
 
 const preferedEmpresaRut = (empresas = [], initialRut) => {
@@ -177,11 +192,10 @@ const MoraServiceHub = () => (
   </section>
 );
 
-const ServiceDetailContent = () => {
+const ServiceDetailContentWithParams = () => {
   const params = useParams();
-  const searchParams = useSearchParams();
   const slug = params?.service;
-  const tabFromUrl = searchParams?.get("tab");
+  const tabFromUrl = useClientQueryParam("tab");
   const definition = resolveServiceDefinition(slug);
   const inferredKey = definition?.key || resolveServiceKeyFromName(slug);
 
@@ -204,9 +218,14 @@ const ServiceDetailContent = () => {
   return <GenericServiceContent definition={definition} slug={slug} />;
 };
 
-const GenericServiceContent = ({ definition, slug }) => {
-  const searchParams = useSearchParams();
-  const initialEmpresaFromQuery = searchParams?.get("empresa") || undefined;
+const ServiceDetailContent = () => (
+  <Suspense fallback={<div className="p-6 text-gray-500 animate-pulse">Cargando servicio...</div>}>
+    <ServiceDetailContentWithParams />
+  </Suspense>
+);
+
+const GenericServiceContentWithParams = ({ definition, slug }) => {
+  const initialEmpresaFromQuery = useClientQueryParam("empresa") || undefined;
 
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
   const {
@@ -348,6 +367,11 @@ const GenericServiceContent = ({ definition, slug }) => {
             <div className="text-sm text-[color:var(--text-secondary)]">
               Selecciona un rango de fechas para refrescar los indicadores (opcional).
             </div>
+            {selectedEmpresaRut ? (
+              <span className="inline-flex w-fit items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
+                Empresa en vista: {empresasDisponibles.find((empresa) => empresa.empresaRut === selectedEmpresaRut)?.empresaNombre || selectedEmpresaRut}
+              </span>
+            ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               {serviceKey === "zonas-extremas" ? (
                 <Link
@@ -846,7 +870,7 @@ const GenericServiceContent = ({ definition, slug }) => {
                         {dashboardData?.latestGestiones?.length ? (
                           dashboardData.latestGestiones.map((gestion) => (
                             <tr key={gestion.id}>
-                              <td className="px-3 py-2">{gestion.folio || "—"}</td>
+                              <td className="px-3 py-2 font-semibold">{gestion.folioInterno || gestion.folio || `#${gestion.id}`}</td>
                               <td className="px-3 py-2">{formatDate(gestion.fechaGestion)}</td>
                               <td className="px-3 py-2">{gestion.zonaExtrema || "—"}</td>
                               <td className="px-3 py-2 capitalize">{gestion.estado || "—"}</td>
@@ -926,6 +950,9 @@ const GenericServiceContent = ({ definition, slug }) => {
                 <h2 className="text-lg font-semibold text-[color:var(--text-primary)]">
                   Documentos de la empresa
                 </h2>
+                <p className="text-xs text-[color:var(--text-secondary)]">
+                  {empresasDisponibles.find((empresa) => empresa.empresaRut === selectedEmpresaRut)?.empresaNombre || selectedEmpresaRut || "Empresa seleccionada"}
+                </p>
                 <Link
                   href="mailto:soporte@previley.com?subject=Actualización%20de%20documentos%20Previley"
                   className="inline-flex items-center gap-2 rounded-full border border-[color:var(--theme-primary)] bg-[color:var(--theme-primary)] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[color:var(--theme-primary-dark)]"
@@ -984,6 +1011,12 @@ const GenericServiceContent = ({ definition, slug }) => {
     </section>
   );
 };
+
+const GenericServiceContent = ({ definition, slug }) => (
+  <Suspense fallback={<div className="p-6 text-gray-500 animate-pulse">Cargando servicio...</div>}>
+    <GenericServiceContentWithParams definition={definition} slug={slug} />
+  </Suspense>
+);
 
 const ServiceDetailPage = () => (
   <Suspense fallback={<div className="p-6 text-gray-500 animate-pulse">Cargando servicio...</div>}>

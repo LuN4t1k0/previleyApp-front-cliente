@@ -226,7 +226,8 @@
   font-weight: 600;
   font-size: 0.86rem;
   color: rgba(30, 33, 41, 0.78);
-  transition: background-color 0.18s ease, color 0.18s ease;
+  border: 1px solid transparent;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 
 .nav-pill:is(:hover, :focus-visible) {
@@ -235,8 +236,10 @@
 }
 
 .nav-pill--active {
-  background: rgba(66, 90, 239, 0.18);
+  background: rgba(66, 90, 239, 0.12);
+  border-color: rgba(66, 90, 239, 0.16);
   color: #1c215a;
+  box-shadow: 0 4px 12px rgba(66, 90, 239, 0.08);
 }
 
 .nav-icon-chip {
