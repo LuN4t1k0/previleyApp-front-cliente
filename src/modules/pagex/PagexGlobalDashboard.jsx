@@ -124,8 +124,8 @@ const PagexGlobalDashboard = () => {
                 PAGEX multi-empresa
               </h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
-                Consolidado ejecutivo de pagos en exceso, recuperación, saldos pendientes y
-                concentración por empresa.
+                Resumen claro de los pagos en exceso, cuánto se ha recuperado y qué queda
+                pendiente por empresa.
               </p>
             </div>
 
@@ -159,13 +159,13 @@ const PagexGlobalDashboard = () => {
               icon={RiFundsLine}
             />
             <MetricCard
-              label="Total recuperado"
+              label="Monto recuperado confirmado"
               value={formatCurrency(data.resumen?.totalRecuperado)}
-              helper={`Avance ${formatPercent(avance)}`}
+              helper={`Pagos confirmados · avance ${formatPercent(avance)}`}
               icon={RiShieldCheckLine}
             />
             <MetricCard
-              label="Total pendiente"
+              label="Monto pendiente"
               value={formatCurrency(data.resumen?.totalPendiente)}
               helper={`${formatNumber(data.casosPorEstado?.pendientes)} casos pendientes`}
               icon={RiTimeLine}
@@ -182,7 +182,7 @@ const PagexGlobalDashboard = () => {
             <Panel className="p-5">
               <h2 className="text-base font-semibold text-slate-950">Ranking de empresas</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Empresas ordenadas por monto PAGEX registrado.
+                Empresas ordenadas por monto total detectado. Selecciona una empresa para ver su detalle.
               </p>
               <BarList
                 className="mt-6"
@@ -210,7 +210,7 @@ const PagexGlobalDashboard = () => {
             <Panel className="p-5">
               <h2 className="text-base font-semibold text-slate-950">Casos por estado</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Distribución operativa de los registros PAGEX.
+                Cada caso corresponde a un registro de pago en exceso.
               </p>
               <BarList className="mt-6" data={estadoData} valueFormatter={formatNumber} />
             </Panel>

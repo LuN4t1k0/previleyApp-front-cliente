@@ -34,3 +34,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Graphify: grafo, reportes, caché y archivos temporales de extracción
+graphify-out/
+**/graphify-out/
+.graphify_*.json
+.graphify_*.txt
+.graphify_python
