@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import useSocket from "@/hooks/useSocket";
 import useRealtimeEntity from "@/hooks/useRealtimeEntity";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import apiService from "@/app/api/apiService";
 import Titulo from "@/components/title/Title";
 import {
@@ -231,6 +231,7 @@ const ExpedienteContent = () => {
   const { role } = useRole();
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { openModal, closeModal } = useModal();
   const { runWithFeedback } = useActionFeedback();
   const gestionId = params.id;
@@ -336,7 +337,10 @@ const ExpedienteContent = () => {
   const dynamicAnticiposConfig = useDynamicActions(anticiposConfig, isEditable);
   const dynamicSubsidiosConfig = useDynamicActions(subsidiosConfig, isEditable);
 
-  const isReadOnly = role === "cliente";
+  const isReadOnly =
+    role === "cliente" ||
+    role === "cliente_admin" ||
+    searchParams?.get("modo") === "lectura";
   const canEdit =
     !isReadOnly && licenciasConfig.permissions.edit.includes(role);
   const canDelete =

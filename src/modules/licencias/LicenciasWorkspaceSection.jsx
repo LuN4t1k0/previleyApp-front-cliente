@@ -3,11 +3,11 @@
 import { useSearchParams } from "next/navigation";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import TrabajadorSkeleton from "@/components/skeleton/TrabajadorSkeleton";
-import ConcliliacionGestion from "@/modules/conliliacion/ConciliacionGestion";
 import FichaTrabajadorDashboard from "@/modules/trabajador/FichaTrabajadorDashboard";
 import EmpresaLicenciasDashboard from "./EmpresaLicenciasDashboard";
 import LicenciasGlobalDashboard from "./LicenciasGlobalDashboard";
 import LicenciasSectionNav from "./LicenciasSectionNav";
+import LicenciasManagement from "./LicenciasManagement";
 import { resolveLicenciasSection, resolveRequiredEmpresa } from "@/services/licenciasWorkspace.mjs";
 
 const LicenciasWorkspaceSection = ({ section }) => {
@@ -39,7 +39,7 @@ const LicenciasWorkspaceSection = ({ section }) => {
       );
     }
   } else if (canonical === "gestiones") {
-    content = <ConcliliacionGestion />;
+    content = <LicenciasManagement />;
   } else if (canonical === "ficha-trabajador") {
     content = <FichaTrabajadorDashboard />;
   }

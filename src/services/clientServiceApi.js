@@ -3,6 +3,10 @@
 import apiService from "@/app/api/apiService";
 import { getOperationalDashboardDefinition } from "@/config/operationalServiceDashboards.mjs";
 import { aggregateOperationalDashboard } from "@/services/operationalServiceDashboard.mjs";
+import {
+  getGestionLicenciaExcelPath,
+  normalizeGestionLicenciaPage,
+} from "@/services/licenciasManagement.mjs";
 
 const buildRangeParams = (range) => {
   if (!range) return {};
@@ -96,6 +100,31 @@ export const fetchLicenciasDashboard = async (empresaRut) => {
     topWorkers: unwrapApiData(topRes, []),
     recentManagement: unwrapApiData(gestionesRes, []),
   };
+};
+
+export const fetchGestionesLicencia = async (params) => {
+  const response = await apiService.get("/gestion-licencia", { params });
+  return normalizeGestionLicenciaPage(response?.data || {});
+};
+
+export const downloadGestionLicenciaExcel = async (id) => {
+  const response = await apiService.get(getGestionLicenciaExcelPath(id));
+  const data = unwrapApiData(response, {});
+  if (!data?.url) {
+    throw new Error("El expediente no tiene un archivo Excel disponible.");
+  }
+
+  if (typeof document !== "undefined") {
+    const link = document.createElement("a");
+    link.href = data.url;
+    link.download = data.filename || `gestion-licencia-${id}.xlsx`;
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  return data;
 };
 
 const normalizeRows = (response) => response?.data?.data || [];
