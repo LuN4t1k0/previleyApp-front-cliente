@@ -1,6 +1,8 @@
 "use client";
 
 import apiService from "@/app/api/apiService";
+import { getOperationalDashboardDefinition } from "@/config/operationalServiceDashboards.mjs";
+import { aggregateOperationalDashboard } from "@/services/operationalServiceDashboard.mjs";
 
 const buildRangeParams = (range) => {
   if (!range) return {};
@@ -127,4 +129,26 @@ export const fetchZonasExtremasDashboard = async (empresaRut, range) => {
     latestGestiones: normalizeRows(gestionesRes),
     latestDetalles: normalizeRows(detallesRes),
   };
+};
+
+export const fetchOperationalServiceDashboard = async (
+  serviceKey,
+  empresaRut
+) => {
+  const definition = getOperationalDashboardDefinition(serviceKey);
+  if (!definition) {
+    throw new Error(`El servicio ${serviceKey} no tiene un dashboard configurado.`);
+  }
+
+  const params = { limit: 500, offset: 0 };
+  if (empresaRut) params.empresaRut = empresaRut;
+
+  const response = await apiService.get(definition.endpoint, { params });
+  const body = response?.data || {};
+
+  return aggregateOperationalDashboard(
+    Array.isArray(body.data) ? body.data : [],
+    definition,
+    body.total
+  );
 };
