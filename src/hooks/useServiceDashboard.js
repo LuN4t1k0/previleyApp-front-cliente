@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   fetchLicenciasDashboard,
   fetchMoraDashboard,
@@ -9,6 +9,10 @@ import {
   fetchOperationalServiceDashboard,
 } from "@/services/clientServiceApi";
 import { resolveServiceDefinition } from "@/config/clientServices.config";
+import {
+  createDashboardNotConfiguredError,
+  createLatestRequestTracker,
+} from "@/services/dashboardRequestState.mjs";
 
 const DASHBOARD_FETCHERS = {
   mora: { fetcher: fetchMoraDashboard, requiresEmpresa: true },
@@ -37,6 +41,10 @@ const DASHBOARD_FETCHERS = {
 
 export const useServiceDashboard = (serviceKey, empresaRut, range) => {
   const fetcherConfig = serviceKey ? DASHBOARD_FETCHERS[serviceKey] : null;
+  const requestTrackerRef = useRef(null);
+  if (!requestTrackerRef.current) {
+    requestTrackerRef.current = createLatestRequestTracker();
+  }
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(
     Boolean(
@@ -50,11 +58,12 @@ export const useServiceDashboard = (serviceKey, empresaRut, range) => {
   const requiresEmpresa = Boolean(fetcherConfig?.requiresEmpresa);
 
   const fetchData = useCallback(async () => {
+    const requestId = requestTrackerRef.current.begin();
     if (!fetcher) {
       setData(null);
       setError(
         serviceKey
-          ? new Error(`No existe un dashboard para el servicio ${serviceKey}.`)
+          ? createDashboardNotConfiguredError(serviceKey)
           : null
       );
       setLoading(false);
@@ -67,8 +76,11 @@ export const useServiceDashboard = (serviceKey, empresaRut, range) => {
       return;
     }
     setLoading(true);
+    setData(null);
+    setError(null);
     try {
       const payload = await fetcher(empresaRut, range);
+      if (!requestTrackerRef.current.isCurrent(requestId)) return;
       setData(payload);
       setError(null);
     } catch (err) {
@@ -76,9 +88,13 @@ export const useServiceDashboard = (serviceKey, empresaRut, range) => {
         `Error al obtener datos del servicio ${serviceKey} para la empresa ${empresaRut}:`,
         err
       );
-      setError(err);
+      if (requestTrackerRef.current.isCurrent(requestId)) {
+        setError(err);
+      }
     } finally {
-      setLoading(false);
+      if (requestTrackerRef.current.isCurrent(requestId)) {
+        setLoading(false);
+      }
     }
   }, [fetcher, empresaRut, range, requiresEmpresa, serviceKey]);
 

@@ -412,7 +412,9 @@ const GenericServiceContentWithParams = ({ definition, slug }) => {
           </div>
         ) : dashboardError ? (
           <div className="glass-panel rounded-[2rem] p-6 text-sm text-rose-500 ">
-            No pudimos cargar la información del servicio. Intenta nuevamente más tarde.
+            {dashboardError.code === "DASHBOARD_NOT_CONFIGURED"
+              ? "Este servicio está contratado, pero su dashboard aún no está disponible."
+              : "No pudimos cargar la información del servicio. Intenta nuevamente más tarde."}
           </div>
         ) : (
           <div className="flex flex-col gap-8">
