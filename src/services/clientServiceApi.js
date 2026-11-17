@@ -68,21 +68,33 @@ const formatEvolutionMensual = (data = []) =>
     totalDias: Number(item.totalDias || 0),
   }));
 
+const unwrapApiData = (response, fallback) => {
+  const body = response?.data;
+  if (body?.data !== undefined) return body.data;
+  return body ?? fallback;
+};
+
 export const fetchLicenciasDashboard = async (empresaRut) => {
-  const [summaryRes, tasaRes, evolutionRes, comparativoRes] = await Promise.all([
-    apiService.get(`/licencia-dashboard/${empresaRut}/resumen-financiero`),
+  const [integralRes, tasaRes, evolutionRes, comparativoRes, topRes, gestionesRes] = await Promise.all([
+    apiService.get(`/licencia-dashboard/${empresaRut}/ficha-resumen`),
     apiService.get(`/licencia-dashboard/${empresaRut}/tasa-rechazo`),
     apiService.get(`/licencia-dashboard/${empresaRut}/evolucion-mensual`),
     apiService.get(
       `/licencia-dashboard/${empresaRut}/comparativo-anticipos-subsidios`
     ),
+    apiService.get(`/licencia-dashboard/${empresaRut}/top-trabajadores`),
+    apiService.get("/gestion-licencia", {
+      params: { empresaRut, limit: 5, offset: 0 },
+    }),
   ]);
 
   return {
-    summary: summaryRes?.data?.data || {},
-    rates: tasaRes?.data?.data || {},
-    evolution: formatEvolutionMensual(evolutionRes?.data?.data || []),
-    comparativo: comparativoRes?.data?.data || {},
+    resumenIntegral: unwrapApiData(integralRes, {}),
+    rates: unwrapApiData(tasaRes, {}),
+    evolution: formatEvolutionMensual(unwrapApiData(evolutionRes, [])),
+    comparativo: unwrapApiData(comparativoRes, {}),
+    topWorkers: unwrapApiData(topRes, []),
+    recentManagement: unwrapApiData(gestionesRes, []),
   };
 };
 

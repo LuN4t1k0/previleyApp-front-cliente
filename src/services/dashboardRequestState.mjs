@@ -9,6 +9,9 @@ export const createLatestRequestTracker = () => {
     isCurrent(requestId) {
       return requestId === currentRequest;
     },
+    invalidate() {
+      currentRequest += 1;
+    },
   };
 };
 

@@ -21,3 +21,12 @@ test("creates a distinguishable configuration error for unsupported dashboards",
   assert.equal(error.message, "No existe un dashboard para el servicio funes.");
 });
 
+test("invalidates an in-flight request when a dashboard selection is cleared", () => {
+  const tracker = createLatestRequestTracker();
+  const request = tracker.begin();
+
+  tracker.invalidate();
+
+  assert.equal(tracker.isCurrent(request), false);
+});
+

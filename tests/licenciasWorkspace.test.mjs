@@ -114,6 +114,69 @@ test("keeps integrated agreements secondary to the gross company balance", () =>
   });
 });
 
+test("normalizes analytic rankings, states and trends for shared charts", () => {
+  const result = normalizeLicenciasAnalytics({
+    resumen: {},
+    rankingEmpresas: [
+      {
+        empresaRut: "11-1",
+        empresaNombre: "Empresa Uno",
+        totalLicencias: "7",
+        totalDias: "21",
+      },
+    ],
+    distribucionEstado: [{ estado: "en_tramite", cantidad: "4" }],
+    distribucionEntidad: [{ entidad: "Fonasa", cantidad: "6" }],
+    tendencia: [{ periodo: "2026-10", cantidad: "3", totalDias: "12" }],
+  });
+
+  assert.deepEqual(result.ranking, [
+    {
+      empresaRut: "11-1",
+      empresaNombre: "Empresa Uno",
+      label: "Empresa Uno · 11-1",
+      totalLicencias: 7,
+      totalDias: 21,
+    },
+  ]);
+  assert.deepEqual(result.states, [
+    { estado: "en_tramite", label: "En tramite", cantidad: 4 },
+  ]);
+  assert.deepEqual(result.entities, [{ entidad: "Fonasa", cantidad: 6 }]);
+  assert.deepEqual(result.timeline, [
+    { periodo: "2026-10", licencias: 3, dias: 12 },
+  ]);
+});
+
+test("keeps only the five newest management files in the operational summary", () => {
+  const recentManagement = Array.from({ length: 7 }, (_, index) => ({
+    id: index + 1,
+    folioInterno: `GL-${index + 1}`,
+    empresaRut: "11-1",
+    periodo: "2026-10",
+    estado: "pendiente",
+    licencias: Array.from({ length: index + 1 }),
+    createdAt: `2026-10-${String(index + 1).padStart(2, "0")}T12:00:00.000Z`,
+  }));
+
+  const result = normalizeLicenciasOperations({
+    resumenIntegral: { metricas: {} },
+    recentManagement,
+  });
+
+  assert.equal(result.recentManagement.length, 5);
+  assert.deepEqual(result.recentManagement[0], {
+    id: 7,
+    folio: "GL-7",
+    empresaRut: "11-1",
+    periodo: "2026-10",
+    estado: "pendiente",
+    totalLicencias: 7,
+    createdAt: "2026-10-07T12:00:00.000Z",
+  });
+  assert.equal(result.recentManagement[4].folio, "GL-3");
+});
+
 test("builds a hub with three standard destinations and one complementary worker file", () => {
   assert.deepEqual(getLicenciasWorkspaceLinks(), {
     sections: [

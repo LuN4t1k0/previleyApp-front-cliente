@@ -1,731 +1,202 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { AreaChart, BarList } from "@tremor/react";
 import {
   RiBuildingLine,
-  RiRefreshLine,
-  RiAlertLine,
-  RiInformationLine,
-  RiArrowUpCircleLine,
-  RiArrowDownCircleLine,
-  RiDownloadCloudLine,
+  RiCalendarCheckLine,
+  RiGroupLine,
+  RiTimeLine,
 } from "@remixicon/react";
-import apiService from "@/app/api/apiService";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
-import TrabajadorSkeleton from "@/components/skeleton/TrabajadorSkeleton";
-import ServiceTimeline from "@/components/servicios/ServiceTimeline";
-import { saveAs } from "file-saver";
+import useLicenciasCompanyDashboard from "@/hooks/useLicenciasCompanyDashboard";
+import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
+import {
+  buildLicenciasSectionHref,
+  resolveRequiredEmpresa,
+} from "@/services/licenciasWorkspace.mjs";
+import LicenciasFinancialPanel from "./LicenciasFinancialPanel";
 
-// --- Helpers ---
-const formatCLP = (value) =>
-  new Intl.NumberFormat("es-CL", {
-    style: "currency",
-    currency: "CLP",
-    maximumFractionDigits: 0,
-  }).format(Number.isFinite(Number(value)) ? Number(value) : 0);
+const number = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 });
+const percent = new Intl.NumberFormat("es-CL", { maximumFractionDigits: 1 });
+const formatNumber = (value) => number.format(Number(value || 0));
+const formatPercent = (value) => `${percent.format(Number(value || 0))}%`;
 
-const formatNumber = (value) =>
-  new Intl.NumberFormat("es-CL", { maximumFractionDigits: 0 }).format(
-    Number.isFinite(Number(value)) ? Number(value) : 0
-  );
-
-const formatDate = (value) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("es-CL");
+const humanize = (value) => {
+  const normalized = String(value || "sin estado")
+    .toLowerCase()
+    .replace(/[_-]+/g, " ");
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 };
 
-const estadoLabel = (estado) =>
-  estado
-    ? estado.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-    : "Sin estado";
-
-const estadoBadgeColor = (estado) => {
-  const normalized = (estado || "").toLowerCase();
-  if (["autorizada", "completado", "pagado", "pagada"].includes(normalized)) return "emerald";
-  if (["pendiente", "en trámite"].includes(normalized)) return "amber";
-  if (["rechazada", "rechazado", "devuelta"].includes(normalized)) return "rose";
-  return "slate";
-};
-
-const badgeToneClasses = {
-  emerald: "bg-emerald-100 text-emerald-700",
-  amber: "bg-amber-100 text-amber-700",
-  rose: "bg-rose-100 text-rose-700",
-  slate: "bg-slate-200 text-slate-700",
-};
-
-const getBadgeTone = (tone) => badgeToneClasses[tone] || badgeToneClasses.slate;
-
-// --- Sub-componentes ---
-const Header = ({
-  loadingEmpresas,
-  empresaSeleccionada,
-  empresaInput,
-  onEmpresaInputChange,
-  onEmpresaInputFocus,
-  onEmpresaInputBlur,
-  empresaOptions,
-  handleActualizar,
-  loading,
-  selectedYear,
-  onYearChange,
-  yearOptions,
-  onDownloadExcel,
-  exportLoading,
-}) => (
-  <section className="glass-panel rounded-[2.5rem] p-6 md:p-8">
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-      <div className="space-y-3">
-        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[color:var(--theme-primary)]">
-          Panel empresa
-        </span>
-        <h1 className="text-3xl font-semibold text-[color:var(--text-primary)] md:text-4xl">
-          Dashboard integral por empresa
-        </h1>
-        <p className="text-sm text-[color:var(--text-secondary)] md:text-base">
-          Visualiza licencias, anticipos, subsidios y el saldo consolidado para cada empresa autorizada.
-        </p>
+const MetricCard = ({ label, value, detail, icon: Icon }) => (
+  <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+        <p className="mt-2 text-2xl font-semibold text-slate-950">{value}</p>
+        <p className="mt-2 text-xs text-slate-500">{detail}</p>
       </div>
-
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-        <div className="relative flex min-w-[260px] flex-1 items-center gap-3 rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm shadow-sm">
-          <RiBuildingLine className="h-5 w-5 text-[color:var(--theme-primary)]" aria-hidden="true" />
-          <input
-            type="text"
-            placeholder={loadingEmpresas ? "Cargando empresas..." : "Busca por nombre o RUT"}
-            className="flex-1 bg-transparent text-sm text-[color:var(--text-primary)] placeholder:text-gray-400 outline-none"
-            value={empresaInput}
-            onChange={(event) => onEmpresaInputChange(event.target.value)}
-            onFocus={(event) => {
-              event.target.select();
-              onEmpresaInputFocus();
-            }}
-            onBlur={onEmpresaInputBlur}
-            list="empresa-options"
-            disabled={loadingEmpresas || loading}
-          />
-          <datalist id="empresa-options">
-            {empresaOptions.map((empresa) => (
-              <option key={empresa.rut} value={empresa.label} />
-            ))}
-          </datalist>
-        </div>
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <button
-            type="button"
-            onClick={handleActualizar}
-            disabled={!empresaSeleccionada || loading}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[color:var(--theme-primary)] to-[color:var(--theme-primary-dark)] px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RiRefreshLine className="h-4 w-4" aria-hidden="true" />
-            Actualizar
-          </button>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <select
-              aria-label="Seleccionar año calendario"
-              value={selectedYear}
-              onChange={(event) => onYearChange(Number(event.target.value))}
-              disabled={loading || exportLoading}
-              className="min-w-[120px] rounded-2xl border border-white/70 bg-white/90 px-4 py-2 text-sm font-semibold text-[color:var(--text-primary)] shadow-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {yearOptions.map((yearOption) => (
-                <option key={yearOption} value={yearOption}>
-                  {yearOption}
-                </option>
-              ))}
-            </select>
-
-            <button
-              type="button"
-              onClick={onDownloadExcel}
-              disabled={!empresaSeleccionada || loading || exportLoading}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--theme-primary)] bg-white px-5 py-2 text-sm font-semibold text-[color:var(--theme-primary)] shadow-sm transition hover:bg-[color:var(--theme-primary)] hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RiDownloadCloudLine className="h-4 w-4" aria-hidden="true" />
-              {exportLoading ? "Generando..." : "Descargar Excel"}
-            </button>
-          </div>
-        </div>
-      </div>
+      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+        <Icon className="h-5 w-5" />
+      </span>
     </div>
+  </article>
+);
+
+const Panel = ({ title, description, children }) => (
+  <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
+    {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
+    {children}
   </section>
 );
 
-const EmptyState = () => (
-  <section className="rounded-3xl border border-white/70 bg-white/75 p-12 text-center shadow-sm backdrop-blur">
-    <RiInformationLine className="mx-auto h-12 w-12 text-[color:var(--theme-primary)]" />
-    <h2 className="mt-5 text-2xl font-semibold text-[color:var(--text-primary)]">
-      Selecciona una empresa
-    </h2>
-    <p className="mt-2 text-sm text-[color:var(--text-secondary)]">
-      Elige una empresa para revisar su resumen actualizado de licencias.
+const CompanyRequired = () => (
+  <section className="rounded-lg border border-blue-200 bg-blue-50 p-10 text-center">
+    <RiBuildingLine className="mx-auto h-10 w-10 text-blue-700" />
+    <h2 className="mt-4 text-xl font-semibold text-slate-950">Selecciona una empresa</h2>
+    <p className="mt-2 text-sm text-slate-600">
+      El dashboard operativo siempre corresponde a una empresa específica.
     </p>
   </section>
 );
 
-const ResumenEmpresa = ({ resumen, empresaRut, selectedYear }) => {
-  const metricas = resumen?.metricas ?? {};
-  const cuentaCorriente = metricas.cuentaCorriente ?? { saldo: 0, estado: "" };
-  const anticipos = metricas.anticipos ?? { total: 0, cantidad: 0 };
-  const subsidios = metricas.subsidios ?? { total: 0, cantidad: 0 };
-  const trabajadores = metricas.trabajadores ?? { conLicencia: 0 };
-  const licenciasMetricas = metricas.licencias ?? { total: 0, diasTotales: 0 };
-  const detalle = resumen?.detalle ?? {};
-  const licenciasRecientes = detalle.licenciasRecientes ?? [];
-  const anticiposRecientes = detalle.anticiposRecientes ?? [];
-  const subsidiosRecientes = detalle.subsidiosRecientes ?? [];
-  const topAFavor = detalle.topTrabajadoresAFavor ?? [];
-  const topEnContra = detalle.topTrabajadoresEnContra ?? [];
-
-  const licenciasPorEstado = useMemo(() => {
-    const porEstado = resumen?.metricas?.licencias?.porEstado;
-    if (!porEstado) return [];
-    return Object.entries(porEstado)
-      .map(([estado, cantidad]) => ({ estado: estadoLabel(estado), cantidad }))
-      .sort((a, b) => b.cantidad - a.cantidad);
-  }, [resumen]);
-
-  const cardSurface =
-    "rounded-3xl border border-white/70 bg-white/75 p-6 shadow-sm backdrop-blur";
-
-  return (
-    <div className="space-y-8">
-      <section className={cardSurface}>
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-semibold uppercase tracking-[0.3em] text-[color:var(--theme-primary)]">
-            {resumen?.empresa?.nombre}
-          </span>
-          <h2 className="text-2xl font-semibold text-[color:var(--text-primary)]">
-            Resumen financiero
-          </h2>
-          <p className="text-sm text-[color:var(--text-secondary)]">
-            {resumen?.empresa?.rut}
-          </p>
-        </div>
-
-        <div className="mt-6 grid gap-6 md:grid-cols-3">
-          <div className="rounded-2xl border border-white/80 bg-white/90 p-4 shadow-inner">
-            <p className="text-sm font-medium text-gray-600">Saldo general de la cuenta</p>
-            <p
-              className={`mt-2 text-3xl font-semibold ${
-                cuentaCorriente.saldo >= 0 ? "text-emerald-600" : "text-rose-600"
-              }`}
-            >
-              {formatCLP(cuentaCorriente.saldo)}
-            </p>
-            <span
-              className={`mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getBadgeTone(
-                cuentaCorriente.saldo >= 0 ? "emerald" : "rose"
-              )}`}
-            >
-              {cuentaCorriente.estado === "a favor" ? "A favor" : "En contra"}
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-white/80 bg-white/90 p-4 shadow-inner">
-            <p className="text-sm font-medium text-gray-600">Total anticipos pagados</p>
-            <p className="mt-2 text-3xl font-semibold text-[color:var(--text-primary)]">
-              {formatCLP(anticipos.total)}
-            </p>
-            <p className="text-xs text-[color:var(--text-secondary)]">
-              Movimientos: {formatNumber(anticipos.cantidad)}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-white/80 bg-white/90 p-4 shadow-inner">
-            <p className="text-sm font-medium text-gray-600">Total subsidios recibidos</p>
-            <p className="mt-2 text-3xl font-semibold text-[color:var(--text-primary)]">
-              {formatCLP(subsidios.total)}
-            </p>
-            <p className="text-xs text-[color:var(--text-secondary)]">
-              Movimientos: {formatNumber(subsidios.cantidad)}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <h3 className="text-lg font-semibold text-[color:var(--text-primary)]">
-          Métricas operacionales
-        </h3>
-        <div className="mt-4 grid gap-6 md:grid-cols-3">
-          <div className={cardSurface}>
-            <p className="text-sm font-medium text-gray-600">Trabajadores con licencia</p>
-            <p className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-              {formatNumber(trabajadores.conLicencia)}
-            </p>
-          </div>
-          <div className={cardSurface}>
-            <p className="text-sm font-medium text-gray-600">Total días de ausentismo</p>
-            <p className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-              {formatNumber(licenciasMetricas.diasTotales)}
-            </p>
-          </div>
-          <div className={cardSurface}>
-            <p className="text-sm font-medium text-gray-600">Licencias registradas</p>
-            <p className="mt-2 text-2xl font-semibold text-[color:var(--text-primary)]">
-              {formatNumber(licenciasMetricas.total)}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className={cardSurface}>
-        <h3 className="text-lg font-semibold text-[color:var(--text-primary)]">
-          Distribución de licencias por estado
-        </h3>
-        {licenciasPorEstado.length > 0 ? (
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            {licenciasPorEstado.map(({ estado, cantidad }) => (
-              <div
-                key={estado}
-                className="rounded-2xl border border-white/70 bg-white/80 p-4 shadow-sm transition hover:border-[color:var(--theme-primary)]"
-              >
-                <p className="text-sm font-medium text-gray-700">{estado}</p>
-                <span
-                  className={`mt-3 inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getBadgeTone(
-                    estadoBadgeColor(estado)
-                  )}`}
-                >
-                  {cantidad}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="pt-4 text-sm text-center text-[color:var(--text-secondary)]">
-            No hay datos disponibles.
-          </p>
-        )}
-      </section>
-
-      <section className="space-y-4">
-        <h3 className="text-lg font-semibold text-[color:var(--text-primary)]">
-          Movimientos recientes
-        </h3>
-        <div className={cardSurface}>
-          <header className="flex items-center justify-between">
-            <h4 className="text-base font-semibold text-[color:var(--text-primary)]">Licencias</h4>
-          </header>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-700">
-              <thead className="text-xs uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-2">Trabajador</th>
-                  <th className="px-4 py-2">RUT</th>
-                  <th className="px-4 py-2">Estado</th>
-                  <th className="px-4 py-2">Periodo</th>
-                  <th className="px-4 py-2 text-right">Anticipo</th>
-                  <th className="px-4 py-2 text-right">Subsidio</th>
-                </tr>
-              </thead>
-              <tbody>
-                {licenciasRecientes.length > 0 ? (
-                  licenciasRecientes.map((item) => (
-                    <tr key={item.folio} className="border-t border-gray-100">
-                      <td className="px-4 py-3">{item.nombreTrabajador}</td>
-                      <td className="px-4 py-3 text-gray-500">{item.trabajadorRut}</td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getBadgeTone(
-                            estadoBadgeColor(item.estado)
-                          )}`}
-                        >
-                          {estadoLabel(item.estado)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {`${formatDate(item.fechaInicio)} - ${formatDate(item.fechaTermino)}`}
-                      </td>
-                      <td className="px-4 py-3 text-right">{formatCLP(item.montoAnticipo)}</td>
-                      <td className="px-4 py-3 text-right">{formatCLP(item.montoSubsidio)}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">
-                      No hay licencias recientes.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className={cardSurface}>
-            <h4 className="flex items-center gap-2 text-base font-semibold text-emerald-700">
-              <RiArrowUpCircleLine className="h-5 w-5" aria-hidden="true" />
-              Anticipos
-            </h4>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-700">
-                <thead className="text-xs uppercase tracking-wide text-gray-500">
-                  <tr>
-                    <th className="px-4 py-2">Fecha</th>
-                    <th className="px-4 py-2">RUT trabajador</th>
-                    <th className="px-4 py-2 text-right">Monto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {anticiposRecientes.length > 0 ? (
-                    anticiposRecientes.map((item, index) => (
-                      <tr key={`${item.trabajadorRut}-${index}`} className="border-t border-gray-100">
-                        <td className="px-4 py-3">{formatDate(item.fecha)}</td>
-                        <td className="px-4 py-3 text-gray-500">{item.trabajadorRut}</td>
-                        <td className="px-4 py-3 text-right text-emerald-700">
-                          {formatCLP(item.monto)}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={3} className="px-4 py-6 text-center text-sm text-gray-500">
-                        No hay anticipos recientes.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className={cardSurface}>
-            <h4 className="flex items-center gap-2 text-base font-semibold text-[color:var(--text-primary)]">
-              <RiArrowDownCircleLine className="h-5 w-5 text-rose-600" aria-hidden="true" />
-              Subsidios
-            </h4>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full text-left text-sm text-gray-700">
-                <thead className="text-xs uppercase tracking-wide text-gray-500">
-                  <tr>
-                    <th className="px-4 py-2">Fecha</th>
-                    <th className="px-4 py-2">RUT trabajador</th>
-                    <th className="px-4 py-2 text-right">Monto</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {subsidiosRecientes.length > 0 ? (
-                    subsidiosRecientes.map((item, index) => (
-                      <tr key={`${item.trabajadorRut}-${index}`} className="border-t border-gray-100">
-                        <td className="px-4 py-3">{formatDate(item.fecha)}</td>
-                        <td className="px-4 py-3 text-gray-500">{item.trabajadorRut}</td>
-                        <td className="px-4 py-3 text-right text-rose-600">
-                          {formatCLP(item.monto)}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={3} className="px-4 py-6 text-center text-sm text-gray-500">
-                        No hay subsidios recientes.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 md:grid-cols-2">
-        <div className={cardSurface}>
-          <h4 className="flex items-center gap-2 text-base font-semibold text-emerald-700">
-            <RiArrowUpCircleLine className="h-5 w-5" aria-hidden="true" />
-            Top trabajadores con saldo a favor
-          </h4>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-700">
-              <thead className="text-xs uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-2">Trabajador</th>
-                  <th className="px-4 py-2 text-right">Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topAFavor.length > 0 ? (
-                  topAFavor.map((item) => (
-                    <tr key={item.trabajadorRut} className="border-t border-gray-100">
-                      <td className="px-4 py-3">{`${item.nombre} (${item.trabajadorRut})`}</td>
-                      <td className="px-4 py-3 text-right text-emerald-700 font-semibold">
-                        {formatCLP(item.saldo)}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center text-sm text-gray-500">
-                      Sin registros
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className={cardSurface}>
-          <h4 className="flex items-center gap-2 text-base font-semibold text-rose-700">
-            <RiArrowDownCircleLine className="h-5 w-5" aria-hidden="true" />
-            Top trabajadores con saldo en contra
-          </h4>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-700">
-              <thead className="text-xs uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-4 py-2">Trabajador</th>
-                  <th className="px-4 py-2 text-right">Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topEnContra.length > 0 ? (
-                  topEnContra.map((item) => (
-                    <tr key={item.trabajadorRut} className="border-t border-gray-100">
-                      <td className="px-4 py-3">{`${item.nombre} (${item.trabajadorRut})`}</td>
-                      <td className="px-4 py-3 text-right text-rose-700 font-semibold">
-                        {formatCLP(item.saldo)}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={2} className="px-4 py-6 text-center text-sm text-gray-500">
-                      Sin registros
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <ServiceTimeline
-        empresaRut={empresaRut}
-        serviceKey="licencias"
-        year={selectedYear}
-      />
+const RecentManagement = ({ rows, empresaRut }) => (
+  <Panel title="Expedientes recientes" description="Las cinco gestiones más recientes de la empresa.">
+    <div className="mt-5 overflow-x-auto">
+      <table className="w-full min-w-[640px] text-left text-sm">
+        <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
+          <tr>
+            <th className="px-3 py-3">Folio</th>
+            <th className="px-3 py-3">Periodo</th>
+            <th className="px-3 py-3">Estado</th>
+            <th className="px-3 py-3 text-right">Licencias</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length ? rows.map((row) => (
+            <tr key={row.id || row.folio} className="border-b border-slate-100">
+              <td className="px-3 py-3 font-semibold text-slate-900">{row.folio}</td>
+              <td className="px-3 py-3 text-slate-600">{row.periodo}</td>
+              <td className="px-3 py-3"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{humanize(row.estado)}</span></td>
+              <td className="px-3 py-3 text-right">{formatNumber(row.totalLicencias)}</td>
+            </tr>
+          )) : (
+            <tr><td colSpan={4} className="px-3 py-8 text-center text-slate-500">No hay expedientes recientes.</td></tr>
+          )}
+        </tbody>
+      </table>
     </div>
-  );
-};
+    <Link
+      href={buildLicenciasSectionHref("gestiones", { empresa: empresaRut })}
+      className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+    >
+      Ver todas las gestiones
+    </Link>
+  </Panel>
+);
 
-// --- Componente Principal ---
-const EmpresaLicenciasDashboard = ({
-  initialEmpresaRut = "",
-  requireExplicitSelection = false,
-}) => {
+const EmpresaLicenciasDashboard = ({ initialEmpresaRut = "", requireExplicitSelection = false }) => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
-  const [empresaSeleccionada, setEmpresaSeleccionada] = useState("");
-  const [empresaInput, setEmpresaInput] = useState("");
-  const lastValidLabelRef = useRef("");
-  const [resumen, setResumen] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const currentYear = new Date().getFullYear();
-  const yearOptions = useMemo(
-    () => Array.from({ length: 5 }, (_, index) => currentYear - index),
-    [currentYear]
+  const empresaOptions = useMemo(
+    () => [...(empresas || [])].sort((a, b) =>
+      `${a.nombre} ${a.empresaRut}`.localeCompare(`${b.nombre} ${b.empresaRut}`, "es")
+    ),
+    [empresas]
   );
-  const [selectedYear, setSelectedYear] = useState(currentYear);
-  const [exportLoading, setExportLoading] = useState(false);
-
-  const empresaOptions = useMemo(() =>
-    empresas
-      .map((empresa) => ({
-        rut: empresa.empresaRut,
-        nombre: empresa.nombre,
-        label: `${empresa.nombre} (${empresa.empresaRut})`,
-        rutNormalized: empresa.empresaRut.replace(/[^\dk]/gi, "").toLowerCase(),
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'es')),
-  [empresas]);
+  const [empresaSeleccionada, setEmpresaSeleccionada] = useState("");
 
   useEffect(() => {
-    if (!empresaOptions.length) return;
-
-    const currentIsValid = empresaOptions.some(
-      (option) => option.rut === empresaSeleccionada
-    );
-    if (currentIsValid) return;
-
-    const requestedIsValid = empresaOptions.some(
-      (option) => option.rut === initialEmpresaRut
-    );
-    if (requestedIsValid) {
-      setEmpresaSeleccionada(initialEmpresaRut);
+    const resolved = resolveRequiredEmpresa(empresaOptions, initialEmpresaRut);
+    if (resolved) {
+      setEmpresaSeleccionada(resolved);
       return;
     }
-
-    if (empresaOptions.length === 1 || !requireExplicitSelection) {
-      setEmpresaSeleccionada(empresaOptions[0].rut);
+    if (!requireExplicitSelection && empresaOptions.length) {
+      setEmpresaSeleccionada(empresaOptions[0].empresaRut);
       return;
     }
-
     setEmpresaSeleccionada("");
-  }, [
-    empresaOptions,
-    empresaSeleccionada,
-    initialEmpresaRut,
-    requireExplicitSelection,
-  ]);
+  }, [empresaOptions, initialEmpresaRut, requireExplicitSelection]);
 
-  useEffect(() => {
-    const match = empresaOptions.find((option) => option.rut === empresaSeleccionada);
-    const label = match ? match.label : "";
-    setEmpresaInput(label);
-    lastValidLabelRef.current = label;
-  }, [empresaOptions, empresaSeleccionada]);
-
-  const handleEmpresaInputChange = useCallback((value) => {
-    setEmpresaInput(value);
-    const normalizedValue = value.trim().toLowerCase();
-    if (!normalizedValue) {
-      setEmpresaSeleccionada("");
-      return;
-    }
-
-    const matchByLabel = empresaOptions.find(
-      (option) => option.label.toLowerCase() === normalizedValue
-    );
-    if (matchByLabel) {
-      if (matchByLabel.rut !== empresaSeleccionada) {
-        setResumen(null);
-        setEmpresaSeleccionada(matchByLabel.rut);
-      }
-      if (matchByLabel.label !== value) {
-        setEmpresaInput(matchByLabel.label);
-      }
-      lastValidLabelRef.current = matchByLabel.label;
-      return;
-    }
-
-    const normalizedRut = normalizedValue.replace(/[^\dk]/gi, "");
-    const matchByRut = empresaOptions.find(
-      (option) => option.rutNormalized === normalizedRut
-    );
-    if (matchByRut && matchByRut.rut !== empresaSeleccionada) {
-      setResumen(null);
-      setEmpresaSeleccionada(matchByRut.rut);
-      setEmpresaInput(matchByRut.label);
-      lastValidLabelRef.current = matchByRut.label;
-    }
-  }, [empresaOptions, empresaSeleccionada]);
-
-  const handleEmpresaInputFocus = useCallback(() => {
-    setEmpresaInput("");
-  }, []);
-
-  const handleEmpresaInputBlur = useCallback(() => {
-    if (!empresaInput) {
-      setEmpresaInput(lastValidLabelRef.current || "");
-    }
-  }, [empresaInput]);
-
-  const fetchResumen = async (rut) => {
-    if (!rut) return;
-    setLoading(true);
-    setError("");
-    try {
-      const { data } = await apiService.get(`/licencia-dashboard/${rut}/ficha-resumen`);
-      setResumen(data?.data || null);
-      if (!data?.data) setError("No se encontró información para la empresa seleccionada.");
-    } catch (err) {
-      setResumen(null);
-      setError(
-        err?.response?.data?.message || "No fue posible obtener la información de la empresa."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDescargarExcel = useCallback(async () => {
-    if (!empresaSeleccionada) {
-      setError("Debes seleccionar una empresa para exportar el reporte.");
-      return;
-    }
-    setExportLoading(true);
-    try {
-      const response = await apiService.get(
-        `/licencia-dashboard/${empresaSeleccionada}/exportar-resumen`,
-        {
-          responseType: "blob",
-        }
-      );
-      const blob = new Blob([response.data], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const filename = `resumen_licencias_${empresaSeleccionada}.xlsx`;
-      saveAs(blob, filename);
-    } catch (err) {
-      console.error("Error al exportar resumen de licencias:", err);
-      setError(
-        err?.response?.data?.message ||
-          "No fue posible exportar el resumen de licencias."
-      );
-    } finally {
-      setExportLoading(false);
-    }
-  }, [empresaSeleccionada]);
-
-  useEffect(() => {
-    if (empresaSeleccionada) {
-      fetchResumen(empresaSeleccionada);
-    }
-  }, [empresaSeleccionada]);
-
-  const showError = !!error && !loading;
-  const showSkeleton = loading || (loadingEmpresas && !resumen);
+  const { data, loading, error, retry } = useLicenciasCompanyDashboard(empresaSeleccionada);
 
   return (
-    <div className="theme-licencias">
-      <main className="dashboard-gradient min-h-screen px-4 py-8 md:px-8 md:py-12">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-          <Header
-            loadingEmpresas={loadingEmpresas}
-            empresaSeleccionada={empresaSeleccionada}
-            empresaInput={empresaInput}
-            onEmpresaInputChange={handleEmpresaInputChange}
-            onEmpresaInputFocus={handleEmpresaInputFocus}
-            onEmpresaInputBlur={handleEmpresaInputBlur}
-            empresaOptions={empresaOptions}
-            handleActualizar={() => fetchResumen(empresaSeleccionada)}
-            loading={loading}
-            selectedYear={selectedYear}
-            onYearChange={setSelectedYear}
-            yearOptions={yearOptions}
-            onDownloadExcel={handleDescargarExcel}
-            exportLoading={exportLoading}
-          />
-
-          {showError && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50/90 px-5 py-4 text-sm text-rose-700 shadow-sm">
-              <div className="flex items-center gap-2">
-                <RiAlertLine className="h-5 w-5" aria-hidden="true" />
-                <p>{error}</p>
-              </div>
-            </div>
-          )}
-
-          {showSkeleton && <TrabajadorSkeleton />}
-
-          {!showSkeleton && !resumen && <EmptyState />}
-
-          {!showSkeleton && resumen && (
-            <ResumenEmpresa
-              resumen={resumen}
-              empresaRut={empresaSeleccionada}
-              selectedYear={selectedYear}
-            />
-          )}
+    <main className="min-h-screen bg-slate-50 text-slate-950">
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Dashboard Operativo</p>
+            <h1 className="mt-3 text-3xl font-semibold md:text-4xl">Licencias médicas por empresa</h1>
+            <p className="mt-3 text-base leading-7 text-slate-600">Seguimiento de licencias, ausentismo, estados y balance financiero de una empresa.</p>
+          </div>
+          <label className="min-w-[300px] text-sm font-semibold text-slate-700">
+            Empresa
+            <select
+              value={empresaSeleccionada}
+              onChange={(event) => setEmpresaSeleccionada(event.target.value)}
+              disabled={loadingEmpresas}
+              className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal text-slate-900 outline-none focus:border-blue-500"
+            >
+              <option value="">Selecciona una empresa</option>
+              {empresaOptions.map((empresa) => (
+                <option key={empresa.empresaRut} value={empresa.empresaRut}>{empresa.nombre} · {empresa.empresaRut}</option>
+              ))}
+            </select>
+          </label>
         </div>
-      </main>
-    </div>
+      </header>
+
+      <div className="px-4 py-6 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+          {!empresaSeleccionada && !loadingEmpresas ? <CompanyRequired /> : null}
+          {loading ? <DashboardMoraAnaliticoSkeleton /> : null}
+          {error ? (
+            <section className="rounded-lg border border-rose-200 bg-rose-50 p-5 text-rose-800">
+              <p>{error}</p>
+              <button type="button" onClick={retry} className="mt-3 text-sm font-semibold underline">Reintentar</button>
+            </section>
+          ) : null}
+
+          {data && !loading ? (
+            <>
+              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricCard label="Licencias registradas" value={formatNumber(data.summary.totalLicencias)} detail="Expedientes visibles" icon={RiCalendarCheckLine} />
+                <MetricCard label="Licencias vigentes" value={formatNumber(data.summary.licenciasVigentes)} detail="Autorizadas o en trámite" icon={RiTimeLine} />
+                <MetricCard label="Trabajadores con licencia" value={formatNumber(data.summary.trabajadoresConLicencia)} detail="Personas distintas" icon={RiGroupLine} />
+                <MetricCard label="Días de ausentismo" value={formatNumber(data.summary.totalDias)} detail="Acumulado de la empresa" icon={RiTimeLine} />
+              </section>
+
+              <LicenciasFinancialPanel financial={data.financial} />
+
+              <section className="grid gap-6 lg:grid-cols-2">
+                <Panel title="Distribución por estado" description="Situación de las licencias de la empresa.">
+                  <BarList className="mt-6" data={data.states.map((item) => ({ name: humanize(item.estado), value: item.cantidad }))} valueFormatter={formatNumber} />
+                </Panel>
+                <Panel title="Rechazos y devoluciones" description="Tasas calculadas sobre las licencias visibles.">
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                    <MetricCard label="Tasa de rechazo" value={formatPercent(data.rates.tasaRechazo)} detail={`${formatNumber(data.rates.rechazadas)} licencias`} icon={RiTimeLine} />
+                    <MetricCard label="Tasa de devolución" value={formatPercent(data.rates.tasaDevolucion)} detail={`${formatNumber(data.rates.devueltas)} licencias`} icon={RiTimeLine} />
+                  </div>
+                </Panel>
+              </section>
+
+              <Panel title="Evolución mensual" description="Licencias y días de ausentismo en el tiempo.">
+                <AreaChart className="mt-6 h-72" data={data.evolution.map((item) => ({ periodo: item.periodo, Licencias: item.licencias, Días: item.dias }))} index="periodo" categories={["Licencias", "Días"]} colors={["blue", "amber"]} valueFormatter={formatNumber} />
+              </Panel>
+
+              <Panel title="Trabajadores con más días" description="Personas que concentran más días de licencia en la empresa.">
+                <BarList className="mt-6" data={data.topWorkers.map((item) => ({ name: `${item.nombreTrabajador} · ${item.trabajadorRut}`, value: item.totalDias }))} valueFormatter={(value) => `${formatNumber(value)} días`} />
+              </Panel>
+
+              <RecentManagement rows={data.recentManagement} empresaRut={empresaSeleccionada} />
+            </>
+          ) : null}
+        </div>
+      </div>
+    </main>
   );
 };
 

@@ -16,6 +16,17 @@ const asFiniteNumber = (value) => {
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 
+const humanize = (value) => {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+  return normalized
+    ? `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`
+    : "Sin estado";
+};
+
 export const resolveLicenciasSection = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
   const canonical = LEGACY_SECTION_ALIASES[normalized] || normalized;
@@ -96,16 +107,38 @@ export const normalizeLicenciasAnalytics = (payload = {}) => {
       totalSubsidios,
       saldoBruto: totalSubsidios - totalAnticipos,
     },
-    ranking: asArray(payload?.rankingEmpresas),
-    states: asArray(payload?.distribucionEstado),
-    entities: asArray(payload?.distribucionEntidad),
-    timeline: asArray(payload?.tendencia),
+    ranking: asArray(payload?.rankingEmpresas).map((item) => {
+      const empresaRut = item?.empresaRut || "";
+      const empresaNombre = item?.empresaNombre || empresaRut || "Sin empresa";
+      return {
+        empresaRut,
+        empresaNombre,
+        label: empresaRut ? `${empresaNombre} · ${empresaRut}` : empresaNombre,
+        totalLicencias: asFiniteNumber(item?.totalLicencias),
+        totalDias: asFiniteNumber(item?.totalDias),
+      };
+    }),
+    states: asArray(payload?.distribucionEstado).map((item) => ({
+      estado: item?.estado || "sin_estado",
+      label: humanize(item?.estado),
+      cantidad: asFiniteNumber(item?.cantidad),
+    })),
+    entities: asArray(payload?.distribucionEntidad).map((item) => ({
+      entidad: item?.entidad || "Sin entidad",
+      cantidad: asFiniteNumber(item?.cantidad),
+    })),
+    timeline: asArray(payload?.tendencia).map((item) => ({
+      periodo: item?.periodo || "",
+      licencias: asFiniteNumber(item?.cantidad),
+      dias: asFiniteNumber(item?.totalDias),
+    })),
     totalEmpresasConInformacion: asFiniteNumber(payload?.totalEmpresasConInformacion),
   };
 };
 
 export const normalizeLicenciasOperations = (payload = {}) => {
-  const metricas = payload?.metricas || {};
+  const integral = payload?.resumenIntegral || payload;
+  const metricas = integral?.metricas || {};
   const licencias = metricas.licencias || {};
   const anticipos = metricas.anticipos || {};
   const subsidios = metricas.subsidios || {};
@@ -115,7 +148,7 @@ export const normalizeLicenciasOperations = (payload = {}) => {
   const acuerdosActivo = cuentaCorriente.moduloAcuerdosActivo === true;
 
   return {
-    empresa: payload?.empresa || null,
+    empresa: integral?.empresa || null,
     summary: {
       totalLicencias: asFiniteNumber(licencias.total),
       licenciasVigentes: asFiniteNumber(licencias.vigentes),
@@ -135,11 +168,46 @@ export const normalizeLicenciasOperations = (payload = {}) => {
             activo: true,
             saldoIntegrado: asFiniteNumber(cuentaCorriente.saldo),
             recuperado: asFiniteNumber(cuentaCorriente.recuperadoAcuerdos),
-            detail: payload?.integracionAcuerdos || null,
+            detail: integral?.integracionAcuerdos || null,
           }
         : null,
     },
-    detail: payload?.detalle || {},
+    detail: integral?.detalle || {},
+    rates: {
+      total: asFiniteNumber(payload?.rates?.total),
+      rechazadas: asFiniteNumber(payload?.rates?.rechazadas),
+      devueltas: asFiniteNumber(payload?.rates?.devueltas),
+      tasaRechazo: asFiniteNumber(payload?.rates?.tasaRechazo),
+      tasaDevolucion: asFiniteNumber(payload?.rates?.tasaDevolucion),
+    },
+    evolution: asArray(payload?.evolution).map((item) => ({
+      periodo: item?.periodo || item?.mes || "",
+      licencias: asFiniteNumber(item?.cantidadLicencias || item?.cantidad),
+      dias: asFiniteNumber(item?.totalDias),
+    })),
+    topWorkers: asArray(payload?.topWorkers).map((item) => ({
+      trabajadorRut: item?.trabajadorRut || "",
+      nombreTrabajador: item?.nombreTrabajador || "Sin nombre",
+      totalDias: asFiniteNumber(item?.totalDias),
+    })),
+    recentManagement: asArray(payload?.recentManagement)
+      .slice()
+      .sort(
+        (a, b) =>
+          new Date(b?.createdAt || 0).getTime() - new Date(a?.createdAt || 0).getTime()
+      )
+      .slice(0, 5)
+      .map((item) => ({
+        id: item?.id,
+        folio: item?.folioInterno || item?.folio || "—",
+        empresaRut: item?.empresaRut || "",
+        periodo: item?.periodo || "—",
+        estado: item?.estado || "sin_estado",
+        totalLicencias: Array.isArray(item?.licencias)
+          ? item.licencias.length
+          : asFiniteNumber(item?.totalLicencias),
+        createdAt: item?.createdAt || null,
+      })),
   };
 };
 
