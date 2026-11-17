@@ -28,8 +28,20 @@ export const OPERATIONAL_SERVICE_DASHBOARDS = Object.freeze({
   },
 });
 
-export const getOperationalDashboardDefinition = (serviceKey) =>
-  OPERATIONAL_SERVICE_DASHBOARDS[serviceKey] || null;
+const OPERATIONAL_SERVICE_ALIASES = Object.freeze({
+  cf: "cargas-familiares",
+  dc: "depositos-convenidos",
+});
+
+export const getCanonicalOperationalServiceKey = (serviceKey) => {
+  const canonicalKey = OPERATIONAL_SERVICE_ALIASES[serviceKey] || serviceKey;
+  return OPERATIONAL_SERVICE_DASHBOARDS[canonicalKey] ? canonicalKey : null;
+};
+
+export const getOperationalDashboardDefinition = (serviceKey) => {
+  const canonicalKey = getCanonicalOperationalServiceKey(serviceKey);
+  return canonicalKey ? OPERATIONAL_SERVICE_DASHBOARDS[canonicalKey] : null;
+};
 
 export const isOperationalDashboardService = (serviceKey) =>
   Boolean(getOperationalDashboardDefinition(serviceKey));

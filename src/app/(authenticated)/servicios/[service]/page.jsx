@@ -26,6 +26,8 @@ import PageShell from "@/components/PageShell/PageShell";
 import moraTabsConfig from "@/config/module/mora/moraTabs.config";
 import licenciasClientTabs from "@/config/module/licencias/licenciasClientTabs.config";
 import pagexTabsConfig from "@/config/module/pagex/pagexTabs";
+import OperationalServiceDashboard from "@/modules/operational-services/OperationalServiceDashboard";
+import { getCanonicalOperationalServiceKey } from "@/config/operationalServiceDashboards.mjs";
 
 const toISODate = (value) => {
   if (!value) return undefined;
@@ -88,12 +90,18 @@ const preferedEmpresaRut = (empresas = [], initialRut) => {
 
 const getServiceEntry = (servicesByType, definition, slug) => {
   if (!definition) return null;
+  const requestedKey =
+    getCanonicalOperationalServiceKey(definition.key) || definition.key;
   return (
     servicesByType.find(
-      (entry) =>
-        entry.definition?.key === definition.key ||
-        entry.definition?.slug === slug ||
-        entry.serviceKey === definition.key
+      (entry) => {
+        const entryKey =
+          getCanonicalOperationalServiceKey(entry.serviceKey) || entry.serviceKey;
+        return (
+          entryKey === requestedKey ||
+          entry.definition?.slug === slug
+        );
+      }
     ) || null
   );
 };
@@ -198,6 +206,11 @@ const ServiceDetailContentWithParams = () => {
   const tabFromUrl = useClientQueryParam("tab");
   const definition = resolveServiceDefinition(slug);
   const inferredKey = definition?.key || resolveServiceKeyFromName(slug);
+  const operationalServiceKey = getCanonicalOperationalServiceKey(inferredKey);
+
+  if (operationalServiceKey) {
+    return <OperationalServiceDashboard serviceKey={operationalServiceKey} />;
+  }
 
   if (inferredKey === "mora") {
     if (!tabFromUrl) {
