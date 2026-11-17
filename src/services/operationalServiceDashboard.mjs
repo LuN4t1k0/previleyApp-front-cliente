@@ -27,6 +27,11 @@ export const humanizeStatus = (value) => {
   return `${label.charAt(0).toUpperCase()}${label.slice(1)}`;
 };
 
+export const formatDashboardDate = (value) => {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : "—";
+};
+
 const getPeriod = (row) => {
   const value = row?.fechaGestion || row?.periodoGestion || row?.createdAt;
   if (!value) return "Sin periodo";

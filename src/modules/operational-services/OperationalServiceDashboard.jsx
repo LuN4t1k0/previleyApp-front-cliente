@@ -12,21 +12,16 @@ import {
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import useServiceDashboard from "@/hooks/useServiceDashboard";
 import { getOperationalDashboardDefinition } from "@/config/operationalServiceDashboards.mjs";
-import { humanizeStatus } from "@/services/operationalServiceDashboard.mjs";
+import {
+  formatDashboardDate,
+  humanizeStatus,
+} from "@/services/operationalServiceDashboard.mjs";
 
 const numberFormatter = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0,
 });
 
 const formatNumber = (value) => numberFormatter.format(Number(value || 0));
-
-const formatDate = (value) => {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? String(value)
-    : date.toLocaleDateString("es-CL");
-};
 
 const accentStyles = {
   rose: {
@@ -92,6 +87,63 @@ const EmptyDashboard = ({ title }) => (
       Cuando existan registros para las empresas seleccionadas, aparecerán en
       este dashboard.
     </p>
+  </Panel>
+);
+
+const RecentGestionesTable = ({ rows, definition }) => (
+  <Panel className="overflow-hidden">
+    <div className="border-b border-slate-200 px-5 py-4">
+      <h2 className="text-base font-semibold">Gestiones recientes</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Últimos procesos registrados para la vista seleccionada.
+      </p>
+    </div>
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <tr>
+            <th className="px-5 py-3">Folio</th>
+            <th className="px-5 py-3">Empresa</th>
+            <th className="px-5 py-3">Fecha</th>
+            <th className="px-5 py-3 text-right">Volumen</th>
+            <th className="px-5 py-3">Estado</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-100 bg-white">
+          {rows.map((row) => {
+            const statusKey = String(row.estado || "sin_estado")
+              .toLowerCase()
+              .replace(/[\s-]+/g, "_");
+            return (
+              <tr key={row.id || row.folio}>
+                <td className="whitespace-nowrap px-5 py-3 font-semibold text-slate-900">
+                  {row.folio || "—"}
+                </td>
+                <td className="min-w-[220px] px-5 py-3 text-slate-600">
+                  {row.empresaNombre || row.empresa?.nombre || row.empresaRut}
+                </td>
+                <td className="whitespace-nowrap px-5 py-3 text-slate-600">
+                  {formatDashboardDate(row.fechaGestion || row.createdAt)}
+                </td>
+                <td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-slate-900">
+                  {formatNumber(row[definition.volumeField])}
+                </td>
+                <td className="whitespace-nowrap px-5 py-3">
+                  <span
+                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
+                      statusStyles[statusKey] ||
+                      "bg-slate-100 text-slate-700 ring-slate-500/20"
+                    }`}
+                  >
+                    {humanizeStatus(row.estado)}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
   </Panel>
 );
 
@@ -300,60 +352,10 @@ const OperationalServiceDashboard = ({ serviceKey }) => {
               />
             </Panel>
 
-            <Panel className="overflow-hidden">
-              <div className="border-b border-slate-200 px-5 py-4">
-                <h2 className="text-base font-semibold">Gestiones recientes</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Últimos procesos registrados para la vista seleccionada.
-                </p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200 text-sm">
-                  <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="px-5 py-3">Folio</th>
-                      <th className="px-5 py-3">Empresa</th>
-                      <th className="px-5 py-3">Fecha</th>
-                      <th className="px-5 py-3 text-right">Volumen</th>
-                      <th className="px-5 py-3">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {(data.latest || []).map((row) => {
-                      const statusKey = String(row.estado || "sin_estado")
-                        .toLowerCase()
-                        .replace(/[\s-]+/g, "_");
-                      return (
-                        <tr key={row.id || row.folio}>
-                          <td className="whitespace-nowrap px-5 py-3 font-semibold text-slate-900">
-                            {row.folio || "—"}
-                          </td>
-                          <td className="min-w-[220px] px-5 py-3 text-slate-600">
-                            {row.empresaNombre || row.empresa?.nombre || row.empresaRut}
-                          </td>
-                          <td className="whitespace-nowrap px-5 py-3 text-slate-600">
-                            {formatDate(row.fechaGestion || row.createdAt)}
-                          </td>
-                          <td className="whitespace-nowrap px-5 py-3 text-right font-semibold text-slate-900">
-                            {formatNumber(row[definition.volumeField])}
-                          </td>
-                          <td className="whitespace-nowrap px-5 py-3">
-                            <span
-                              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${
-                                statusStyles[statusKey] ||
-                                "bg-slate-100 text-slate-700 ring-slate-500/20"
-                              }`}
-                            >
-                              {humanizeStatus(row.estado)}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </Panel>
+            <RecentGestionesTable
+              rows={data.latest || []}
+              definition={definition}
+            />
           </>
         )}
       </div>

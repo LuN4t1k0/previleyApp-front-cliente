@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   aggregateOperationalDashboard,
+  formatDashboardDate,
   humanizeStatus,
 } from "../src/services/operationalServiceDashboard.mjs";
 
@@ -87,5 +88,11 @@ test("humanizes empty and separated status values", () => {
   assert.equal(humanizeStatus("pre-facturada"), "Pre facturada");
   assert.equal(humanizeStatus("EN_ANALISIS"), "En analisis");
   assert.equal(humanizeStatus(""), "Sin estado");
+});
+
+test("formats dashboard dates without depending on browser locale or timezone", () => {
+  assert.equal(formatDashboardDate("2026-09-30T23:45:00.000Z"), "30-09-2026");
+  assert.equal(formatDashboardDate("2026-02-03"), "03-02-2026");
+  assert.equal(formatDashboardDate(""), "—");
 });
 
