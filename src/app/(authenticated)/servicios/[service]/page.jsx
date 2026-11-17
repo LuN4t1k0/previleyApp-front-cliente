@@ -24,10 +24,11 @@ import apiService from "@/app/api/apiService";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import PageShell from "@/components/PageShell/PageShell";
 import moraTabsConfig from "@/config/module/mora/moraTabs.config";
-import licenciasClientTabs from "@/config/module/licencias/licenciasClientTabs.config";
 import pagexTabsConfig from "@/config/module/pagex/pagexTabs";
 import OperationalServiceDashboard from "@/modules/operational-services/OperationalServiceDashboard";
 import { getCanonicalOperationalServiceKey } from "@/config/operationalServiceDashboards.mjs";
+import LicenciasWorkspaceHub from "@/modules/licencias/LicenciasWorkspaceHub";
+import LicenciasWorkspaceSection from "@/modules/licencias/LicenciasWorkspaceSection";
 
 const toISODate = (value) => {
   if (!value) return undefined;
@@ -221,7 +222,10 @@ const ServiceDetailContentWithParams = () => {
   }
 
   if (inferredKey === "licencias") {
-    return <PageShell moduleTitle="Licencias Médicas" tabsConfig={licenciasClientTabs} />;
+    if (!tabFromUrl) {
+      return <LicenciasWorkspaceHub />;
+    }
+    return <LicenciasWorkspaceSection section={tabFromUrl} />;
   }
 
   if (inferredKey === "pagex") {

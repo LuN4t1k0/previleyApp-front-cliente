@@ -6,7 +6,7 @@ import FichaTrabajadorDashboard from "@/modules/trabajador/FichaTrabajadorDashbo
 const licenciasClientTabs = [
   {
     key: "dashboard-global",
-    label: "Dashboard Global",
+    label: "Dashboard Analítico",
     component: <LicenciasGlobalDashboard />,
     rolesAllowed: ["cliente"],
   },

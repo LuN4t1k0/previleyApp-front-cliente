@@ -515,7 +515,10 @@ const ResumenEmpresa = ({ resumen, empresaRut, selectedYear }) => {
 };
 
 // --- Componente Principal ---
-const EmpresaLicenciasDashboard = () => {
+const EmpresaLicenciasDashboard = ({
+  initialEmpresaRut = "",
+  requireExplicitSelection = false,
+}) => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState("");
   const [empresaInput, setEmpresaInput] = useState("");
@@ -543,10 +546,33 @@ const EmpresaLicenciasDashboard = () => {
   [empresas]);
 
   useEffect(() => {
-    if (empresas.length > 0 && !empresaSeleccionada) {
-      setEmpresaSeleccionada(empresas[0].empresaRut);
+    if (!empresaOptions.length) return;
+
+    const currentIsValid = empresaOptions.some(
+      (option) => option.rut === empresaSeleccionada
+    );
+    if (currentIsValid) return;
+
+    const requestedIsValid = empresaOptions.some(
+      (option) => option.rut === initialEmpresaRut
+    );
+    if (requestedIsValid) {
+      setEmpresaSeleccionada(initialEmpresaRut);
+      return;
     }
-  }, [empresas, empresaSeleccionada]);
+
+    if (empresaOptions.length === 1 || !requireExplicitSelection) {
+      setEmpresaSeleccionada(empresaOptions[0].rut);
+      return;
+    }
+
+    setEmpresaSeleccionada("");
+  }, [
+    empresaOptions,
+    empresaSeleccionada,
+    initialEmpresaRut,
+    requireExplicitSelection,
+  ]);
 
   useEffect(() => {
     const match = empresaOptions.find((option) => option.rut === empresaSeleccionada);

@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import {
   LICENCIAS_SECTIONS,
   buildLicenciasSectionHref,
+  getLicenciasWorkspaceLinks,
   normalizeLicenciasAnalytics,
   normalizeLicenciasOperations,
+  resolveLicenciasLegacyHref,
   resolveLicenciasSection,
   resolveRequiredEmpresa,
 } from "../src/services/licenciasWorkspace.mjs";
@@ -110,4 +112,63 @@ test("keeps integrated agreements secondary to the gross company balance", () =>
       detail: { saldos: { neto: 7000 } },
     },
   });
+});
+
+test("builds a hub with three standard destinations and one complementary worker file", () => {
+  assert.deepEqual(getLicenciasWorkspaceLinks(), {
+    sections: [
+      {
+        key: "dashboard-analitico",
+        label: "Dashboard Analítico",
+        href: "/servicios/licencias-medicas/dashboard-analitico",
+      },
+      {
+        key: "dashboard-operativo",
+        label: "Dashboard Operativo",
+        href: "/servicios/licencias-medicas/dashboard-operativo",
+      },
+      {
+        key: "gestiones",
+        label: "Gestiones",
+        href: "/servicios/licencias-medicas/gestiones",
+      },
+    ],
+    complementary: [
+      {
+        key: "ficha-trabajador",
+        label: "Ficha Trabajador",
+        href: "/servicios/licencias-medicas/ficha-trabajador",
+      },
+    ],
+  });
+});
+
+test("maps legacy tabs to canonical destinations without dropping customer context", () => {
+  const cases = [
+    [
+      "dashboard-global",
+      { empresa: "11-1" },
+      "/servicios/licencias-medicas/dashboard-analitico?empresa=11-1",
+    ],
+    [
+      "dashboard-operativo",
+      { empresa: "22-2" },
+      "/servicios/licencias-medicas/dashboard-operativo?empresa=22-2",
+    ],
+    [
+      "gestiones",
+      { empresa: "22-2" },
+      "/servicios/licencias-medicas/gestiones?empresa=22-2",
+    ],
+    [
+      "ficha-trabajador",
+      { trabajador: "12.345.678-9" },
+      "/servicios/licencias-medicas/ficha-trabajador?trabajador=12.345.678-9",
+    ],
+  ];
+
+  cases.forEach(([tab, params, expected]) => {
+    assert.equal(resolveLicenciasLegacyHref(tab, params), expected);
+  });
+  assert.equal(resolveLicenciasLegacyHref("desconocido", {}), null);
 });
