@@ -62,13 +62,16 @@ La ruta `/servicios/<servicio>` funcionará como portada del servicio. Las rutas
 - Contenido: volumen activo, estados pendientes/cerrados, antigüedad, actividad reciente y otros indicadores accionables disponibles para el servicio.
 - El selector de empresa ocupa una posición y terminología comunes en todos los servicios.
 - Cambiar de empresa descarta respuestas obsoletas y muestra una transición de carga clara.
+- La actividad reciente se limita a cinco gestiones y ofrece `Ver todas` hacia la sección Gestiones; el dashboard no duplica la bandeja completa.
 
 ### Gestiones
 
 - Alcance inicial: todas las empresas autorizadas, con filtro de empresa disponible.
 - Contenido: tabla paginada de registros, búsqueda, estado, periodo/fecha y campos relevantes del servicio.
 - Mantiene los detalles propios de cada dominio mediante columnas configurables.
-- Exportación o acciones solo se muestran cuando el servicio ya las soporte; no se simulan capacidades inexistentes.
+- Cada fila permite descargar un Excel con el detalle completo de esa gestión; no se limita a exportar el resumen visible.
+- La descarga se ofrece de forma consistente para Cargas Familiares, Depósitos Convenidos y Notificaciones Previsionales.
+- No se muestran acciones de creación, edición ni eliminación.
 
 ## Arquitectura
 
@@ -105,12 +108,17 @@ Para los tres servicios nuevos, Operativo y Gestiones usarán únicamente estado
 - El frontend no enviará ni mostrará empresas fuera de `useEmpresasPermitidas` y `useEmpresasServicios`.
 - El backend seguirá siendo la autoridad para validar `empresaRut`.
 - La normalización de alias (`cf`, `dc` y claves canónicas) ocurrirá antes de buscar la configuración.
+- La descarga individual valida que la gestión pertenezca a una empresa autorizada antes de consultar sus detalles.
+- Cada exportación genera un registro de auditoría con usuario, empresa, gestión, servicio y nombre de archivo.
+- El rol cliente recibe permiso explícito solo para exportar detalles de sus empresas; no obtiene permisos de edición ni acceso global.
 
 ## Verificación y aceptación
 
 - Los seis servicios muestran las mismas tres etiquetas y el mismo orden.
 - El analítico abre consolidado; el operativo abre con empresa definida; gestiones permite filtrar por empresa.
 - Cargas Familiares, Depósitos Convenidos y Notificaciones Previsionales muestran sus datos reales en las tres secciones.
+- Gestiones muestra todas las filas mediante paginación y permite descargar el Excel de detalle de cada una.
+- Los dashboards muestran solo cinco gestiones recientes y enlazan a la bandeja completa.
 - Mora, Pagex y Licencias conservan sus indicadores y funciones actuales.
 - Las rutas antiguas relevantes siguen funcionando.
 - Los enlaces actuales por `?tab=`, las rutas históricas bajo `/dashboard`, las páginas de Licencias y los deep links de notificaciones conservarán sus parámetros y llegarán a una vista equivalente, por render directo o redirección interna.

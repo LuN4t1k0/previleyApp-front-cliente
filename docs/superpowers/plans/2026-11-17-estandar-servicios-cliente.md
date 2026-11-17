@@ -18,6 +18,7 @@
 - No inventar estados ni indicadores no presentes en la API.
 - Preservar deep links, parámetros y funciones complementarias existentes.
 - Con varias empresas, el Operativo no consulta datos hasta una selección explícita válida.
+- Toda descarga individual valida el alcance de empresa en backend y genera auditoría; habilitar exportación no concede edición.
 
 ## Review Focus
 
@@ -25,7 +26,8 @@
 - Una sección o slug desconocido debe producir un estado no configurado, nunca carga infinita; se prueba en Task 1 y Task 2.
 - Con varias empresas y sin `empresa`, el Operativo no debe llamar al fetcher; se prueba en Task 3.
 - Una respuesta tardía de la empresa anterior no debe reemplazar la selección actual; se prueba en Task 3.
-- Si `total > data.length`, las métricas derivadas deben marcarse como parciales y Gestiones debe conservar el total de la API; se prueba en Task 3 y Task 4.
+- Si `total > data.length`, las métricas derivadas deben marcarse como parciales y Gestiones debe conservar el total de la API; se prueba en Task 3 y Task 5.
+- Un cliente no debe exportar una gestión de otra empresa ni descargar detalles sin auditoría; se prueba en Task 4.
 
 ---
 
@@ -136,7 +138,7 @@ Expected: FAIL por exports/propiedades ausentes.
 
 - [ ] **Step 3: Implement selection and data contracts**
 
-El analítico consulta sin `empresaRut` y abre consolidado. El operativo consulta solo después de `resolveRequiredEmpresa`; al cambiar empresa limpia datos visibles y usa `createLatestRequestTracker` para ignorar respuestas anteriores. El agregador conserva `apiTotal`, `loadedRows` e `isPartial`.
+El analítico consulta sin `empresaRut` y abre consolidado. El operativo consulta solo después de `resolveRequiredEmpresa`; al cambiar empresa limpia datos visibles y usa `createLatestRequestTracker` para ignorar respuestas anteriores. El agregador conserva `apiTotal`, `loadedRows` e `isPartial`; la actividad reciente limita la presentación a cinco filas y enlaza a la ruta Gestiones conservando `empresa`.
 
 - [ ] **Step 4: Split the shared presentation**
 
@@ -154,7 +156,57 @@ git add src/modules/operational-services src/hooks/useServiceDashboard.js src/se
 git commit -m "feat: separate analytic and operational dashboards"
 ```
 
-### Task 4: Bandeja de gestiones para los tres servicios nuevos
+### Task 4: Exportación segura del detalle de cada gestión
+
+**Files:**
+- Modify: `../backend/src/security/access/resources.js`
+- Modify: `../backend/src/routes/gestionCargaFamiliar.routes.js`
+- Modify: `../backend/src/controller/gestionCargaFamiliar.controller.js`
+- Modify: `../backend/src/services/detalleCargaFamiliar.service.js`
+- Modify: `../backend/src/routes/gestionDepositoConvenido.routes.js`
+- Modify: `../backend/src/routes/gestionNotificacionPrevisional.routes.js`
+- Modify: existing export controllers to pass audit context where required.
+- Test: `../backend/tests/clientOperationalExports.access.test.js`
+- Test: `../backend/tests/clientOperationalExports.tenantScope.test.js`
+
+**Interfaces:**
+- Consumes: authenticated actor, `empresaRutsPermitidas`, management `id` and existing detail DTO mappers.
+- Produces: authenticated `GET /gestion-carga-familiar/:id/detalles/export`, plus client-authorized existing endpoints for Depósitos and Notificaciones; all return XLSX with `Content-Disposition`.
+
+- [ ] **Step 1: Write failing authorization and tenant-scope tests**
+
+Probar que `cliente` y `cliente_admin` pueden exportar detalles solo cuando la gestión pertenece a `empresaRutsPermitidas`; un RUT ajeno retorna 403 antes de consultar detalles; admin/trabajador mantienen acceso; cada éxito invoca auditoría con `userId`, `empresaRut`, `gestionId`, `scope`, `filename`.
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `cd ../backend && npm test -- tests/clientOperationalExports.access.test.js tests/clientOperationalExports.tenantScope.test.js --runInBand`
+Expected: FAIL porque Cargas no tiene endpoint y los tres recursos no conceden exportación explícita al cliente.
+
+- [ ] **Step 3: Implement explicit least-privilege access**
+
+Agregar `allowedRolesByAction[EXPORT] = ["cliente", "cliente_admin"]` únicamente a los tres recursos de detalle. Cada ruta carga la gestión padre como sujeto, compara `empresaRut` con `empresaRutsPermitidas` mediante el middleware de acceso y recién entonces llama al exportador.
+
+- [ ] **Step 4: Implement Cargas XLSX and uniform auditing**
+
+Agregar `exportByGestion(gestionId)` a `detalleCargaFamiliar.service.js` usando su DTO de detalle y hoja `Detalles`. El controlador devuelve buffer y filename. Los tres controladores registran el evento de exportación con el `ExportAuditService` antes de responder.
+
+- [ ] **Step 5: Run focused and backend regression tests**
+
+Run: `cd ../backend && npm test -- tests/clientOperationalExports.access.test.js tests/clientOperationalExports.tenantScope.test.js --runInBand`
+Expected: PASS.
+
+Run: `cd ../backend && npm test -- tests/detalleNotificacionPrevisionalRules.test.js tests/detalleNotificacionPrevisional.tenantScopeBypass.test.js --runInBand`
+Expected: PASS.
+
+- [ ] **Step 6: Commit in the backend repository**
+
+```bash
+cd ../backend
+git add src/security/access/resources.js src/routes src/controller/gestionCargaFamiliar.controller.js src/services/detalleCargaFamiliar.service.js tests/clientOperationalExports.access.test.js tests/clientOperationalExports.tenantScope.test.js
+git commit -m "feat: allow audited client management exports"
+```
+
+### Task 5: Bandeja de gestiones para los tres servicios nuevos
 
 **Files:**
 - Create: `src/services/operationalServiceManagement.mjs`
@@ -165,11 +217,11 @@ git commit -m "feat: separate analytic and operational dashboards"
 
 **Interfaces:**
 - Consumes: endpoint, `volumeField`, `volumeLabel` y columnas de `getOperationalDashboardDefinition`.
-- Produces: `buildManagementQuery({ page, pageSize, empresaRut, folio, estado })`, `normalizeManagementResponse(payload, definition)`, `OperationalServiceManagement({ serviceKey })`.
+- Produces: `buildManagementQuery({ page, pageSize, empresaRut, folio, estado })`, `normalizeManagementResponse(payload, definition)`, `downloadOperationalManagementDetail(serviceKey, gestionId)`, `OperationalServiceManagement({ serviceKey })`.
 
 - [ ] **Step 1: Write failing query and normalization tests**
 
-Probar `offset=(page-1)*pageSize`; omisión de filtros vacíos; preservación de `total`; normalización de columnas comunes `folio`, `empresaNombre`, `empresaRut`, `fechaGestion`, `estado`, volumen y comentario/observaciones; valores faltantes como `—`.
+Probar `offset=(page-1)*pageSize`; omisión de filtros vacíos; preservación de `total`; normalización de columnas comunes `folio`, `empresaNombre`, `empresaRut`, `fechaGestion`, `estado`, volumen y comentario/observaciones; valores faltantes como `—`; resolución del endpoint de descarga por servicio.
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -182,7 +234,7 @@ Usar únicamente los filtros uniformemente soportados por los endpoints actuales
 
 - [ ] **Step 4: Implement the read-only management table**
 
-Mostrar filtros por empresa, folio y estado, tabla paginada y estados carga/vacío/error. El alcance inicial es todas las empresas. No mostrar crear, editar, eliminar ni exportar, porque el rol cliente no tiene esas autorizaciones uniformemente.
+Mostrar filtros por empresa, folio y estado, tabla paginada y estados carga/vacío/error. El alcance inicial es todas las empresas. Cada fila incluye `Descargar Excel`, con estado de descarga por fila y nombre obtenido de `Content-Disposition`. No mostrar crear, editar ni eliminar.
 
 - [ ] **Step 5: Run focused tests and build**
 
@@ -196,7 +248,7 @@ git add src/services/operationalServiceManagement.mjs src/modules/operational-se
 git commit -m "feat: add client operational management tables"
 ```
 
-### Task 5: Adaptar Mora, Pagex y Licencias al estándar sin regresiones
+### Task 6: Adaptar Mora, Pagex y Licencias al estándar sin regresiones
 
 **Files:**
 - Modify: `src/modules/service-workspace/ServiceSectionRouter.jsx`
