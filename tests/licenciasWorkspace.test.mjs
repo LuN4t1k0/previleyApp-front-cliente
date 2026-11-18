@@ -7,6 +7,7 @@ import {
   normalizeLicenciasAnalytics,
   normalizeLicenciasOperations,
   resolveLicenciasLegacyHref,
+  resolveLicenciasLegacyRouteHref,
   resolveLicenciasSection,
   resolveRequiredEmpresa,
 } from "../src/services/licenciasWorkspace.mjs";
@@ -234,4 +235,56 @@ test("maps legacy tabs to canonical destinations without dropping customer conte
     assert.equal(resolveLicenciasLegacyHref(tab, params), expected);
   });
   assert.equal(resolveLicenciasLegacyHref("desconocido", {}), null);
+});
+
+test("maps legacy routes and tab entries to canonical sections while preserving context", () => {
+  const cases = [
+    [
+      "/dashboard/licencia-medica/dashboard-global",
+      { empresa: "11-1", trabajador: "" },
+      "/servicios/licencias-medicas/dashboard-analitico?empresa=11-1",
+    ],
+    [
+      "/dashboard/licencia-medica/dashboard-operativo",
+      { empresa: "22-2" },
+      "/servicios/licencias-medicas/dashboard-operativo?empresa=22-2",
+    ],
+    [
+      "/licencia-medica/ficha-empresa",
+      { empresa: "33-3", seccion: "balance" },
+      "/servicios/licencias-medicas/dashboard-operativo?empresa=33-3&seccion=balance",
+    ],
+    [
+      "/licencia-medica/conciliacion",
+      { empresa: "44-4" },
+      "/servicios/licencias-medicas/gestiones?empresa=44-4",
+    ],
+    [
+      "/licencia-medica/ficha-trabajador-rut",
+      { trabajador: "12.345.678-9", empresa: "44-4" },
+      "/servicios/licencias-medicas/ficha-trabajador?trabajador=12.345.678-9&empresa=44-4",
+    ],
+    [
+      "/dashboard/licencia-medica",
+      { tab: "gestiones", empresa: "55-5" },
+      "/servicios/licencias-medicas/gestiones?empresa=55-5",
+    ],
+    [
+      "/dashboard/licencia-medica",
+      { tab: "ficha-trabajador", trabajador: "9-9" },
+      "/servicios/licencias-medicas/ficha-trabajador?trabajador=9-9",
+    ],
+  ];
+
+  cases.forEach(([pathname, query, expected]) => {
+    assert.equal(resolveLicenciasLegacyRouteHref(pathname, query), expected);
+  });
+
+  assert.equal(
+    resolveLicenciasLegacyRouteHref("/servicios/licencias-medicas/dashboard-analitico", {
+      empresa: "66-6",
+    }),
+    "/servicios/licencias-medicas/dashboard-analitico?empresa=66-6"
+  );
+  assert.equal(resolveLicenciasLegacyRouteHref("/ruta/desconocida", {}), null);
 });

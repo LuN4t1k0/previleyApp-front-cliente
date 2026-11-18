@@ -1,13 +1,5 @@
-import PageShell from "@/components/PageShell/PageShell";
-import conciliacionTabsConfig from "@/config/module/conciliacion/pagexTabs";
+import LicenciasLegacyRedirect from "@/modules/licencias/LicenciasLegacyRedirect";
 
-
-
-const page = () => {
-
-  return (
-    <PageShell tabsConfig={conciliacionTabsConfig} moduleTitle="Licencias Médicas" />
-  )
-};
-
-export default page;
+export default function Page({ searchParams }) {
+  return <LicenciasLegacyRedirect pathname="/licencia-medica/conciliacion" searchParams={searchParams} />;
+}

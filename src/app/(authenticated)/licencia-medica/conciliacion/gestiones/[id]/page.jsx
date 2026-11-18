@@ -916,7 +916,9 @@ const handleCargarArchivo = (tipo) => {
 // --- EL "CONTENEDOR" QUE EXPONEMOS COMO PÁGINA ---
 const ExpedienteGestionPage = () => (
   <ModalProvider modalsConfig={configuracion.modalsConfig}>
-    <ExpedienteContent />
+    <React.Suspense fallback={<p className="p-6 text-sm text-slate-500">Cargando expediente…</p>}>
+      <ExpedienteContent />
+    </React.Suspense>
     <ModalManager />
   </ModalProvider>
 );

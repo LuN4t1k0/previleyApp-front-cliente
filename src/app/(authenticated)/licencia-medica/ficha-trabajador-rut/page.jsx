@@ -1,11 +1,5 @@
-import dynamic from "next/dynamic";
+import LicenciasLegacyRedirect from "@/modules/licencias/LicenciasLegacyRedirect";
 
-const FichaTrabajadorDashboard = dynamic(() =>
-  import("@/modules/trabajador/FichaTrabajadorDashboard")
-);
-
-const Page = () => {
-  return <FichaTrabajadorDashboard />;
-};
-
-export default Page;
+export default function Page({ searchParams }) {
+  return <LicenciasLegacyRedirect pathname="/licencia-medica/ficha-trabajador-rut" searchParams={searchParams} />;
+}

@@ -78,6 +78,46 @@ export const resolveLicenciasLegacyHref = (tab, params = {}) => {
   return buildLicenciasSectionHref(normalized, params);
 };
 
+const LEGACY_ROUTE_SECTIONS = Object.freeze({
+  "/dashboard/licencia-medica/dashboard-global": "dashboard-analitico",
+  "/dashboard/licencia-medica/dashboard-operativo": "dashboard-operativo",
+  "/licencia-medica/dashboard-global": "dashboard-analitico",
+  "/licencia-medica/ficha-empresa": "dashboard-operativo",
+  "/licencia-medica/conciliacion": "gestiones",
+  "/licencia-medica/ficha-trabajador-rut": "ficha-trabajador",
+});
+
+const CANONICAL_ROUTE_SECTIONS = Object.freeze({
+  "/servicios/licencias-medicas/dashboard-analitico": "dashboard-analitico",
+  "/servicios/licencias-medicas/dashboard-operativo": "dashboard-operativo",
+  "/servicios/licencias-medicas/gestiones": "gestiones",
+  "/servicios/licencias-medicas/ficha-trabajador": "ficha-trabajador",
+});
+
+const getContextParams = (query = {}) =>
+  Object.fromEntries(
+    Object.entries(query)
+      .filter(([key]) => key !== "tab")
+      .map(([key, value]) => [key, Array.isArray(value) ? value[0] : value])
+  );
+
+export const resolveLicenciasLegacyRouteHref = (pathname, query = {}) => {
+  const normalizedPath = String(pathname || "").replace(/\/$/, "");
+  const context = getContextParams(query);
+  const section =
+    CANONICAL_ROUTE_SECTIONS[normalizedPath] ||
+    LEGACY_ROUTE_SECTIONS[normalizedPath];
+
+  if (section) return resolveLicenciasLegacyHref(section, context);
+
+  if (normalizedPath === "/dashboard/licencia-medica") {
+    if (query?.tab) return resolveLicenciasLegacyHref(query.tab, context);
+    return "/servicios/licencias-medicas";
+  }
+
+  return null;
+};
+
 export const resolveRequiredEmpresa = (empresas = [], requestedRut = "") => {
   const available = asArray(empresas).filter((empresa) => empresa?.empresaRut);
   const requested = String(requestedRut || "").trim();

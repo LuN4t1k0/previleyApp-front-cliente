@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { AreaChart, BarList } from "@tremor/react";
 import {
@@ -106,20 +106,22 @@ const EmpresaLicenciasDashboard = ({ initialEmpresaRut = "", requireExplicitSele
     ),
     [empresas]
   );
-  const [empresaSeleccionada, setEmpresaSeleccionada] = useState("");
-
-  useEffect(() => {
+  const [empresaElegida, setEmpresaElegida] = useState(null);
+  const empresaSeleccionada = useMemo(() => {
+    if (empresaElegida !== null) {
+      return empresaOptions.some(
+        (empresa) => empresa.empresaRut === empresaElegida
+      )
+        ? empresaElegida
+        : "";
+    }
     const resolved = resolveRequiredEmpresa(empresaOptions, initialEmpresaRut);
-    if (resolved) {
-      setEmpresaSeleccionada(resolved);
-      return;
-    }
+    if (resolved) return resolved;
     if (!requireExplicitSelection && empresaOptions.length) {
-      setEmpresaSeleccionada(empresaOptions[0].empresaRut);
-      return;
+      return empresaOptions[0].empresaRut;
     }
-    setEmpresaSeleccionada("");
-  }, [empresaOptions, initialEmpresaRut, requireExplicitSelection]);
+    return "";
+  }, [empresaElegida, empresaOptions, initialEmpresaRut, requireExplicitSelection]);
 
   const { data, loading, error, retry } = useLicenciasCompanyDashboard(empresaSeleccionada);
 
@@ -136,7 +138,7 @@ const EmpresaLicenciasDashboard = ({ initialEmpresaRut = "", requireExplicitSele
             Empresa
             <select
               value={empresaSeleccionada}
-              onChange={(event) => setEmpresaSeleccionada(event.target.value)}
+              onChange={(event) => setEmpresaElegida(event.target.value)}
               disabled={loadingEmpresas}
               className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal text-slate-900 outline-none focus:border-blue-500"
             >

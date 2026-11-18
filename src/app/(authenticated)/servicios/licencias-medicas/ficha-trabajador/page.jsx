@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import LicenciasWorkspaceSection from "@/modules/licencias/LicenciasWorkspaceSection";
 
 export const metadata = {
@@ -5,6 +6,10 @@ export const metadata = {
 };
 
 export default function LicenciasFichaTrabajadorPage() {
-  return <LicenciasWorkspaceSection section="ficha-trabajador" />;
+  return (
+    <Suspense fallback={<p className="p-6 text-sm text-slate-500">Cargando ficha del trabajador…</p>}>
+      <LicenciasWorkspaceSection section="ficha-trabajador" />
+    </Suspense>
+  );
 }
 

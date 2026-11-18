@@ -1,11 +1,5 @@
-import dynamic from "next/dynamic";
+import LicenciasLegacyRedirect from "@/modules/licencias/LicenciasLegacyRedirect";
 
-const LicenciasGlobalDashboard = dynamic(() =>
-  import("@/modules/licencias/LicenciasGlobalDashboard")
-);
-
-const Page = () => {
-  return <LicenciasGlobalDashboard />;
-};
-
-export default Page;
+export default function Page({ searchParams }) {
+  return <LicenciasLegacyRedirect pathname="/dashboard/licencia-medica/dashboard-global" searchParams={searchParams} />;
+}

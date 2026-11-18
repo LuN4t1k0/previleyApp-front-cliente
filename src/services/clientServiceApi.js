@@ -108,23 +108,29 @@ export const fetchGestionesLicencia = async (params) => {
 };
 
 export const downloadGestionLicenciaExcel = async (id) => {
-  const response = await apiService.get(getGestionLicenciaExcelPath(id));
-  const data = unwrapApiData(response, {});
-  if (!data?.url) {
-    throw new Error("El expediente no tiene un archivo Excel disponible.");
-  }
+  const response = await apiService.get(getGestionLicenciaExcelPath(id), {
+    params: { direct: 1 },
+    responseType: "blob",
+  });
+  const disposition = response?.headers?.["content-disposition"] || "";
+  const filename =
+    disposition.match(/filename="?([^";]+)"?/i)?.[1] ||
+    `gestion-licencia-${id}.xlsx`;
+  const blob = response?.data;
 
-  if (typeof document !== "undefined") {
+  if (typeof document !== "undefined" && blob) {
+    const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = data.url;
-    link.download = data.filename || `gestion-licencia-${id}.xlsx`;
+    link.href = objectUrl;
+    link.download = filename;
     link.rel = "noopener noreferrer";
     document.body.appendChild(link);
     link.click();
     link.remove();
+    URL.revokeObjectURL(objectUrl);
   }
 
-  return data;
+  return { blob, filename };
 };
 
 const normalizeRows = (response) => response?.data?.data || [];
