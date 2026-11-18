@@ -3,10 +3,9 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { DateRangePicker, Divider } from "@tremor/react";
+import { Divider } from "@tremor/react";
 import { toast } from "react-hot-toast";
 import {
-  RiArrowRightLine,
   RiCalendarLine,
   RiDashboardLine,
   RiFileList3Line,
@@ -19,6 +18,7 @@ import {
   resolveServiceDefinition,
   resolveServiceKeyFromName,
 } from "@/config/clientServices.config";
+import ServiceHub from "@/components/dashboard/ServiceHub";
 import MetricCard from "@/components/dashboard/MetricCard";
 import apiService from "@/app/api/apiService";
 import { formatCurrency, formatDate } from "@/utils/formatters";
@@ -26,6 +26,18 @@ import PageShell from "@/components/PageShell/PageShell";
 import moraTabsConfig from "@/config/module/mora/moraTabs.config";
 import pagexTabsConfig from "@/config/module/pagex/pagexTabs";
 import OperationalServiceDashboard from "@/modules/operational-services/OperationalServiceDashboard";
+import GestionHistoryTable from "@/modules/operational-services/GestionHistoryTable";
+import DashboardYearSelect from "@/components/dashboard/DashboardYearSelect";
+import {
+  DashboardBody,
+  DashboardFilters,
+  DashboardHeader,
+  DashboardPeriodFilter,
+  DashboardStatus,
+  dashboardControlClass,
+  dashboardFieldClass,
+} from "@/components/dashboard/ServiceDashboardLayout";
+import { getDashboardYearRange } from "@/services/dashboardYear.mjs";
 import { getCanonicalOperationalServiceKey } from "@/config/operationalServiceDashboards.mjs";
 import LicenciasWorkspaceHub from "@/modules/licencias/LicenciasWorkspaceHub";
 import LicenciasWorkspaceSection from "@/modules/licencias/LicenciasWorkspaceSection";
@@ -142,64 +154,7 @@ const moraHubCards = [
   },
 ];
 
-const MoraServiceHub = () => (
-  <section className="min-h-screen bg-slate-50 pb-16">
-    <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 pt-10 sm:px-6 lg:px-8">
-      <header className="border-b border-slate-200 bg-white px-6 py-8 shadow-sm md:px-8">
-        <div className="max-w-3xl">
-          <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-600">
-            Servicio contratado
-          </span>
-          <h1 className="mt-4 text-3xl font-bold text-slate-900 sm:text-4xl">
-            Mora Presunta
-          </h1>
-          <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-slate-500 sm:text-base">
-            Accede a las áreas principales del servicio desde un solo lugar.
-          </p>
-        </div>
-      </header>
-
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {moraHubCards.map((card) => {
-          const Icon = card.icon;
-          const content = (
-            <article className={`group flex min-h-[260px] flex-col rounded-lg border border-slate-200 border-t-4 ${card.tone} bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md`}>
-              <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
-                <Icon className="h-7 w-7" />
-              </div>
-              <h2 className="mt-6 text-xl font-semibold text-slate-950">
-                {card.title}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-slate-500">
-                {card.description}
-              </p>
-              {card.href ? (
-                <div className="mt-auto inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  Ingresar
-                  <RiArrowRightLine className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </div>
-              ) : (
-                <span className="mt-auto inline-flex w-fit rounded-md border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-500">
-                  {card.status}
-                </span>
-              )}
-            </article>
-          );
-
-          return card.href ? (
-            <Link key={card.title} href={card.href}>
-              {content}
-            </Link>
-          ) : (
-            <div key={card.title} aria-disabled="true">
-              {content}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  </section>
-);
+const MoraServiceHub = () => <ServiceHub title="Mora Presunta" cards={moraHubCards} />;
 
 const ServiceDetailContentWithParams = () => {
   const params = useParams();
@@ -269,6 +224,7 @@ const GenericServiceContentWithParams = ({ definition, slug }) => {
   );
 
   const [selectedEmpresaRut, setSelectedEmpresaRut] = useState(defaultEmpresaRut);
+  const [year, setYear] = useState("");
   const [range, setRange] = useState({
     from: undefined,
     to: undefined,
@@ -278,27 +234,22 @@ const GenericServiceContentWithParams = ({ definition, slug }) => {
     setSelectedEmpresaRut(defaultEmpresaRut);
   }, [defaultEmpresaRut]);
 
-  const normalizedRange = useMemo(() => buildRangeParams(range), [range]);
+  const normalizedRange = useMemo(
+    () => getDashboardYearRange(year) || buildRangeParams(range),
+    [year, range]
+  );
 
   const {
     data: dashboardData,
     loading: loadingDashboard,
     error: dashboardError,
-    refetch,
   } = useServiceDashboard(serviceKey, selectedEmpresaRut, normalizedRange);
 
   const {
     data: empresaData,
     loading: loadingEmpresa,
     error: empresaError,
-    refetch: refetchEmpresa,
   } = useEmpresaCompleta(selectedEmpresaRut);
-
-  useEffect(() => {
-    if (!selectedEmpresaRut) return;
-    refetch();
-    refetchEmpresa();
-  }, [selectedEmpresaRut, normalizedRange, refetch, refetchEmpresa]);
 
   const handleDownloadDocument = async (documentId) => {
     try {
@@ -341,34 +292,33 @@ const GenericServiceContentWithParams = ({ definition, slug }) => {
     loadingEmpresa;
 
   return (
-    <section className="pb-16">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 pt-10 md:px-6">
-        <header className="glass-panel relative overflow-hidden rounded-[2.5rem] p-8 md:p-10">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-blue-600">
-                Servicio
-              </span>
-              <h1 className="mt-3 text-3xl font-semibold text-[color:var(--text-primary)] sm:text-4xl">
-                {definition.icon} {definition.label}
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm text-[color:var(--text-secondary)] sm:text-base">
-                {definition.description}
-              </p>
-            </div>
-            {empresasDisponibles.length > 0 ? (
-              <div className="flex flex-col gap-2 rounded-2xl border border-white/60 bg-white/70 p-4 text-xs text-[color:var(--text-secondary)] shadow-sm">
-                <label
-                  htmlFor="empresa-selector"
-                  className="font-semibold text-[color:var(--text-primary)]"
-                >
-                  Empresa
-                </label>
+    <section className="min-h-screen bg-slate-50 text-slate-950">
+      <DashboardHeader
+        kind={serviceKey === "zonas-extremas" ? "Dashboard Operativo" : "Servicio"}
+        title={definition.label}
+        description={definition.description}
+      >
+        {serviceKey === "zonas-extremas" && (
+          <Link
+            href="/servicios/zonas-extremas/gestiones"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-indigo-700"
+          >
+            <RiFileList3Line className="h-4 w-4" aria-hidden="true" />
+            Ver gestiones
+          </Link>
+        )}
+      </DashboardHeader>
+
+      <DashboardBody>
+        {(empresasDisponibles.length > 0 || serviceKey === "zonas-extremas") && (
+          <DashboardFilters>
+            {empresasDisponibles.length > 0 && (
+              <label className={dashboardFieldClass}>
+                Empresa
                 <select
-                  id="empresa-selector"
                   value={selectedEmpresaRut || ""}
                   onChange={(event) => setSelectedEmpresaRut(event.target.value)}
-                  className="rounded-xl border border-white/60 bg-white px-3 py-2 text-sm text-[color:var(--text-primary)] focus:border-[color:var(--theme-primary)] focus:outline-none"
+                  className={dashboardControlClass}
                 >
                   {empresasDisponibles.map((empresa) => (
                     <option key={empresa.empresaRut} value={empresa.empresaRut}>
@@ -376,50 +326,40 @@ const GenericServiceContentWithParams = ({ definition, slug }) => {
                     </option>
                   ))}
                 </select>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-[color:var(--text-secondary)]">
-              Selecciona un rango de fechas para refrescar los indicadores (opcional).
-            </div>
-            {selectedEmpresaRut ? (
-              <span className="inline-flex w-fit items-center rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
-                Empresa en vista: {empresasDisponibles.find((empresa) => empresa.empresaRut === selectedEmpresaRut)?.empresaNombre || selectedEmpresaRut}
-              </span>
-            ) : null}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              {serviceKey === "zonas-extremas" ? (
-                <Link
-                  href="/servicios/zonas-extremas/gestiones"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[color:var(--theme-primary)] bg-white px-4 py-2 text-xs font-semibold text-[color:var(--theme-primary)] shadow-sm hover:bg-[color:var(--theme-primary)]/10"
-                >
-                  <RiFileList3Line className="h-4 w-4" />
-                  Ver gestiones
-                </Link>
-              ) : null}
-              <DateRangePicker
-                value={range}
-                onValueChange={setRange}
-                enableSelect={false}
-                enableClear
-              />
-            </div>
-          </div>
-          <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl" />
-        </header>
-
+              </label>
+            )}
+            {serviceKey === "zonas-extremas" && (
+              <>
+                <DashboardYearSelect
+                  serviceKey="zonas-extremas"
+                  empresaRut={selectedEmpresaRut}
+                  enabled={Boolean(selectedEmpresaRut)}
+                  value={year}
+                  customRange={!year && Boolean(range?.from && range?.to)}
+                  onChange={(value) => {
+                    setYear(value);
+                    setRange({});
+                  }}
+                />
+                <DashboardPeriodFilter
+                  value={range}
+                  onChange={(value) => {
+                    setYear("");
+                    setRange(value || {});
+                  }}
+                />
+              </>
+            )}
+          </DashboardFilters>
+        )}
         {isLoading ? (
-          <div className="glass-panel rounded-[2rem] p-6 text-sm text-[color:var(--text-secondary)] ">
-            Cargando datos del servicio...
-          </div>
+          <DashboardStatus>Cargando datos del servicio…</DashboardStatus>
         ) : dashboardError ? (
-          <div className="glass-panel rounded-[2rem] p-6 text-sm text-rose-500 ">
+          <DashboardStatus error={dashboardError.code !== "DASHBOARD_NOT_CONFIGURED"}>
             {dashboardError.code === "DASHBOARD_NOT_CONFIGURED"
-              ? "Este servicio está contratado, pero su dashboard aún no está disponible."
-              : "No pudimos cargar la información del servicio. Intenta nuevamente más tarde."}
-          </div>
+              ? "El dashboard de este servicio estará disponible cuando se incorporen sus indicadores."
+              : "No pudimos cargar la información del servicio."}
+          </DashboardStatus>
         ) : (
           <div className="flex flex-col gap-8">
             <section className="flex flex-col gap-4">
@@ -869,49 +809,15 @@ const GenericServiceContentWithParams = ({ definition, slug }) => {
                   </div>
                 </div>
 
-                <div className="glass-panel rounded-[2rem] p-5 ">
-                  <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
-                    Últimas gestiones
-                  </h3>
-                  <Divider className="my-3" />
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-white/60 text-xs">
-                      <thead className="bg-white/70 text-left font-semibold uppercase tracking-wide text-[color:var(--text-secondary)]">
-                        <tr>
-                          <th className="px-3 py-2">Folio</th>
-                          <th className="px-3 py-2">Fecha</th>
-                          <th className="px-3 py-2">Zona</th>
-                          <th className="px-3 py-2">Estado</th>
-                          <th className="px-3 py-2 text-right">Registros</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/50">
-                        {dashboardData?.latestGestiones?.length ? (
-                          dashboardData.latestGestiones.map((gestion) => (
-                            <tr key={gestion.id}>
-                              <td className="px-3 py-2 font-semibold">{gestion.folioInterno || gestion.folio || `#${gestion.id}`}</td>
-                              <td className="px-3 py-2">{formatDate(gestion.fechaGestion)}</td>
-                              <td className="px-3 py-2">{gestion.zonaExtrema || "—"}</td>
-                              <td className="px-3 py-2 capitalize">{gestion.estado || "—"}</td>
-                              <td className="px-3 py-2 text-right">
-                                {gestion.totalRegistros || 0}
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              className="px-3 py-4 text-center text-[color:var(--text-secondary)]"
-                              colSpan={5}
-                            >
-                              Sin gestiones registradas.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                {selectedEmpresaRut && (
+                  <GestionHistoryTable
+                    key={JSON.stringify([selectedEmpresaRut, normalizedRange?.from, normalizedRange?.to])}
+                    serviceKey="zonas-extremas"
+                    empresaRut={selectedEmpresaRut}
+                    from={normalizedRange?.from}
+                    to={normalizedRange?.to}
+                  />
+                )}
 
                 <div className="glass-panel rounded-[2rem] p-5 ">
                   <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">
@@ -1026,7 +932,7 @@ const GenericServiceContentWithParams = ({ definition, slug }) => {
             </section>
           </div>
         )}
-      </div>
+      </DashboardBody>
     </section>
   );
 };

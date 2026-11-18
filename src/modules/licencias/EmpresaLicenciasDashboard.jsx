@@ -11,6 +11,8 @@ import {
 } from "@remixicon/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import useLicenciasCompanyDashboard from "@/hooks/useLicenciasCompanyDashboard";
+import { DashboardHeader, DashboardContext, DashboardBody, DashboardFilters, DashboardStatus, dashboardFieldClass, dashboardControlClass } from "@/components/dashboard/ServiceDashboardLayout";
+import DashboardYearSelect from "@/components/dashboard/DashboardYearSelect";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
 import {
   buildLicenciasSectionHref,
@@ -50,16 +52,6 @@ const Panel = ({ title, description, children }) => (
     <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
     {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
     {children}
-  </section>
-);
-
-const CompanyRequired = () => (
-  <section className="rounded-lg border border-blue-200 bg-blue-50 p-10 text-center">
-    <RiBuildingLine className="mx-auto h-10 w-10 text-blue-700" />
-    <h2 className="mt-4 text-xl font-semibold text-slate-950">Selecciona una empresa</h2>
-    <p className="mt-2 text-sm text-slate-600">
-      El dashboard operativo siempre corresponde a una empresa específica.
-    </p>
   </section>
 );
 
@@ -106,6 +98,7 @@ const EmpresaLicenciasDashboard = ({ initialEmpresaRut = "", requireExplicitSele
     ),
     [empresas]
   );
+  const [year, setYear] = useState("");
   const [empresaElegida, setEmpresaElegida] = useState(null);
   const empresaSeleccionada = useMemo(() => {
     if (empresaElegida !== null) {
@@ -123,43 +116,33 @@ const EmpresaLicenciasDashboard = ({ initialEmpresaRut = "", requireExplicitSele
     return "";
   }, [empresaElegida, empresaOptions, initialEmpresaRut, requireExplicitSelection]);
 
-  const { data, loading, error, retry } = useLicenciasCompanyDashboard(empresaSeleccionada);
+  const { data, loading, error, retry } = useLicenciasCompanyDashboard(empresaSeleccionada, year);
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Dashboard Operativo</p>
-            <h1 className="mt-3 text-3xl font-semibold md:text-4xl">Licencias médicas por empresa</h1>
-            <p className="mt-3 text-base leading-7 text-slate-600">Seguimiento de licencias, ausentismo, estados y balance financiero de una empresa.</p>
-          </div>
-          <label className="min-w-[300px] text-sm font-semibold text-slate-700">
+      <DashboardHeader kind="Dashboard operativo" title="Licencias médicas por empresa" description="Seguimiento de licencias, ausentismo, estados y balance financiero de una empresa.">
+        <DashboardContext>{empresaSeleccionada || "Selecciona una empresa"}</DashboardContext>
+      </DashboardHeader>
+      <DashboardBody>
+        <DashboardFilters>
+          <label className={dashboardFieldClass}>
             Empresa
-            <select
-              value={empresaSeleccionada}
-              onChange={(event) => setEmpresaElegida(event.target.value)}
-              disabled={loadingEmpresas}
-              className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm font-normal text-slate-900 outline-none focus:border-blue-500"
-            >
+            <select value={empresaSeleccionada} onChange={(event) => setEmpresaElegida(event.target.value)} disabled={loadingEmpresas} className={dashboardControlClass}>
               <option value="">Selecciona una empresa</option>
-              {empresaOptions.map((empresa) => (
-                <option key={empresa.empresaRut} value={empresa.empresaRut}>{empresa.nombre} · {empresa.empresaRut}</option>
-              ))}
+              {empresaOptions.map((empresa) => <option key={empresa.empresaRut} value={empresa.empresaRut}>{empresa.nombre} · {empresa.empresaRut}</option>)}
             </select>
           </label>
-        </div>
-      </header>
-
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-          {!empresaSeleccionada && !loadingEmpresas ? <CompanyRequired /> : null}
+          <DashboardYearSelect serviceKey="licencias" empresaRut={empresaSeleccionada} enabled={Boolean(empresaSeleccionada)} value={year} onChange={setYear} />
+        </DashboardFilters>
+          {!empresaSeleccionada && !loadingEmpresas && (
+            <DashboardStatus>Selecciona una empresa para consultar el Dashboard Operativo.</DashboardStatus>
+          )}
           {loading ? <DashboardMoraAnaliticoSkeleton /> : null}
           {error ? (
-            <section className="rounded-lg border border-rose-200 bg-rose-50 p-5 text-rose-800">
+            <DashboardStatus error>
               <p>{error}</p>
               <button type="button" onClick={retry} className="mt-3 text-sm font-semibold underline">Reintentar</button>
-            </section>
+            </DashboardStatus>
           ) : null}
 
           {data && !loading ? (
@@ -196,8 +179,7 @@ const EmpresaLicenciasDashboard = ({ initialEmpresaRut = "", requireExplicitSele
               <RecentManagement rows={data.recentManagement} empresaRut={empresaSeleccionada} />
             </>
           ) : null}
-        </div>
-      </div>
+      </DashboardBody>
     </main>
   );
 };

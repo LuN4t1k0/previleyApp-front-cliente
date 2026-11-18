@@ -17,6 +17,10 @@ import {
 } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
+import DashboardYearSelect from "@/components/dashboard/DashboardYearSelect";
+import { getDashboardYearRange } from "@/services/dashboardYear.mjs";
+import GestionHistoryPagination from "@/modules/operational-services/GestionHistoryPagination";
+import { downloadGestionHistoryExcel, fetchGestionHistoryPage } from "@/services/clientServiceApi";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 
 const toISODate = (value) => {
@@ -51,28 +55,10 @@ const getEstadoTone = (estado) =>
   estadoTone[String(estado || "").toLowerCase()] ||
   "border-slate-200 bg-slate-50 text-slate-700";
 
-const normalizeGestiones = (payload) => {
-  const rows = Array.isArray(payload?.data)
-    ? payload.data
-    : Array.isArray(payload?.data?.data)
-      ? payload.data.data
-      : Array.isArray(payload)
-        ? payload
-        : [];
-
-  return Array.from(
-    rows
-      .reduce((map, gestion) => {
-        if (gestion?.id) map.set(String(gestion.id), gestion);
-        return map;
-      }, new Map())
-      .values()
-  );
-};
-
 const ZonasExtremasGestionesDashboard = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
   const [empresaRut, setEmpresaRut] = useState("");
+  const [year, setYear] = useState("");
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
   const [estado, setEstado] = useState("");
   const [gestiones, setGestiones] = useState([]);
@@ -82,6 +68,8 @@ const ZonasExtremasGestionesDashboard = () => {
     totalRecuperado: 0,
   });
   const [listTotal, setListTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -103,72 +91,68 @@ const ZonasExtremasGestionesDashboard = () => {
     }
   }, [empresaOptions, empresaRut]);
 
-  const fetchGestiones = useCallback(async () => {
+  useEffect(() => {
     if (!empresaRut) return;
+    const controller = new AbortController();
+
     setLoading(true);
     setError("");
-    try {
-      const params = {
-        empresaRut,
-        limit: 100,
-        ...buildRangeParams(dateRange),
-      };
-      if (estado) params.estado = estado;
-      const [gestionesResponse, summaryResponse] = await Promise.all([
-        apiService.get("/gestion-zonas-extremas", { params }),
-        apiService.get(
-          `/zonas-extremas-dashboard/${empresaRut}/resumen-financiero`,
-          { params }
-        ),
-      ]);
-      const rows = normalizeGestiones(gestionesResponse?.data);
-      const nextSummary = summaryResponse?.data?.data || {};
-      setGestiones(rows);
-      setListTotal(Number(gestionesResponse?.data?.total || rows.length));
-      setSummary({
-        totalGestiones: Number(nextSummary.totalGestiones || 0),
-        totalRegistros: Number(nextSummary.totalRegistros || 0),
-        totalRecuperado: Number(nextSummary.totalRecuperado || 0),
-      });
-    } catch (err) {
-      console.error("Error cargando gestiones de zonas extremas", err);
-      setError(err?.message || "No fue posible cargar las gestiones.");
-      setGestiones([]);
-      setListTotal(0);
-      setSummary({ totalGestiones: 0, totalRegistros: 0, totalRecuperado: 0 });
-    } finally {
-      setLoading(false);
-    }
-  }, [dateRange, empresaRut, estado]);
+    const params = { empresaRut, ...buildRangeParams(getDashboardYearRange(year) || dateRange) };
+    if (estado) params.estado = estado;
 
-  useEffect(() => {
-    fetchGestiones();
-  }, [fetchGestiones]);
+    Promise.all([
+      fetchGestionHistoryPage(
+        "zonas-extremas",
+        {
+          page,
+          empresaRut,
+          estado,
+          from: params.fechaGestion_inicio,
+          to: params.fechaGestion_termino,
+        },
+        controller.signal
+      ),
+      apiService.get(
+        `/zonas-extremas-dashboard/${empresaRut}/resumen-financiero`,
+        { params, signal: controller.signal }
+      ),
+    ])
+      .then(([history, summaryResponse]) => {
+        if (controller.signal.aborted) return;
+        const nextSummary = summaryResponse?.data?.data || {};
+        setGestiones(history.rows);
+        setListTotal(history.total);
+        setSummary({
+          totalGestiones: Number(nextSummary.totalGestiones || 0),
+          totalRegistros: Number(nextSummary.totalRegistros || 0),
+          totalRecuperado: Number(nextSummary.totalRecuperado || 0),
+        });
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        setError(err?.message || "No fue posible cargar las gestiones.");
+        setGestiones([]);
+        setListTotal(0);
+        setSummary({ totalGestiones: 0, totalRegistros: 0, totalRecuperado: 0 });
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [dateRange, empresaRut, estado, page, refresh, year]);
 
   const handleDownloadDetalle = useCallback(async (gestion) => {
     if (!gestion?.id) return;
+    setError("");
     try {
-      const response = await apiService.get(
-        `/gestion-zonas-extremas/${gestion.id}/export`,
-        { responseType: "blob" }
-      );
-      const blob = new Blob([response.data], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `detalle_zonas_extremas_${gestion.folio || gestion.id}.xlsx`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadGestionHistoryExcel("zonas-extremas", gestion);
     } catch (err) {
-      console.error("Error descargando detalle de zonas extremas", err);
-      setError("No se pudo descargar el archivo de detalle de la gestión.");
+      setError(
+        err?.response?.status === 403
+          ? "No tienes permisos para descargar el Excel de esta gestión."
+          : "No se pudo descargar el archivo de detalle de la gestión."
+      );
     }
   }, []);
 
@@ -192,7 +176,16 @@ const ZonasExtremasGestionesDashboard = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <DashboardYearSelect serviceKey="zonas-extremas" empresaRut={empresaRut} enabled={Boolean(empresaRut)}
+              value={year}
+              customRange={!year && Boolean(dateRange?.from || dateRange?.to)}
+              onChange={(value) => {
+                setYear(value);
+                setDateRange({});
+                setPage(1);
+              }}
+            />
             <button
               type="button"
               onClick={() => setFiltersOpen((open) => !open)}
@@ -203,7 +196,7 @@ const ZonasExtremasGestionesDashboard = () => {
             </button>
             <button
               type="button"
-              onClick={fetchGestiones}
+              onClick={() => setRefresh((value) => value + 1)}
               className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500"
             >
               <RiRefreshLine className="h-4 w-4" />
@@ -221,7 +214,10 @@ const ZonasExtremasGestionesDashboard = () => {
                   <RiBuildingLine className="h-4 w-4 text-blue-600" />
                   <select
                     value={empresaRut}
-                    onChange={(event) => setEmpresaRut(event.target.value)}
+                    onChange={(event) => {
+                      setEmpresaRut(event.target.value);
+                      setPage(1);
+                    }}
                     disabled={loadingEmpresas}
                     className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none"
                   >
@@ -242,7 +238,11 @@ const ZonasExtremasGestionesDashboard = () => {
                   <RiCalendarLine className="h-4 w-4 shrink-0 text-blue-600" />
                   <DateRangePicker
                     value={dateRange}
-                    onValueChange={setDateRange}
+                    onValueChange={(value) => {
+                      setYear("");
+                      setDateRange(value);
+                      setPage(1);
+                    }}
                     enableClear
                     className="min-w-[220px]"
                   />
@@ -255,7 +255,10 @@ const ZonasExtremasGestionesDashboard = () => {
                   <RiShieldCheckLine className="h-4 w-4 text-blue-600" />
                   <select
                     value={estado}
-                    onChange={(event) => setEstado(event.target.value)}
+                    onChange={(event) => {
+                      setEstado(event.target.value);
+                      setPage(1);
+                    }}
                     className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 outline-none"
                   >
                     <option value="">Todos los estados</option>
@@ -468,6 +471,14 @@ const ZonasExtremasGestionesDashboard = () => {
               );
             })}
           </section>
+        )}
+        {empresaRut && (
+          <GestionHistoryPagination
+            page={page}
+            total={listTotal}
+            loading={loading}
+            onPageChange={setPage}
+          />
         )}
       </div>
     </main>

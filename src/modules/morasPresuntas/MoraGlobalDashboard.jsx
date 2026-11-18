@@ -15,6 +15,9 @@ import {
 import { getMoraGlobalDashboard } from "@/services/api/globalDashboards";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
 import { formatMoraEstadoLabel } from "@/utils/moraEstado";
+import DashboardYearSelect from "@/components/dashboard/DashboardYearSelect";
+import { DashboardHeader, DashboardContext, DashboardBody, DashboardFilters, DashboardStatus } from "@/components/dashboard/ServiceDashboardLayout";
+import { getDashboardYearParams } from "@/services/dashboardYear.mjs";
 
 const currencyFormatter = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -250,37 +253,17 @@ const RiskBreakdownList = ({
   );
 };
 
-const DashboardHeader = ({ scope, totalEmpresas }) => (
-  <header className="border-b border-slate-200 bg-white">
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
-      <div className="max-w-3xl">
-        <div className="mb-4 flex items-center gap-3">
-          <span className="h-2 w-2 rounded-sm bg-red-500" aria-hidden="true" />
-          <span className="text-xs font-semibold uppercase text-slate-500">
-            Dashboard Analítico
-          </span>
-        </div>
-        <h1 className="text-3xl font-semibold text-slate-950 md:text-4xl">
-          Mora presunta consolidada
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600 md:text-base">
-          Reorganización ejecutiva del riesgo, la recuperación y las empresas que requieren
-          atención prioritaria.
-        </p>
-      </div>
-
-      <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-auto">
-        <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-          <RiBuildingLine className="h-4 w-4 text-slate-500" />
-          <span>{scope?.isGlobal ? "Administrador" : "Empresas asignadas"}</span>
-        </div>
-        <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-          <RiStackLine className="h-4 w-4 text-slate-500" />
-          <span>{totalEmpresas} empresas</span>
-        </div>
-      </div>
-    </div>
-  </header>
+const DashboardFrame = ({ scope, totalEmpresas, year, onYearChange, children }) => (
+  <main className="min-h-screen bg-slate-50 text-slate-950">
+    <DashboardHeader kind="Dashboard Analítico" title="Mora presunta consolidada" description="Reorganización ejecutiva del riesgo, la recuperación y las empresas que requieren atención prioritaria.">
+      <DashboardContext><RiBuildingLine className="h-4 w-4" />{scope?.isGlobal ? "Administrador" : "Empresas asignadas"}</DashboardContext>
+      <DashboardContext><RiStackLine className="h-4 w-4" />{totalEmpresas} empresas</DashboardContext>
+    </DashboardHeader>
+    <DashboardBody>
+      <DashboardFilters><DashboardYearSelect serviceKey="mora" value={year} onChange={onYearChange} /></DashboardFilters>
+      {children}
+    </DashboardBody>
+  </main>
 );
 
 const MetricTile = ({ label, value, detail, icon: Icon, accent = "bg-slate-900" }) => (
@@ -537,25 +520,42 @@ const MoraGlobalDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  const [year, setYear] = useState("");
   const router = useRouter();
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const response = await getMoraGlobalDashboard();
+    const controller = new AbortController();
+    let ignore = false;
+
+    getMoraGlobalDashboard(getDashboardYearParams(year), { signal: controller.signal })
+      .then((response) => {
+        if (ignore) return;
+        if (!response?.requiresSelection && (!response?.kpis || typeof response.kpis !== "object")) {
+          throw new Error("No fue posible obtener los indicadores del dashboard.");
+        }
         setData(response);
-      } catch (err) {
+      })
+      .catch((err) => {
+        if (ignore) return;
         console.error("Error al cargar dashboard global de mora:", err);
         setError(err.message || "No fue posible cargar el dashboard global.");
-      } finally {
-        setLoading(false);
-      }
-    };
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
 
-    fetchData();
-  }, []);
+    return () => {
+      ignore = true;
+      controller.abort();
+    };
+  }, [retry, year]);
+
+  const handleYearChange = (value) => {
+    setError("");
+    setLoading(true);
+    setYear(value);
+  };
 
   const handleIrEmpresa = (empresaRut) => {
     if (!empresaRut) return;
@@ -563,20 +563,41 @@ const MoraGlobalDashboard = () => {
   };
 
   if (loading) {
-    return <DashboardMoraAnaliticoSkeleton />;
-  }
-
-  if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-red-700">
-        {error}
-      </div>
+      <DashboardFrame scope={data?.scope} totalEmpresas={data?.scope?.empresas?.length || 0} year={year} onYearChange={handleYearChange}>
+        <DashboardMoraAnaliticoSkeleton />
+      </DashboardFrame>
     );
   }
 
-  if (!data) {
-    return null;
+  const sinRegistros = data?.kpis?.totalCasos != null && Number(data.kpis.totalCasos) === 0;
+  if (error || data?.requiresSelection || sinRegistros) {
+    const message = error || (data?.requiresSelection
+      ? "No hay empresas disponibles para consultar."
+      : "No hay registros de mora para mostrar.");
+    return (
+      <DashboardFrame scope={data?.scope} totalEmpresas={data?.scope?.empresas?.length || 0} year={year} onYearChange={handleYearChange}>
+          <DashboardStatus error={Boolean(error)}>
+            <p>{message}</p>
+            {error && (
+              <button
+                type="button"
+                onClick={() => {
+                  setError("");
+                  setLoading(true);
+                  setRetry((value) => value + 1);
+                }}
+                className="mt-3 font-semibold text-blue-700 hover:underline"
+              >
+                Reintentar
+              </button>
+            )}
+          </DashboardStatus>
+      </DashboardFrame>
+    );
   }
+
+  if (!data) return null;
 
   const totalEmpresas = Array.isArray(data.scope?.empresas) ? data.scope.empresas.length : "∞";
   const totalDeuda = Number(data.kpis?.totalDeuda || 0);
@@ -642,10 +663,7 @@ const MoraGlobalDashboard = () => {
   const topEntidades = (data.entidadesMayorDeuda || []).slice(0, 8);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-      <DashboardHeader scope={data.scope} totalEmpresas={totalEmpresas} />
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <DashboardFrame scope={data.scope} totalEmpresas={totalEmpresas} year={year} onYearChange={handleYearChange}>
           <KpiGrid
             totalDeuda={totalDeuda}
             totalRegularizado={totalRegularizado}
@@ -674,9 +692,7 @@ const MoraGlobalDashboard = () => {
             totalPendiente={totalPendiente}
             tendencia={tendencia}
           />
-        </div>
-      </div>
-    </main>
+    </DashboardFrame>
   );
 };
 

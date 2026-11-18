@@ -2,15 +2,29 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   aggregateOperationalDashboard,
+  fetchOperationalGestionRows,
   formatDashboardDate,
   humanizeStatus,
 } from "../src/services/operationalServiceDashboard.mjs";
+
+test("aggregates the full history beyond the first API page", async () => {
+  const history = Array.from({ length: 521 }, (_, id) => ({ id, totalCasos: 1 }));
+  const offsets = [];
+  const rows = await fetchOperationalGestionRows(async ({ limit, offset }) => {
+    offsets.push(offset);
+    return { data: history.slice(offset, offset + limit), total: history.length };
+  });
+  const { summary } = aggregateOperationalDashboard(rows, { volumeField: "totalCasos" });
+  assert.deepEqual(offsets, [0, 500]);
+  assert.equal(summary.totalGestiones, 521);
+  assert.equal(summary.totalVolumen, 521);
+});
 
 const definition = {
   volumeField: "totalCasos",
 };
 
-test("aggregates summary, normalized states, companies, timeline and latest rows", () => {
+test("aggregates summary, normalized states, companies and timeline", () => {
   const rows = [
     {
       id: 3,
@@ -64,8 +78,6 @@ test("aggregates summary, normalized states, companies, timeline and latest rows
     { periodo: "2026-08", gestiones: 1, volumen: 5 },
     { periodo: "2026-09", gestiones: 2, volumen: 10 },
   ]);
-  assert.equal(result.latest.length, 3);
-  assert.equal(result.latest[0].folio, "NP-00003");
 });
 
 test("returns a stable empty dashboard", () => {
@@ -80,7 +92,6 @@ test("returns a stable empty dashboard", () => {
     states: [],
     companies: [],
     timeline: [],
-    latest: [],
   });
 });
 

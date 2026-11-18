@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   LICENCIAS_SECTIONS,
   buildLicenciasSectionHref,
+  getLicenciasNavigationContext,
   getLicenciasWorkspaceLinks,
   normalizeLicenciasAnalytics,
   normalizeLicenciasOperations,
@@ -38,6 +39,22 @@ test("builds canonical section links and preserves only non-empty query values",
     "/servicios/licencias-medicas/dashboard-operativo?empresa=76.412.562-2"
   );
   assert.equal(buildLicenciasSectionHref("desconocido", {}), null);
+});
+
+test("preserves the selected company and worker when navigating between sections", () => {
+  const params = new URLSearchParams({
+    empresa: "11-1",
+    trabajador: "12.345.678-9",
+    seccion: "resumen",
+    tab: "legacy",
+    page: "3",
+  });
+
+  assert.deepEqual(getLicenciasNavigationContext(params), {
+    empresa: "11-1",
+    trabajador: "12.345.678-9",
+    seccion: "resumen",
+  });
 });
 
 test("requires an explicit company when several companies are available", () => {

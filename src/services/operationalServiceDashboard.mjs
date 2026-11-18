@@ -39,6 +39,19 @@ const getPeriod = (row) => {
   return match ? `${match[1]}-${match[2]}` : "Sin periodo";
 };
 
+export async function fetchOperationalGestionRows(fetchPage, limit = 500) {
+  const rows = [];
+  let total;
+  do {
+    const page = await fetchPage({ limit, offset: rows.length });
+    const pageRows = Array.isArray(page?.data) ? page.data : [];
+    if (!pageRows.length) break;
+    rows.push(...pageRows);
+    total = Number(page.total ?? rows.length);
+  } while (rows.length < total);
+  return rows;
+}
+
 export const aggregateOperationalDashboard = (
   rows = [],
   definition = {},
@@ -107,13 +120,6 @@ export const aggregateOperationalDashboard = (
     timeline: Array.from(timeline.values()).sort((a, b) =>
       a.periodo.localeCompare(b.periodo)
     ),
-    latest: [...rows]
-      .sort((a, b) =>
-        String(b?.createdAt || b?.fechaGestion || "").localeCompare(
-          String(a?.createdAt || a?.fechaGestion || "")
-        )
-      )
-      .slice(0, 8),
   };
 };
 

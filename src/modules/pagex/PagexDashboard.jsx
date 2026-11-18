@@ -9,7 +9,6 @@ import React, {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  DateRangePicker,
   BarChart,
   DonutChart,
   Table,
@@ -20,14 +19,15 @@ import {
   TableRow,
 } from "@tremor/react";
 import {
-  RiBuildingLine,
-  RiCalendarLine,
   RiRefreshLine,
   RiInformationLine,
 } from "@remixicon/react";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import apiService from "@/app/api/apiService";
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
+import { DashboardHeader, DashboardContext, DashboardBody, DashboardFilters, DashboardPeriodFilter, DashboardStatus, dashboardFieldClass, dashboardControlClass } from "@/components/dashboard/ServiceDashboardLayout";
+import DashboardYearSelect from "@/components/dashboard/DashboardYearSelect";
+import { getDashboardYearParams } from "@/services/dashboardYear.mjs";
 import ServiceTimeline from "@/components/servicios/ServiceTimeline";
 
 const currencyFormatter = new Intl.NumberFormat("es-CL", {
@@ -63,16 +63,6 @@ const formatDisplayDate = (date) => {
   return `${day}-${month}-${date.getFullYear()}`;
 };
 
-const EmptyState = ({ message }) => (
-  <section className="rounded-[2rem] border border-slate-200 bg-white p-12 text-center shadow-sm">
-    <RiInformationLine className="mx-auto h-12 w-12 text-blue-600" />
-    <h2 className="mt-4 text-2xl font-semibold text-[#06164b]">
-      Selecciona una empresa
-    </h2>
-    <p className="mt-2 text-sm text-slate-600">{message}</p>
-  </section>
-);
-
 const ChartEmpty = ({ message }) => (
   <div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-white/70 p-6 text-center text-sm text-slate-500">
     {message}
@@ -106,6 +96,8 @@ const PagexDashboard = () => {
   const [empresaSeleccionada, setEmpresaSeleccionada] = useState("");
   const [empresaInput, setEmpresaInput] = useState("");
   const lastEmpresaLabel = useRef("");
+  const dashboardRequest = useRef(null);
+  const [year, setYear] = useState("");
   const [dateRange, setDateRange] = useState({
     from: undefined,
     to: undefined,
@@ -207,20 +199,26 @@ const PagexDashboard = () => {
 
   const filtrosActivos = useMemo(() => {
     const filtros = [];
+    if (year) filtros.push({ etiqueta: "Año", valor: year });
     if (dateRange?.from || dateRange?.to) {
       const inicio = dateRange?.from ? formatDisplayDate(dateRange.from) : "-";
       const fin = dateRange?.to ? formatDisplayDate(dateRange.to) : "-";
       filtros.push({ etiqueta: "Rango", valor: `${inicio} → ${fin}` });
     }
     return filtros;
-  }, [dateRange]);
+  }, [dateRange, year]);
 
   const cargarDashboard = useCallback(async () => {
     if (!empresaSeleccionada) return;
+    dashboardRequest.current?.abort();
+    const controller = new AbortController();
+    dashboardRequest.current = controller;
+    const { signal } = controller;
+
     try {
       setErrorCarga("");
       setLoadingDatos(true);
-      const params = buildDateParams(dateRange);
+      const params = year ? getDashboardYearParams(year) : buildDateParams(dateRange);
 
       const [
         resumenResponse,
@@ -230,35 +228,38 @@ const PagexDashboard = () => {
       ] = await Promise.all([
         apiService.get(
           `/pagex-dashboard/${empresaSeleccionada}/resumen-financiero`,
-          { params }
+          { params, signal }
         ),
-        apiService.get(`/pagex-dashboard/${empresaSeleccionada}/casos-por-estado`, { params }),
+        apiService.get(`/pagex-dashboard/${empresaSeleccionada}/casos-por-estado`, { params, signal }),
         apiService.get(
           `/pagex-dashboard/${empresaSeleccionada}/deuda-por-institucion`,
-          { params }
+          { params, signal }
         ),
         apiService.get(
           `/pagex-dashboard/${empresaSeleccionada}/top-pendientes`,
-          { params }
+          { params, signal }
         ),
       ]);
 
+      if (signal.aborted) return;
       setResumenFinanciero(resumenResponse?.data?.data ?? null);
       setCasosEstado(casosResponse?.data?.data ?? null);
       setDeudaPorEntidad(deudaResponse?.data?.data ?? []);
       setTopPendientes(pendientesResponse?.data?.data ?? []);
     } catch (error) {
+      if (signal.aborted) return;
       console.error("Error cargando dashboard Pagex:", error);
       setErrorCarga(
         "No pudimos cargar la información. Inténtalo nuevamente en unos minutos."
       );
     } finally {
-      setLoadingDatos(false);
+      if (!signal.aborted) setLoadingDatos(false);
     }
-  }, [empresaSeleccionada, dateRange]);
+  }, [empresaSeleccionada, dateRange, year]);
 
   useEffect(() => {
     cargarDashboard();
+    return () => dashboardRequest.current?.abort();
   }, [cargarDashboard]);
 
   const barChartData = useMemo(() => {
@@ -285,321 +286,261 @@ const PagexDashboard = () => {
     ].filter((item) => item.casos > 0);
   }, [casosEstado]);
 
-  if (loadingEmpresas && !empresaSeleccionada) {
-    return <DashboardMoraAnaliticoSkeleton />;
-  }
-
-  if (!empresaSeleccionada) {
-    return (
-      <div className="theme-mora">
-        <main className="min-h-dvh bg-[#f7f4fb] px-4 py-5 md:px-6 md:py-7">
-          <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5">
-            <EmptyState message="Elige una empresa autorizada para revisar su actividad en pagos en exceso." />
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   const surface =
     "rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6";
 
   return (
-    <div className="theme-mora">
-      <main className="min-h-dvh bg-[#f7f4fb] px-4 py-5 md:px-6 md:py-7">
-        <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-5">
-          <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-            <div>
-                <h1 className="text-[clamp(2rem,2.3vw,2.85rem)] font-bold leading-tight tracking-normal text-[#06164b]">
-                  Dashboard operativo de Pagex
-                </h1>
-                <p className="mt-2 max-w-4xl text-base text-slate-600 md:text-lg">
-                  Monitorea tus recuperaciones, saldos pendientes y los casos
-                  prioritarios de pagos en exceso.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-                <div className="relative flex min-w-[260px] flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm">
-                  <RiBuildingLine
-                    className="h-4 w-4 text-blue-600"
-                    aria-hidden="true"
-                  />
-                  <input
-                    type="text"
-                    placeholder={
-                      loadingEmpresas
-                        ? "Cargando empresas..."
-                        : "Busca por nombre o RUT"
-                    }
-                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 outline-none"
-                    value={empresaInput}
-                    onChange={(event) =>
-                      handleEmpresaInputChange(event.target.value)
-                    }
-                    onFocus={(event) => {
-                      event.target.select();
-                      handleEmpresaFocus();
-                    }}
-                    onBlur={handleEmpresaBlur}
-                    list="pagex-empresas-options-cliente"
-                    disabled={loadingEmpresas || loadingDatos}
-                  />
-                  <datalist id="pagex-empresas-options-cliente">
-                    {empresaOptions.map((empresa) => (
-                      <option key={empresa.rut} value={empresa.label} />
-                    ))}
-                  </datalist>
-                </div>
-
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <div className="flex min-w-[220px] flex-1 items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm">
-                    <RiCalendarLine
-                      className="h-4 w-4 text-blue-600"
-                      aria-hidden="true"
-                    />
-                    <DateRangePicker
-                      value={dateRange}
-                      onValueChange={setDateRange}
-                      enableClear
-                      className="flex-1"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={cargarDashboard}
-                    disabled={loadingDatos}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <RiRefreshLine className="h-4 w-4" />
-                    Actualizar
-                  </button>
-                </div>
-              </div>
-          </section>
-
-          <section className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm md:px-6">
-            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
-              <RiInformationLine className="h-4 w-4 text-blue-600" />
-              <span className="font-semibold">Filtros activos</span>
-              {filtrosActivos.length === 0 && (
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                  Sin filtros adicionales
-                </span>
-              )}
-              {filtrosActivos.map((filtro) => (
-                <span
-                  key={`${filtro.etiqueta}-${filtro.valor}`}
-                  className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
-                >
-                  {filtro.etiqueta}: {filtro.valor}
-                </span>
-              ))}
-            </div>
-          </section>
-
-          {errorCarga && (
-            <section className="rounded-3xl border border-rose-200 bg-rose-50 p-5 text-rose-700 shadow-sm">
-              {errorCarga}
-            </section>
-          )}
-
-          <section className={surface}>
-            <div className="grid gap-4 lg:grid-cols-4">
-              <MetricCard
-                label="Monto solicitado"
-                value={formatCurrency(resumenFinanciero?.totalSolicitado ?? 0)}
-                helper="Pagos en exceso identificados"
-              />
-              <MetricCard
-                label="Monto recuperado"
-                value={formatCurrency(resumenFinanciero?.totalRecuperado ?? 0)}
-                helper="Casos regularizados"
-                highlight={
-                  casosEstado
-                    ? `Avance: ${formatPercentage(
-                        casosEstado?.porcentajeAvance ?? 0
-                      )}`
-                    : undefined
-                }
-              />
-              <MetricCard
-                label="Monto pendiente"
-                value={formatCurrency(resumenFinanciero?.totalPendiente ?? 0)}
-                helper="Saldo aún en gestión"
-              />
-              <MetricCard
-                label="Casos totales"
-                value={formatNumber(casosEstado?.total ?? 0)}
-                helper={`Pendientes: ${formatNumber(
-                  casosEstado?.pendientes ?? 0
-                )}`}
-              />
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <MetricCard
-                label="Casos pendientes"
-                value={formatNumber(casosEstado?.pendientes ?? 0)}
-              />
-              <MetricCard
-                label="Casos recuperados"
-                value={formatNumber(casosEstado?.resueltos ?? 0)}
-              />
-            </div>
-          </section>
-
-          <section className={surface}>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-[#06164b]">
-                  Distribución de deuda por entidad
-                </h2>
-                <p className="text-sm text-slate-600">
-                  Compara los montos solicitados, recuperados y pendientes por
-                  institución.
-                </p>
-                {barChartData.length > 0 ? (
-                  <BarChart
-                    className="mt-6"
-                    data={barChartData}
-                    index="entidad"
-                    categories={["Solicitado", "Recuperado", "Pendiente"]}
-                    colors={["indigo", "emerald", "rose"]}
-                    valueFormatter={formatCurrency}
-                    yAxisWidth={88}
-                    noDataText="Sin registros para la selección actual."
-                  />
-                ) : (
-                  <ChartEmpty message="Aún no hay registros de deuda por entidad para la selección actual." />
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section className={surface}>
-            <div className="grid gap-6 lg:grid-cols-5">
-              <div className="lg:col-span-2">
-                <h2 className="text-lg font-semibold text-[#06164b]">
-                  Casos por estado
-                </h2>
-                <p className="text-sm text-slate-600">
-                  Distribución de gestiones según su estado actual.
-                </p>
-                {donutData.length > 0 ? (
-                  <DonutChart
-                    className="mt-6"
-                    data={donutData}
-                    category="casos"
-                    index="estado"
-                    valueFormatter={formatNumber}
-                    colors={["amber", "emerald", "rose"]}
-                    showLabel
-                    showTooltip
-                  />
-                ) : (
-                  <ChartEmpty message="Sin datos suficientes para graficar la distribución de estados." />
-                )}
-              </div>
-
-              <div className="lg:col-span-3">
-                <h2 className="text-lg font-semibold text-[#06164b]">
-                  Top de trabajadores con montos pendientes
-                </h2>
-                <p className="text-sm text-slate-600">
-                  Revisa los trabajadores con mayor monto pendiente para
-                  priorizar las gestiones.
-                </p>
-
-                <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                  <Table className="min-w-full divide-y divide-slate-200 text-sm">
-                    <TableHead className="bg-slate-50">
-                      <TableRow>
-                        <TableHeaderCell>Trabajador</TableHeaderCell>
-                        <TableHeaderCell>RUT</TableHeaderCell>
-                        <TableHeaderCell className="text-right">
-                          Monto pendiente
-                        </TableHeaderCell>
-                        <TableHeaderCell className="text-right">
-                          Periodos
-                        </TableHeaderCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {topPendientes.length === 0 && (
-                        <TableRow>
-                          <TableCell
-                            colSpan={4}
-                            className="py-6 text-center text-slate-500"
-                          >
-                            No existen pendientes para la empresa
-                            seleccionada.
-                          </TableCell>
-                        </TableRow>
-                      )}
-                      {topPendientes.map((item) => (
-                        <TableRow key={item.rutTrabajador}>
-                          <TableCell>
-                            {item.nombreTrabajador || "Sin nombre"}
-                          </TableCell>
-                          <TableCell className="text-slate-500">
-                            {item.rutTrabajador}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold text-blue-700">
-                            {formatCurrency(item.totalDeudaPendiente)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatNumber(item.periodosPendientes)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <ServiceTimeline
-            empresaRut={empresaSeleccionada}
-            serviceKey="pagex"
-            dateRange={dateRange}
+    <main className="min-h-screen bg-slate-50 text-slate-950">
+      <DashboardHeader kind="Dashboard operativo" title="Pagos en Exceso" description="Monitorea tus recuperaciones, saldos pendientes y casos prioritarios.">
+        <DashboardContext>{empresaOptions.find((empresa) => empresa.rut === empresaSeleccionada)?.label || empresaSeleccionada || "Sin empresa seleccionada"}</DashboardContext>
+      </DashboardHeader>
+      <DashboardBody>
+        <DashboardFilters footer={empresaSeleccionada && (
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+            <button type="button" onClick={cargarDashboard} disabled={loadingDatos} className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-60">
+              <RiRefreshLine className="h-4 w-4" /> Actualizar
+            </button>
+            <span className="font-semibold">Filtros activos</span>
+            {filtrosActivos.length === 0 && <span>Sin filtros adicionales</span>}
+            {filtrosActivos.map((filtro) => (
+              <span key={`${filtro.etiqueta}-${filtro.valor}`} className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                {filtro.etiqueta}: {filtro.valor}
+              </span>
+            ))}
+          </div>
+        )}>
+          <label className={dashboardFieldClass}>
+            Empresa
+            <input
+              type="text"
+              placeholder={loadingEmpresas ? "Cargando empresas..." : "Busca por nombre o RUT"}
+              className={dashboardControlClass}
+              value={empresaInput}
+              onChange={(event) => handleEmpresaInputChange(event.target.value)}
+              onFocus={(event) => { event.target.select(); handleEmpresaFocus(); }}
+              onBlur={handleEmpresaBlur}
+              list="pagex-empresas-options-cliente"
+              disabled={loadingEmpresas || loadingDatos}
+            />
+            <datalist id="pagex-empresas-options-cliente">
+              {empresaOptions.map((empresa) => <option key={empresa.rut} value={empresa.label} />)}
+            </datalist>
+          </label>
+          <DashboardYearSelect serviceKey="pagex" empresaRut={empresaSeleccionada} enabled={Boolean(empresaSeleccionada)}
+            value={year} customRange={!year && Boolean(dateRange?.from && dateRange?.to)}
+            onChange={(value) => { setYear(value); setDateRange({ from: undefined, to: undefined }); }}
           />
+          <DashboardPeriodFilter value={dateRange} onChange={(range) => { setDateRange(range); setYear(""); }} />
+        </DashboardFilters>
 
-          <section className={surface}>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-950">
-                <RiInformationLine className="h-3.5 w-3.5" />
-                <span className="uppercase">Empresa</span>
-                <span className="font-semibold normal-case">
-                  {empresaOptions.find(
-                    (empresa) => empresa.rut === empresaSeleccionada
-                  )?.label || empresaSeleccionada}
-                </span>
-              </span>
+        {loadingEmpresas && !empresaSeleccionada ? (
+          <DashboardMoraAnaliticoSkeleton />
+        ) : !empresaSeleccionada ? (
+          <DashboardStatus>Elige una empresa autorizada para consultar su actividad en pagos en exceso.</DashboardStatus>
+        ) : (
+          <>
+            {errorCarga && (
+              <DashboardStatus error>{errorCarga}</DashboardStatus>
+            )}
 
-              <span className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-950">
-                <RiInformationLine className="h-3.5 w-3.5" />
-                <span className="uppercase">
-                  Casos Analizados
-                </span>
-                <span className="font-semibold normal-case">
-                  {formatNumber(casosEstado?.total ?? 0)}
-                </span>
-              </span>
+            <section className={surface}>
+              <div className="grid gap-4 lg:grid-cols-4">
+                <MetricCard
+                  label="Monto solicitado"
+                  value={formatCurrency(resumenFinanciero?.totalSolicitado ?? 0)}
+                  helper="Pagos en exceso identificados"
+                />
+                <MetricCard
+                  label="Monto recuperado"
+                  value={formatCurrency(resumenFinanciero?.totalRecuperado ?? 0)}
+                  helper="Casos regularizados"
+                  highlight={
+                    casosEstado
+                      ? `Avance: ${formatPercentage(
+                          casosEstado?.porcentajeAvance ?? 0
+                        )}`
+                      : undefined
+                  }
+                />
+                <MetricCard
+                  label="Monto pendiente"
+                  value={formatCurrency(resumenFinanciero?.totalPendiente ?? 0)}
+                  helper="Saldo aún en gestión"
+                />
+                <MetricCard
+                  label="Casos totales"
+                  value={formatNumber(casosEstado?.total ?? 0)}
+                  helper={`Pendientes: ${formatNumber(
+                    casosEstado?.pendientes ?? 0
+                  )}`}
+                />
+              </div>
 
-              <span className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-950">
-                <RiInformationLine className="h-3.5 w-3.5" />
-                <span className="uppercase">Avance</span>
-                <span className="font-semibold normal-case">
-                  {formatPercentage(casosEstado?.porcentajeAvance ?? 0)}
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <MetricCard
+                  label="Casos pendientes"
+                  value={formatNumber(casosEstado?.pendientes ?? 0)}
+                />
+                <MetricCard
+                  label="Casos recuperados"
+                  value={formatNumber(casosEstado?.resueltos ?? 0)}
+                />
+              </div>
+            </section>
+
+            <section className={surface}>
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex-1">
+                  <h2 className="text-lg font-semibold text-[#06164b]">
+                    Distribución de deuda por entidad
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    Compara los montos solicitados, recuperados y pendientes por
+                    institución.
+                  </p>
+                  {barChartData.length > 0 ? (
+                    <BarChart
+                      className="mt-6"
+                      data={barChartData}
+                      index="entidad"
+                      categories={["Solicitado", "Recuperado", "Pendiente"]}
+                      colors={["indigo", "emerald", "rose"]}
+                      valueFormatter={formatCurrency}
+                      yAxisWidth={88}
+                      noDataText="Sin registros para la selección actual."
+                    />
+                  ) : (
+                    <ChartEmpty message="Aún no hay registros de deuda por entidad para la selección actual." />
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className={surface}>
+              <div className="grid gap-6 lg:grid-cols-5">
+                <div className="lg:col-span-2">
+                  <h2 className="text-lg font-semibold text-[#06164b]">
+                    Casos por estado
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    Distribución de gestiones según su estado actual.
+                  </p>
+                  {donutData.length > 0 ? (
+                    <DonutChart
+                      className="mt-6"
+                      data={donutData}
+                      category="casos"
+                      index="estado"
+                      valueFormatter={formatNumber}
+                      colors={["amber", "emerald", "rose"]}
+                      showLabel
+                      showTooltip
+                    />
+                  ) : (
+                    <ChartEmpty message="Sin datos suficientes para graficar la distribución de estados." />
+                  )}
+                </div>
+
+                <div className="lg:col-span-3">
+                  <h2 className="text-lg font-semibold text-[#06164b]">
+                    Top de trabajadores con montos pendientes
+                  </h2>
+                  <p className="text-sm text-slate-600">
+                    Revisa los trabajadores con mayor monto pendiente para
+                    priorizar las gestiones.
+                  </p>
+
+                  <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <Table className="min-w-full divide-y divide-slate-200 text-sm">
+                      <TableHead className="bg-slate-50">
+                        <TableRow>
+                          <TableHeaderCell>Trabajador</TableHeaderCell>
+                          <TableHeaderCell>RUT</TableHeaderCell>
+                          <TableHeaderCell className="text-right">
+                            Monto pendiente
+                          </TableHeaderCell>
+                          <TableHeaderCell className="text-right">
+                            Periodos
+                          </TableHeaderCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {topPendientes.length === 0 && (
+                          <TableRow>
+                            <TableCell
+                              colSpan={4}
+                              className="py-6 text-center text-slate-500"
+                            >
+                              No existen pendientes para la empresa
+                              seleccionada.
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        {topPendientes.map((item) => (
+                          <TableRow key={item.rutTrabajador}>
+                            <TableCell>
+                              {item.nombreTrabajador || "Sin nombre"}
+                            </TableCell>
+                            <TableCell className="text-slate-500">
+                              {item.rutTrabajador}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-blue-700">
+                              {formatCurrency(item.totalDeudaPendiente)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {formatNumber(item.periodosPendientes)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <ServiceTimeline
+              empresaRut={empresaSeleccionada}
+              serviceKey="pagex"
+              dateRange={dateRange}
+              year={year}
+            />
+
+            <section className={surface}>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-950">
+                  <RiInformationLine className="h-3.5 w-3.5" />
+                  <span className="uppercase">Empresa</span>
+                  <span className="font-semibold normal-case">
+                    {empresaOptions.find(
+                      (empresa) => empresa.rut === empresaSeleccionada
+                    )?.label || empresaSeleccionada}
+                  </span>
                 </span>
-              </span>
-            </div>
-          </section>
-        </div>
-      </main>
-    </div>
+
+                <span className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-950">
+                  <RiInformationLine className="h-3.5 w-3.5" />
+                  <span className="uppercase">
+                    Casos Analizados
+                  </span>
+                  <span className="font-semibold normal-case">
+                    {formatNumber(casosEstado?.total ?? 0)}
+                  </span>
+                </span>
+
+                <span className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-950">
+                  <RiInformationLine className="h-3.5 w-3.5" />
+                  <span className="uppercase">Avance</span>
+                  <span className="font-semibold normal-case">
+                    {formatPercentage(casosEstado?.porcentajeAvance ?? 0)}
+                  </span>
+                </span>
+              </div>
+            </section>
+          </>
+        )}
+      </DashboardBody>
+    </main>
   );
 };
 

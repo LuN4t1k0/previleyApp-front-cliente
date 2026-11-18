@@ -3,16 +3,19 @@
 import { useState, useEffect } from "react";
 import { RiDownloadLine, RiFileExcel2Line } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
+import buildMoraDashboardParams from "@/utils/moraDashboardParams";
 import { downloadExcelFromJson } from "@/utils/exportUtils";
 import { SectionCard } from "../mora-operativo/MoraOperativoUI";
 
-const ExportarResumenGlobal = ({ empresaRut }) => {
+const ExportarResumenGlobal = ({ empresaRut, dateRange }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     const fetchResumen = async () => {
       try {
-        const res = await apiService.get(`/mora-dashboard/${empresaRut}/deuda-por-institucion`);
+        const res = await apiService.get(`/mora-dashboard/${empresaRut}/deuda-por-institucion`, {
+          params: buildMoraDashboardParams({ dateRange }),
+        });
         const enriquecido = res.data.data.map((item) => {
           const porcentaje =
             item.deuda > 0 ? ((item.recuperado / item.deuda) * 100).toFixed(2) : "0.00";
@@ -31,7 +34,7 @@ const ExportarResumenGlobal = ({ empresaRut }) => {
     };
 
     if (empresaRut) fetchResumen();
-  }, [empresaRut]);
+  }, [empresaRut, dateRange]);
 
   const handleExport = () => {
     downloadExcelFromJson(data, "Resumen Instituciones", "resumen_global_instituciones");

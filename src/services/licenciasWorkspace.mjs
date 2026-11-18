@@ -49,19 +49,37 @@ export const buildLicenciasSectionHref = (section, params = {}) => {
   return `/servicios/licencias-medicas/${canonical}${suffix ? `?${suffix}` : ""}`;
 };
 
-export const getLicenciasWorkspaceLinks = () => ({
+export const getLicenciasNavigationContext = (params = {}) => {
+  const read = (key) =>
+    typeof params?.get === "function" ? params.get(key) : params?.[key];
+
+  return Object.fromEntries(
+    ["empresa", "trabajador", "seccion"]
+      .map((key) => [key, read(key)])
+      .filter(([, value]) => value !== undefined && value !== null && value !== "")
+  );
+};
+
+export const getLicenciasWorkspaceLinks = (params = {}) => {
+  const context = getLicenciasNavigationContext(params);
+  const complementaryQuery = new URLSearchParams(context).toString();
+
+  return {
   sections: LICENCIAS_SECTIONS.map((section) => ({
     ...section,
-    href: buildLicenciasSectionHref(section.key),
+    href: buildLicenciasSectionHref(section.key, context),
   })),
   complementary: [
     {
       key: "ficha-trabajador",
       label: "Ficha Trabajador",
-      href: "/servicios/licencias-medicas/ficha-trabajador",
+      href: `/servicios/licencias-medicas/ficha-trabajador${
+        complementaryQuery ? `?${complementaryQuery}` : ""
+      }`,
     },
   ],
-});
+  };
+};
 
 export const resolveLicenciasLegacyHref = (tab, params = {}) => {
   const normalized = String(tab || "").trim().toLowerCase();

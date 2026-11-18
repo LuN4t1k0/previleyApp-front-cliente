@@ -33,6 +33,7 @@ const getCurrentPeriodo = () => {
 };
 
 const getPeriodoFromDateRange = (dateRange) => {
+  if (typeof dateRange?.from === "string") return dateRange.from.slice(0, 7);
   const sourceDate = dateRange?.from instanceof Date ? dateRange.from : null;
   if (!sourceDate) return getCurrentPeriodo();
   return `${sourceDate.getFullYear()}-${String(sourceDate.getMonth() + 1).padStart(2, "0")}`;

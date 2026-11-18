@@ -23,18 +23,18 @@ const DASHBOARD_FETCHERS = {
     requiresEmpresa: true,
   },
   "cargas-familiares": {
-    fetcher: (empresaRut) =>
-      fetchOperationalServiceDashboard("cargas-familiares", empresaRut),
+    fetcher: (empresaRut, range) =>
+      fetchOperationalServiceDashboard("cargas-familiares", empresaRut, range),
     requiresEmpresa: false,
   },
   "depositos-convenidos": {
-    fetcher: (empresaRut) =>
-      fetchOperationalServiceDashboard("depositos-convenidos", empresaRut),
+    fetcher: (empresaRut, range) =>
+      fetchOperationalServiceDashboard("depositos-convenidos", empresaRut, range),
     requiresEmpresa: false,
   },
   "notificaciones-previsionales": {
-    fetcher: (empresaRut) =>
-      fetchOperationalServiceDashboard("notificaciones-previsionales", empresaRut),
+    fetcher: (empresaRut, range) =>
+      fetchOperationalServiceDashboard("notificaciones-previsionales", empresaRut, range),
     requiresEmpresa: false,
   },
 };

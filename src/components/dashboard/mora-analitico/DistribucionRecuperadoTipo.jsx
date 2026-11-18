@@ -4,16 +4,18 @@ import { useEffect, useState } from "react";
 import { BarChart } from "@tremor/react";
 import { RiFundsLine } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
+import buildMoraDashboardParams from "@/utils/moraDashboardParams";
 import { SectionCard, SectionHeader } from "../mora-operativo/MoraOperativoUI";
 
-const DistribucionRecuperadoTipo = ({ empresaRut }) => {
+const DistribucionRecuperadoTipo = ({ empresaRut, dateRange }) => {
   const [data, setData] = useState(null);
 
   useEffect(() => {
     const fetchResumen = async () => {
       try {
         const res = await apiService.get(
-          `/mora-dashboard/${empresaRut}/resumen-financiero`
+          `/mora-dashboard/${empresaRut}/resumen-financiero`,
+          { params: buildMoraDashboardParams({ dateRange }) }
         );
 
         const resumen = res.data.data;
@@ -28,7 +30,7 @@ const DistribucionRecuperadoTipo = ({ empresaRut }) => {
     };
 
     if (empresaRut) fetchResumen();
-  }, [empresaRut]);
+  }, [empresaRut, dateRange]);
 
   if (!data) return null;
 

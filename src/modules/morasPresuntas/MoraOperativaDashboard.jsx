@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DateRangePicker } from "@tremor/react";
+import { DashboardHeader, DashboardContext, DashboardBody, DashboardFilters, DashboardPeriodFilter, DashboardStatus, dashboardFieldClass, dashboardControlClass } from "@/components/dashboard/ServiceDashboardLayout";
+import DashboardYearSelect from "@/components/dashboard/DashboardYearSelect";
+import { getDashboardYearRange } from "@/services/dashboardYear.mjs";
 import useEmpresasPermitidas from "@/hooks/useEmpresasPermitidas";
 import apiService from "@/app/api/apiService";
 import IndicadoresOperativos from "@/components/dashboard/mora-operativo/IndicadoresOperativos";
@@ -19,16 +21,9 @@ import ExportarResumenGlobal from "@/components/dashboard/mora-analitico/Exporta
 import DashboardMoraAnaliticoSkeleton from "@/components/skeleton/DashboardMoraAnaliticoSkeleton";
 import {
   RiBuildingLine,
-  RiCalendarLine,
   RiFilterLine,
   RiStackLine,
 } from "@remixicon/react";
-
-const SectionPanel = ({ children, className = "" }) => (
-  <section className={`rounded-lg border border-indigo-200 bg-white p-5 shadow-sm ${className}`}>
-    {children}
-  </section>
-);
 
 const MoraOperativaDashboard = () => {
   const { empresas, loading: loadingEmpresas } = useEmpresasPermitidas();
@@ -39,7 +34,9 @@ const MoraOperativaDashboard = () => {
   const [entidadesDisponibles, setEntidadesDisponibles] = useState([]);
   const [entidadSeleccionada, setEntidadSeleccionada] = useState("");
   const [cargandoEntidades, setCargandoEntidades] = useState(false);
-  const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
+  const [year, setYear] = useState("");
+  const [manualDateRange, setManualDateRange] = useState({ from: undefined, to: undefined });
+  const dateRange = useMemo(() => getDashboardYearRange(year) || manualDateRange, [year, manualDateRange]);
 
   const empresaOptions = useMemo(
     () =>
@@ -162,60 +159,60 @@ const MoraOperativaDashboard = () => {
       const match = entidadesDisponibles.find((item) => item.value === entidadSeleccionada);
       filtros.push({ etiqueta: "Entidad", valor: match?.label || entidadSeleccionada });
     }
-    if (dateRange?.from || dateRange?.to) {
-      const inicio = dateRange?.from?.toLocaleDateString("es-CL") || "-";
-      const fin = dateRange?.to?.toLocaleDateString("es-CL") || "-";
+    if (year) {
+      filtros.push({ etiqueta: "Año", valor: year });
+    } else if (manualDateRange?.from || manualDateRange?.to) {
+      const inicio = manualDateRange?.from?.toLocaleDateString("es-CL") || "-";
+      const fin = manualDateRange?.to?.toLocaleDateString("es-CL") || "-";
       filtros.push({ etiqueta: "Periodo", valor: `${inicio} → ${fin}` });
     }
     return filtros;
-  }, [entidadSeleccionada, dateRange, entidadesDisponibles]);
-
-  if (loadingEmpresas && !empresaSeleccionada) {
-    return <DashboardMoraAnaliticoSkeleton />;
-  }
-
-  const surface = "rounded-lg border border-indigo-200 bg-white p-5 text-center shadow-sm";
+  }, [entidadSeleccionada, year, manualDateRange, entidadesDisponibles]);
 
   return (
-    <main className="min-h-screen bg-[#f6f6ff] text-slate-950">
-      <header className="border-b border-indigo-100 bg-[#f6f6ff]">
-        <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-5 px-4 py-7 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl">
-              <div className="mb-3 flex items-center gap-3">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
-                <span className="text-[11px] font-semibold uppercase text-emerald-700">
-                  Dashboard Operativo
-                </span>
+    <main className="min-h-screen bg-slate-50 text-slate-950">
+      <DashboardHeader kind="Dashboard Operativo" title="Mora presunta por empresa" description="Prioriza entidades, gestiones y seguimiento de recuperaciones desde una vista de trabajo diaria.">
+        <DashboardContext><RiBuildingLine className="h-4 w-4" />{empresaSeleccionada || "Sin empresa seleccionada"}</DashboardContext>
+        <DashboardContext><RiStackLine className="h-4 w-4" />{entidadesDisponibles.length} entidades</DashboardContext>
+      </DashboardHeader>
+      <DashboardBody>
+          <DashboardFilters footer={<>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
+                <RiFilterLine className="h-5 w-5 text-slate-500" aria-hidden="true" />
+                <span>Filtros activos:</span>
+                {filtrosActivos.length === 0 ? (
+                  <span>Sin filtros adicionales aplicados.</span>
+                ) : null}
               </div>
-              <h1 className="text-3xl font-semibold text-slate-950 md:text-4xl">
-                Mora presunta por empresa
-              </h1>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
-                Prioriza entidades, gestiones y seguimiento de recuperaciones desde una vista de
-                trabajo diaria.
-              </p>
+
+              <button
+                type="button"
+                className="w-fit rounded-md border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-800 hover:border-indigo-500 hover:bg-indigo-50"
+                onClick={() => {
+                  setEntidadSeleccionada("");
+                  setYear("");
+                  setManualDateRange({ from: undefined, to: undefined });
+                }}
+              >
+                Limpiar filtros
+              </button>
             </div>
 
-            <div className="grid gap-3 text-sm font-medium text-slate-700 sm:grid-cols-2">
-              <div className="flex items-center gap-3 rounded-lg border border-indigo-200 bg-white px-4 py-2.5 shadow-sm">
-                <RiBuildingLine className="h-4 w-4 text-slate-500" aria-hidden="true" />
-                <span>{empresaSeleccionada || "Sin empresa seleccionada"}</span>
+            {filtrosActivos.length > 0 ? (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {filtrosActivos.map((filtro) => (
+                  <span
+                    key={filtro.etiqueta}
+                    className="inline-flex items-center rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-950"
+                  >
+                    {filtro.etiqueta}: {filtro.valor}
+                  </span>
+                ))}
               </div>
-              <div className="flex items-center gap-3 rounded-lg border border-indigo-200 bg-white px-4 py-2.5 shadow-sm">
-                <RiStackLine className="h-4 w-4 text-slate-500" aria-hidden="true" />
-                <span>{entidadesDisponibles.length} entidades</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-[1220px] flex-col gap-6">
-          <SectionPanel>
-            <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(300px,1fr)_minmax(380px,1.15fr)_minmax(260px,0.9fr)]">
-              <label className="flex flex-col gap-2">
+            ) : null}
+          </>}>
+              <label className={dashboardFieldClass}>
                 <span className="text-[11px] font-semibold uppercase text-slate-500">Empresa</span>
                 <div className="relative flex min-h-[42px] items-center gap-3 rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm">
                   <RiBuildingLine className="h-5 w-5 text-slate-500" aria-hidden="true" />
@@ -241,23 +238,25 @@ const MoraOperativaDashboard = () => {
                 </div>
               </label>
 
-              <fieldset className="flex flex-col gap-2">
-                <legend className="text-[11px] font-semibold uppercase text-slate-500">Periodo</legend>
-                <div className="flex min-h-[42px] items-center gap-3 rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm">
-                  <RiCalendarLine className="h-5 w-5 shrink-0 text-slate-500" aria-hidden="true" />
-                  <DateRangePicker
-                    value={dateRange}
-                    onValueChange={setDateRange}
-                    enableClear
-                    className="min-w-0 flex-1"
-                  />
-                </div>
-              </fieldset>
+              <DashboardYearSelect serviceKey="mora" empresaRut={empresaSeleccionada} enabled={Boolean(empresaSeleccionada)}
+                value={year}
+                className="min-w-0 [&_select]:min-h-[42px]"
+                customRange={!year && Boolean(manualDateRange?.from || manualDateRange?.to)}
+                onChange={(value) => {
+                  setYear(value);
+                  setManualDateRange({ from: undefined, to: undefined });
+                }}
+              />
 
-              <label className="flex flex-col gap-2 lg:col-span-2 xl:col-span-1">
+              <DashboardPeriodFilter value={manualDateRange} onChange={(value) => {
+                setYear("");
+                setManualDateRange(value);
+              }} />
+
+              <label className={dashboardFieldClass}>
                 <span className="text-[11px] font-semibold uppercase text-slate-500">Entidad</span>
                 <select
-                  className="min-h-[42px] rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                  className={dashboardControlClass}
                   value={entidadSeleccionada}
                   onChange={(event) => setEntidadSeleccionada(event.target.value)}
                   disabled={cargandoEntidades || entidadesDisponibles.length === 0}
@@ -272,44 +271,11 @@ const MoraOperativaDashboard = () => {
                   ))}
                 </select>
               </label>
-            </div>
+          </DashboardFilters>
 
-            <div className="mt-5 flex flex-col gap-3 border-t border-indigo-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
-                <RiFilterLine className="h-5 w-5 text-slate-500" aria-hidden="true" />
-                <span>Filtros activos:</span>
-                {filtrosActivos.length === 0 ? (
-                  <span>Sin filtros adicionales aplicados.</span>
-                ) : null}
-              </div>
-
-              <button
-                type="button"
-                className="w-fit rounded-md border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-800 hover:border-indigo-500 hover:bg-indigo-50"
-                onClick={() => {
-                  setEntidadSeleccionada("");
-                  setDateRange({ from: undefined, to: undefined });
-                }}
-              >
-                Limpiar filtros
-              </button>
-            </div>
-
-            {filtrosActivos.length > 0 ? (
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {filtrosActivos.map((filtro) => (
-                  <span
-                    key={filtro.etiqueta}
-                    className="inline-flex items-center rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-950"
-                  >
-                    {filtro.etiqueta}: {filtro.valor}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </SectionPanel>
-
-          {empresaSeleccionada ? (
+          {loadingEmpresas && !empresaSeleccionada ? (
+            <DashboardMoraAnaliticoSkeleton />
+          ) : empresaSeleccionada ? (
             <div className="space-y-6">
               <IndicadoresOperativos
                 empresaRut={empresaSeleccionada}
@@ -354,9 +320,9 @@ const MoraOperativaDashboard = () => {
                 dateRange={dateRange}
               />
 
-              <TopTrabajadoresDeuda empresaRut={empresaSeleccionada} />
+              <TopTrabajadoresDeuda empresaRut={empresaSeleccionada} dateRange={dateRange} />
 
-              <DistribucionRecuperadoTipo empresaRut={empresaSeleccionada} />
+              <DistribucionRecuperadoTipo empresaRut={empresaSeleccionada} dateRange={dateRange} />
 
               <HistoricoOperativo
                 empresaRut={empresaSeleccionada}
@@ -370,17 +336,12 @@ const MoraOperativaDashboard = () => {
                 dateRange={dateRange}
               />
 
-              <ExportarResumenGlobal empresaRut={empresaSeleccionada} />
+              <ExportarResumenGlobal empresaRut={empresaSeleccionada} dateRange={dateRange} />
             </div>
           ) : (
-            <section className={surface}>
-              <p className="text-sm text-slate-500">
-                Selecciona una empresa para visualizar indicadores operativos.
-              </p>
-            </section>
+            <DashboardStatus>Selecciona una empresa para visualizar indicadores operativos.</DashboardStatus>
           )}
-        </div>
-      </div>
+      </DashboardBody>
     </main>
   );
 };

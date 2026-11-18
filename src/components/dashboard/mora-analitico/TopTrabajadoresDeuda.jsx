@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 import { RiUserSearchLine } from "@remixicon/react";
 import apiService from "@/app/api/apiService";
+import buildMoraDashboardParams from "@/utils/moraDashboardParams";
 import { SectionCard, SectionHeader } from "../mora-operativo/MoraOperativoUI";
 
-const TopTrabajadoresDeuda = ({ empresaRut }) => {
+const TopTrabajadoresDeuda = ({ empresaRut, dateRange }) => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
     const fetchTop = async () => {
       try {
-        const res = await apiService.get(`/mora-dashboard/${empresaRut}/top-pendientes`);
+        const res = await apiService.get(`/mora-dashboard/${empresaRut}/top-pendientes`, {
+          params: buildMoraDashboardParams({ dateRange }),
+        });
         const rawData = res.data.data || [];
         const normalized = rawData.map((item) => {
           const rawDeuda = item.totalDeudaPendiente;
@@ -37,7 +40,7 @@ const TopTrabajadoresDeuda = ({ empresaRut }) => {
     };
 
     if (empresaRut) fetchTop();
-  }, [empresaRut]);
+  }, [empresaRut, dateRange]);
 
   if (!data.length) return null;
 

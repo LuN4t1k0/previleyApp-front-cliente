@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { getLicenciasWorkspaceLinks } from "@/services/licenciasWorkspace.mjs";
 
 const LicenciasSectionNav = ({ activeSection }) => {
   const pathname = usePathname();
-  const links = getLicenciasWorkspaceLinks();
+  const searchParams = useSearchParams();
+  const links = getLicenciasWorkspaceLinks(searchParams);
 
   return (
     <nav

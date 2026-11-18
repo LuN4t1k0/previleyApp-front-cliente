@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getDashboardYearRange } from "@/services/dashboardYear.mjs";
 import { fetchLicenciasDashboard } from "@/services/clientServiceApi";
 import { normalizeLicenciasOperations } from "@/services/licenciasWorkspace.mjs";
 import { createLatestRequestTracker } from "@/services/dashboardRequestState.mjs";
 
-const useLicenciasCompanyDashboard = (empresaRut) => {
+const useLicenciasCompanyDashboard = (empresaRut, year) => {
   const trackerRef = useRef(null);
   if (!trackerRef.current) trackerRef.current = createLatestRequestTracker();
 
@@ -31,7 +32,7 @@ const useLicenciasCompanyDashboard = (empresaRut) => {
     setError("");
     setLoading(true);
 
-    fetchLicenciasDashboard(empresaRut)
+    fetchLicenciasDashboard(empresaRut, getDashboardYearRange(year))
       .then((payload) => {
         if (tracker.isCurrent(requestId)) {
           setData(normalizeLicenciasOperations(payload));
@@ -51,7 +52,7 @@ const useLicenciasCompanyDashboard = (empresaRut) => {
       });
 
     return () => tracker.invalidate();
-  }, [empresaRut, retryVersion]);
+  }, [empresaRut, year, retryVersion]);
 
   return { data, loading, error, retry };
 };

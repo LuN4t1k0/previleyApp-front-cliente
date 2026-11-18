@@ -2,7 +2,15 @@
 
 import apiService from "@/app/api/apiService";
 import { getOperationalDashboardDefinition } from "@/config/operationalServiceDashboards.mjs";
-import { aggregateOperationalDashboard } from "@/services/operationalServiceDashboard.mjs";
+import {
+  aggregateOperationalDashboard,
+  fetchOperationalGestionRows,
+} from "@/services/operationalServiceDashboard.mjs";
+import {
+  getGestionHistoryRequest,
+  getGestionHistoryExcelPath,
+  normalizeGestionHistoryPage,
+} from "@/services/serviceGestionHistory.mjs";
 import {
   getGestionLicenciaExcelPath,
   normalizeGestionLicenciaPage,
@@ -78,17 +86,18 @@ const unwrapApiData = (response, fallback) => {
   return body ?? fallback;
 };
 
-export const fetchLicenciasDashboard = async (empresaRut) => {
+export const fetchLicenciasDashboard = async (empresaRut, range) => {
+  const params = buildRangeParams(range);
   const [integralRes, tasaRes, evolutionRes, comparativoRes, topRes, gestionesRes] = await Promise.all([
-    apiService.get(`/licencia-dashboard/${empresaRut}/ficha-resumen`),
-    apiService.get(`/licencia-dashboard/${empresaRut}/tasa-rechazo`),
-    apiService.get(`/licencia-dashboard/${empresaRut}/evolucion-mensual`),
+    apiService.get(`/licencia-dashboard/${empresaRut}/ficha-resumen`, { params }),
+    apiService.get(`/licencia-dashboard/${empresaRut}/tasa-rechazo`, { params }),
+    apiService.get(`/licencia-dashboard/${empresaRut}/evolucion-mensual`, { params }),
     apiService.get(
-      `/licencia-dashboard/${empresaRut}/comparativo-anticipos-subsidios`
+      `/licencia-dashboard/${empresaRut}/comparativo-anticipos-subsidios`, { params }
     ),
-    apiService.get(`/licencia-dashboard/${empresaRut}/top-trabajadores`),
+    apiService.get(`/licencia-dashboard/${empresaRut}/top-trabajadores`, { params }),
     apiService.get("/gestion-licencia", {
-      params: { empresaRut, limit: 5, offset: 0 },
+      params: { empresaRut, limit: 5, offset: 0, ...params },
     }),
   ]);
 
@@ -146,14 +155,11 @@ export const fetchZonasExtremasDashboard = async (empresaRut, range) => {
   const params = buildRangeParams(range);
   const basePath = `/zonas-extremas-dashboard/${empresaRut}`;
 
-  const [summaryRes, statesRes, zonesRes, gestionesRes, detallesRes] =
+  const [summaryRes, statesRes, zonesRes, detallesRes] =
     await Promise.all([
       apiService.get(`${basePath}/resumen-financiero`, { params }),
       apiService.get(`${basePath}/distribucion-estado`, { params }),
       apiService.get(`${basePath}/distribucion-zona`, { params }),
-      apiService.get(`${basePath}/ultimas-gestiones`, {
-        params: { ...params, limit: 8 },
-      }),
       apiService.get(`${basePath}/ultimos-detalles`, {
         params: { ...params, limit: 8 },
       }),
@@ -173,29 +179,54 @@ export const fetchZonasExtremasDashboard = async (empresaRut, range) => {
     },
     states: normalizeDistribution(statesRes),
     zones: normalizeDistribution(zonesRes),
-    latestGestiones: normalizeRows(gestionesRes),
     latestDetalles: normalizeRows(detallesRes),
   };
 };
 
+export const fetchGestionHistoryPage = async (serviceKey, filters, signal) => {
+  const { endpoint, params } = getGestionHistoryRequest(serviceKey, filters);
+  const response = await apiService.get(endpoint, { params, signal });
+  return normalizeGestionHistoryPage(response.data);
+};
+
+export const downloadGestionHistoryExcel = async (serviceKey, gestion) => {
+  const response = await apiService.get(getGestionHistoryExcelPath(serviceKey, gestion.id), {
+    responseType: "blob",
+  });
+  const filename = `detalle-${serviceKey}-${gestion.folio || gestion.id}.xlsx`;
+  const objectUrl = URL.createObjectURL(response.data);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  try {
+    link.click();
+  } finally {
+    link.remove();
+    URL.revokeObjectURL(objectUrl);
+  }
+};
+
 export const fetchOperationalServiceDashboard = async (
   serviceKey,
-  empresaRut
+  empresaRut,
+  range
 ) => {
   const definition = getOperationalDashboardDefinition(serviceKey);
   if (!definition) {
     throw new Error(`El servicio ${serviceKey} no tiene un dashboard configurado.`);
   }
 
-  const params = { limit: 500, offset: 0 };
+  const params = {};
   if (empresaRut) params.empresaRut = empresaRut;
+  if (range?.from) params.fechaGestion_inicio = range.from;
+  if (range?.to) params.fechaGestion_termino = range.to;
 
-  const response = await apiService.get(definition.endpoint, { params });
-  const body = response?.data || {};
-
-  return aggregateOperationalDashboard(
-    Array.isArray(body.data) ? body.data : [],
-    definition,
-    body.total
-  );
+  const rows = await fetchOperationalGestionRows(async (pagination) => {
+    const response = await apiService.get(definition.endpoint, {
+      params: { ...params, ...pagination },
+    });
+    return response.data;
+  });
+  return aggregateOperationalDashboard(rows, definition);
 };

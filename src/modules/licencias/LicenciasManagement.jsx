@@ -120,7 +120,7 @@ const LicenciasManagement = () => {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Gestiones</p>
-          <h1 className="mt-3 text-3xl font-semibold md:text-4xl">Expedientes de licencias médicas</h1>
+          <h1 className="mt-3 text-3xl font-semibold md:text-4xl">Gestiones de Licencias Médicas</h1>
           <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
             Consulta todas las gestiones autorizadas, revisa su detalle en modo lectura y descarga el Excel individual.
           </p>

@@ -11,10 +11,14 @@ export const buildMoraDashboardParams = ({ empresaRut, entidadId, dateRange } = 
 
   if (dateRange?.from instanceof Date) {
     params.fechaInicio = dateRange.from.toISOString().split("T")[0];
+  } else if (typeof dateRange?.from === "string") {
+    params.fechaInicio = dateRange.from;
   }
 
   if (dateRange?.to instanceof Date) {
     params.fechaFin = dateRange.to.toISOString().split("T")[0];
+  } else if (typeof dateRange?.to === "string") {
+    params.fechaFin = dateRange.to;
   }
 
   return params;
