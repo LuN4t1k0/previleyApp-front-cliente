@@ -228,7 +228,7 @@ const ActionHeader = ({
 };
 
 const ExpedienteContent = () => {
-  const { role } = useRole();
+  const { role, status } = useRole();
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -237,6 +237,7 @@ const ExpedienteContent = () => {
   const gestionId = params.id;
   const LIMIT_POR_PAGINA = 20; // Define un límite estándar
   const canDeleteAll = useMemo(() => role && role !== 'cliente', [role]);
+  const isClient = role === "cliente" || role === "cliente_admin";
 
   // --- Hook para Licencias ---
   const {
@@ -307,9 +308,13 @@ const ExpedienteContent = () => {
   } = useInfiniteScroll({
     // La convertimos en una función async para poder usar await
     fetchFn: async ({ offset, limit }) => {
+      if (status !== "authenticated" || !gestionId) return { data: [], total: 0 };
+
       try {
         const response = await apiService.get(
-          `/subsidios?gestionLicenciaId=${gestionId}&offset=${offset}&limit=${limit}`
+          isClient
+            ? `/gestion-licencia/${gestionId}/subsidios?offset=${offset}&limit=${limit}`
+            : `/subsidios?gestionLicenciaId=${gestionId}&offset=${offset}&limit=${limit}`
         );
 
         setSubsidiosError(null);
@@ -327,7 +332,7 @@ const ExpedienteContent = () => {
       }
     },
     limit: LIMIT_POR_PAGINA,
-    deps: [gestionId],
+    deps: [gestionId, role, status],
   });
 
   const [gestion, setGestion] = useState(null);
@@ -341,11 +346,18 @@ const ExpedienteContent = () => {
   const dynamicLicenciasConfig = useDynamicActions(licenciasConfig, isEditable);
   const dynamicAnticiposConfig = useDynamicActions(anticiposConfig, isEditable);
   const dynamicSubsidiosConfig = useDynamicActions(subsidiosConfig, isEditable);
+  const clientSubsidiosColumns = dynamicSubsidiosConfig.columnsConfig
+    .filter((column) => [
+      "gestionLicenciaId", "folio", "fechaDeposito", "montoDeposito",
+      "subsidio", "diasAutorizados", "diasPagados", "formaPago",
+    ].includes(column.accessorKey));
+  clientSubsidiosColumns.splice(
+    clientSubsidiosColumns.findIndex((column) => column.accessorKey === "montoDeposito") + 1,
+    0,
+    { header: "Subsidio", accessorKey: "subsidio" }
+  );
 
-  const isReadOnly =
-    role === "cliente" ||
-    role === "cliente_admin" ||
-    searchParams?.get("modo") === "lectura";
+  const isReadOnly = isClient || searchParams?.get("modo") === "lectura";
   const canEdit =
     !isReadOnly && licenciasConfig.permissions.edit.includes(role);
   const canDelete =
@@ -903,7 +915,7 @@ const handleCargarArchivo = (tipo) => {
                   excludeColumns={dynamicSubsidiosConfig.excludeColumns}
                   monetaryColumns={dynamicSubsidiosConfig.monetaryColumns}
                   dateColumns={dynamicSubsidiosConfig.dateColumns}
-                  columnsConfig={dynamicSubsidiosConfig.columnsConfig}
+                  columnsConfig={isClient ? clientSubsidiosColumns : dynamicSubsidiosConfig.columnsConfig}
                   canEdit={canEdit}
                   canDelete={canDelete}
                   role={role}
