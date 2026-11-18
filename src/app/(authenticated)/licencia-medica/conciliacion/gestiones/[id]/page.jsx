@@ -297,6 +297,7 @@ const ExpedienteContent = () => {
   });
 
   // --- Hook para Subsidios ---
+  const [subsidiosError, setSubsidiosError] = useState(null);
   const {
     data: subsidiosData,
     loading: subsidiosLoading,
@@ -311,14 +312,18 @@ const ExpedienteContent = () => {
           `/subsidios?gestionLicenciaId=${gestionId}&offset=${offset}&limit=${limit}`
         );
 
+        setSubsidiosError(null);
         return {
           data: response.data.data,
           total: response.data.total,
         };
       } catch (error) {
-        console.error("Error fetching licencias:", error);
-
-        return { data: [], total: 0 };
+        setSubsidiosError(
+          error.response?.status === 403
+            ? "No tiene permisos para ver los subsidios."
+            : "No se pudieron cargar los subsidios."
+        );
+        throw error;
       }
     },
     limit: LIMIT_POR_PAGINA,
@@ -621,6 +626,7 @@ const handleCargarArchivo = (tipo) => {
   }
 };
 
+  const subsidiosCount = metrics?.counts?.subsidios;
   const statCardData = useMemo(
     () => [
       {
@@ -642,8 +648,8 @@ const handleCargarArchivo = (tipo) => {
       {
         key: "subsidios",
         title: "Subsidios",
-        count: subsidiosTotal,
-        isLoading: subsidiosLoading,
+        count: subsidiosCount ?? "—",
+        isLoading: metricsLoading,
         icon: ReceiptPercentIcon,
         color: "emerald",
       },
@@ -653,8 +659,8 @@ const handleCargarArchivo = (tipo) => {
       licenciasLoading,
       anticiposTotal,
       anticiposLoading,
-      subsidiosTotal,
-      subsidiosLoading,
+      subsidiosCount,
+      metricsLoading,
     ]
   );
 
@@ -694,7 +700,9 @@ const handleCargarArchivo = (tipo) => {
           <Tab>Resumen y Métricas</Tab>
           <Tab>Licencias ({licenciasTotal})</Tab>
           <Tab>Anticipos ({anticiposTotal})</Tab>
-          <Tab>Subsidios ({subsidiosTotal})</Tab>
+          <Tab>
+            Subsidios{!metricsLoading && subsidiosCount != null ? ` (${subsidiosCount})` : ""}
+          </Tab>
         </TabList>
         <TabPanels>
           <TabPanel>
@@ -880,31 +888,38 @@ const handleCargarArchivo = (tipo) => {
                   </button>
                 )}
               </div>
-              <GenericTableWithDetail
-                data={subsidiosData}
-                loading={subsidiosLoading}
-                total={subsidiosTotal}
-                scrollTriggerRef={subsidiosLastRowRef}
-                useInfiniteScroll={true}
-                excludeColumns={dynamicSubsidiosConfig.excludeColumns}
-                monetaryColumns={dynamicSubsidiosConfig.monetaryColumns}
-                dateColumns={dynamicSubsidiosConfig.dateColumns}
-                columnsConfig={dynamicSubsidiosConfig.columnsConfig}
-                canEdit={canEdit}
-                canDelete={canDelete}
-                role={role}
-                actionHandlers={{
-                  ...(canEdit
-                    ? { editar: (item) => handleEditItem(item, "subsidio") }
-                    : {}),
-                  ...(canDelete
-                    ? {
-                        eliminar: (item) =>
-                          handleDeleteItem(item.id || item, "subsidio"),
-                      }
-                    : {}),
-                }}
-              />
+              {subsidiosError && (
+                <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-700">
+                  {subsidiosError}
+                </p>
+              )}
+              {(!subsidiosError || subsidiosData.length > 0) && (
+                <GenericTableWithDetail
+                  data={subsidiosData}
+                  loading={subsidiosLoading}
+                  total={subsidiosTotal}
+                  scrollTriggerRef={subsidiosError ? null : subsidiosLastRowRef}
+                  useInfiniteScroll={true}
+                  excludeColumns={dynamicSubsidiosConfig.excludeColumns}
+                  monetaryColumns={dynamicSubsidiosConfig.monetaryColumns}
+                  dateColumns={dynamicSubsidiosConfig.dateColumns}
+                  columnsConfig={dynamicSubsidiosConfig.columnsConfig}
+                  canEdit={canEdit}
+                  canDelete={canDelete}
+                  role={role}
+                  actionHandlers={{
+                    ...(canEdit
+                      ? { editar: (item) => handleEditItem(item, "subsidio") }
+                      : {}),
+                    ...(canDelete
+                      ? {
+                          eliminar: (item) =>
+                            handleDeleteItem(item.id || item, "subsidio"),
+                        }
+                      : {}),
+                  }}
+                />
+              )}
             </Card>
           </TabPanel>
         </TabPanels>
